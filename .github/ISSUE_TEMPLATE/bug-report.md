@@ -17,6 +17,8 @@ labels: bug
 
 **Top-right pill reads** (mock / online, mock providers / online / offline / demo):
 
+**Shading line** (click the GEOMETRY row at the bottom of the sidebar and copy its last grey line, for example "shading: graphics chip, full quality"; write "none" if there is no such line. Also copy any grey note above the photo):
+
 **Photo used** (sample name: Portrait / Coffee cup / Cat / Rocket; or file name from testing/photos; or describe your own):
 
 **Light readout** (x, y, Height, Intensity, Ambient, Colour, Cast shadows on or off, Detailed normals on or off):

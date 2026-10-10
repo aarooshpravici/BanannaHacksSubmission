@@ -12,6 +12,7 @@ Never write a key, a password or the contents of a `.env` file here.
 - Computer (model, macOS or Windows version, Apple chip / NVIDIA card / neither):
 - Browser and version:
 - Top-right pill reads (mock / online, mock providers / online / offline / demo):
+- Shading line (click the GEOMETRY row at the bottom of the sidebar and copy its last grey line, for example "shading: graphics chip, full quality"; write "none" if there is no such line. Also copy any grey note above the photo):
 - What I ran (smoke test / share A / share B / share C / group H demo / other):
 
 ## Setup
@@ -175,6 +176,10 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | R-19 | | |
 | R-20 | | |
 | R-21 | | |
+| F-01 | | |
+| F-02 | | |
+| F-03 | | |
+| F-04 | | |
 | D-01 | | |
 | D-02 | | |
 | D-03 | | |
@@ -192,6 +197,13 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | J-08 | | |
 | J-09 | | |
 | J-10 | | |
+| G-01 | | |
+| G-02 | | |
+| G-03 | | |
+| G-04 | | |
+| G-05 | | |
+| G-06 | | |
+| G-07 | | |
 | H-01 | | |
 | H-02 | | |
 | H-03 | | |
@@ -200,6 +212,9 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | H-06 | | |
 | H-07 | | |
 | H-08 | | |
+| H-09 | | |
+| H-10 | | |
+| H-11 | | |
 
 ## Picture quality (group Q)
 
@@ -228,6 +243,7 @@ Copy this block once per bug.
 - Test case ID:
 - Seriousness (BLOCKER / WRONG / UGLY / IDEA):
 - Photo used:
+- Shading line:
 - Light readout (x, y, Height, Intensity, Ambient, Colour, Cast shadows, Detailed normals):
 - Steps:
   1.

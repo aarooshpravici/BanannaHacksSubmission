@@ -2432,7 +2432,7 @@
       "title": "How Relight works",
       "sections": [
         "Once per photo | Done by the Relight server when you upload a photo. For the four samples it was done ahead of time and the two maps ship with the page.",
-        "Every frame, in your browser | A WebGL2 shader we wrote runs steps 3 and 4 again each time the light moves. No server and no AI model is involved in the dragging.",
+        "Every frame, in your browser | Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor. If the processor is too slow or cannot do it, the Relight server runs our Python version instead. No AI model is involved in the dragging.",
         "Only if you press Enhance | Off until you ask for it. The app is complete without it.",
         "Honest limits | "
       ],
@@ -2478,7 +2478,7 @@
     "name": "how-it-works-step-2",
     "status": "ok",
     "about": "The \"How it works\" panel alone, enlarged, scrolled to step 2.",
-    "see": "Step 2: \"Estimate surface direction\", the blue chip \"Pretrained model: Marigold\", two lines that start \"A second pretrained model estimates which way every surface faces.\", then one picture in purple, pink and green (\"Normal map: colour is the way a surface faces\") and, to its right, the grey note \"A depth map is too smooth to shade a face: tilts worked out from it left faces almost flat. That is why there is a second model.\" Under it the heading \"EVERY FRAME, IN YOUR BROWSER\" with the grey line \"A WebGL2 shader we wrote runs steps 3 and 4 again each time the light moves. No server and no AI model is involved in the dragging.\", and the start of step 3.",
+    "see": "Step 2: \"Estimate surface direction\", the blue chip \"Pretrained model: Marigold\", two lines that start \"A second pretrained model estimates which way every surface faces.\", then one picture in purple, pink and green (\"Normal map: colour is the way a surface faces\") and, to its right, the grey note \"A depth map is too smooth to shade a face: tilts worked out from it left faces almost flat. That is why there is a second model.\" Under it the heading \"EVERY FRAME, IN YOUR BROWSER\" with the grey line \"Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor. If the processor is too slow or cannot do it, the Relight server runs our Python version instead. No AI model is involved in the dragging.\", and the start of step 3.",
     "viewport": "1440x900",
     "appMode": "backend",
     "light": null,
@@ -2522,7 +2522,7 @@
     "name": "how-it-works-over-photo",
     "status": "ok",
     "about": "\"How it works\" opened while a photo is being lit (\"Portrait\" sample, \"Left\" preset): the page behind is dimmed and cannot be used until the panel is closed.",
-    "see": "The same card over a photo that is being lit: the portrait, its sun, the sidebar and the top bar are all still there behind it but dimmed, and none of them reacts until the card is closed. Before this picture was taken the card was closed three ways (the Escape key, a click on the dimmed page, the \"Close\" button); after the Escape key the keyboard focus was back on \"How it works\". Opened again after being scrolled, the card comes back where it was left, not at the top; it was scrolled back up for this picture.",
+    "see": "The same card over a photo that is being lit: the portrait, its sun, the sidebar and the top bar are all still there behind it but dimmed, and none of them reacts until the card is closed. Before this picture was taken the card was closed three ways (the Escape key, a click on the dimmed page, the \"Close\" button); after the Escape key the keyboard focus was back on \"How it works\". Opened again after being scrolled down, the card comes back at the top.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
@@ -2532,7 +2532,7 @@
     "focusAfterClosing": "How it works",
     "clickOutsideCloses": true,
     "closeButtonCloses": true,
-    "reopensWhereItWasLeft": true,
+    "reopensWhereItWasLeft": false,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -3248,7 +3248,7 @@
     "slowNote": "This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
     "how": "No WebGL2, no Workers, and the page's own thread slowed 40 times with Chrome's CPU throttle until the page noticed.",
     "shadingLine": "shading: server renders",
-    "shadingTooltip": "The photo is shaded by the processor because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "shadingTooltip": "The photo is drawn by the server, because this device's processor takes 3.1 s to shade one picture. The graphics chip could not be used: WebGL2 is not available in this browser.",
     "greyNote": "This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
     "redBars": [],
     "buttons": [
@@ -3319,8 +3319,8 @@
     "shading": "server",
     "sceneSeconds": 2.3,
     "sample": "Portrait",
-    "shadingLine": null,
-    "shadingTooltip": null,
+    "shadingLine": "shading: server renders",
+    "shadingTooltip": "The photo is drawn by the server, because nothing on this device can shade it: WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.",
     "greyNote": null,
     "redBars": [
       "Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.). Showing server renders instead, which lag slightly behind the light."
@@ -3438,7 +3438,7 @@
       "title": "How Relight works",
       "sections": [
         "Once per photo | For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.",
-        "Every frame, in your browser | A WebGL2 shader we wrote runs steps 3 and 4 again each time the light moves. No server and no AI model is involved in the dragging.",
+        "Every frame, in your browser | Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor. No AI model is involved in the dragging.",
         "Only if you press Enhance | Switched off in this demo, because it needs the server.",
         "Honest limits | "
       ],

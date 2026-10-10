@@ -18,6 +18,8 @@ title: "Test result: YOUR NAME, share A / B / C / smoke test, DATE"
 
 **Top-right pill reads** (mock / online, mock providers / online / offline / demo):
 
+**Shading line** (click the GEOMETRY row at the bottom of the sidebar and copy its last grey line, for example "shading: graphics chip, full quality"; write "none" if there is no such line. Also copy any grey note above the photo):
+
 **What I ran** (smoke test / share A / share B / share C / group H demo / other):
 
 ## Setup

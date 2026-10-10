@@ -228,7 +228,9 @@ Look at the top-right pill.
 
 ![Correct pill](screenshots/49-status-online-mock-providers.jpg)
 
-**A ten-second check.** Click the **Portrait** picture under "Or try a sample photo:". The astronaut should open at once with the left of the face bright and the right cheek in shadow. The shadow side fades in softly, with no hard, straight line across the face. Drag the round sun button: the lighting should follow. If a red bar appears, or the photo does not react, report it (test case W-16 in [TEST_PLAN.md](TEST_PLAN.md)).
+On a window narrower than 640 pixels (a phone) the pill is shorter: no "backend:" or "demo:" in front, "online, mock providers" reads just "online", and the demo's pill reads just "demo". Left of the pill, at every width, are the words **How it works**; they open a card that explains the app.
+
+**A ten-second check.** Click the **Portrait** picture under "Or try a sample photo:". The astronaut should open at once with the left of the face bright and the right cheek in shadow. The shadow side fades in softly, with no hard, straight line across the face. Drag the round sun button: the lighting should follow. Then click the **GEOMETRY** row at the bottom of the sidebar and read its last small grey line. On most computers it reads "shading: graphics chip, full quality". Whatever it reads, write it down: test case W-16 in [TEST_PLAN.md](TEST_PLAN.md) asks for it, for every device you own. If the photo does not react, or a red bar appears, report it (W-16 again). A **grey** note above the photo is not an error: see [Troubleshooting](#a-grey-note-says-shading-on-this-devices-processor).
 
 Now do the smoke test in [README.md](README.md#10-minute-smoke-test).
 
@@ -253,7 +255,7 @@ On Windows, the install above normally gives a processor-only setup even if you 
 
 **The sample photos never wait.** The four samples on the first page come with their shape already worked out, so they open at once on any computer, even with the backend stopped.
 
-**Dragging the light should always be fast.** That part runs in your browser, on the graphics chip, not in the backend. If dragging or **Sweep** stutters, report it (test cases D-02 and D-07).
+**Dragging the light should always be fast.** That part runs in your browser, not in the backend: normally on the graphics chip. If the graphics chip cannot be used, the processor draws the picture instead and a grey note above the photo says so; the picture is then a slightly soft preview while the light moves and sharpens when it stops. If dragging or **Sweep** stutters, report it with the shading line from the GEOMETRY panel (test cases D-02, D-07 and W-16).
 
 **Stopping and restarting.** Press Ctrl+C in each terminal to stop. To start again, repeat only step 5 and step 6 (without `npm ci`). The backend forgets loaded photos when it restarts: reload the page and choose the photo again.
 
@@ -340,7 +342,7 @@ Open http://localhost:3000. The pill reads **backend: mock** (yellow dot).
 
 ![Plan B: an uploaded file gets a made-up dome](screenshots/56-mock-scene.jpg)
 
-What you can test this way: the smoke test (click **Portrait** in step 2), case W-16 (the most wanted one), case Q-11 (the face under side light), the sample cases U-05 and U-18 to U-21, and groups L, C, S, K, X and W, using the samples wherever a case names one of the four main test photos. Group U also works, with the dome. What you cannot test: the loading screen, the failed-load card, and anything that says it needs the backend. Mark those NOT RUN.
+What you can test this way: the smoke test (click **Portrait** in step 2), case W-16 (the most wanted one: which shading path your device uses), case Q-11 (the face under side light), group G (the "How it works" card), cases F-01 and F-02, the sample cases U-05 and U-18 to U-21, and groups L, C, S, K, X and W, using the samples wherever a case names one of the four main test photos. Group U also works, with the dome. What you cannot test: the loading screen, the failed-load card, and anything that says it needs the backend. Mark those NOT RUN.
 
 Three differences in this mode. **Enhance** finishes in about 4 seconds and returns a copy with a little more contrast and a soft glow; nothing is sent anywhere. The **Detailed normals** switch: on an uploaded file it changes nothing visible; on a sample it is on, greyed, and cannot be clicked, with the line "Always on for a sample photo: its maps were made ahead of time with detailed normals." (case P-09). An uploaded big photo is shrunk to 1536 pixels on its longest side, not 1024 (this matters for case X-02).
 
@@ -436,11 +438,21 @@ Almost always the one-time model download, because step 4 was skipped or did not
 
 The card's second line reads "Cannot reach the backend…". The browser stopped waiting, but the backend is still downloading the models. Do not close anything. Wait for the bars in terminal 1 to finish, then click **Retry** on the card. To avoid this, do step 4 (Download the models) before loading a photo.
 
+### A grey note says "Shading on this device's processor…"
+
+![The grey note](screenshots/126-processor-note.jpg)
+
+This is not an error. Your browser cannot use the graphics chip the way the app needs; the words in the note's brackets say why (most often "WebGL2 is not available in this browser"). The processor draws the picture instead. Everything still works, with or without the backend, and on the static demo too. While the light moves the picture is a slightly soft preview; it sharpens about a quarter of a second after the light stops.
+
+We very much want to know about it. Report your device, the browser and its version, the note's exact words, and the last grey line of the opened GEOMETRY panel (it reads "shading: processor, in the background" or "shading: processor"). Test cases W-16, R-06 and R-11. Then, if you like, try whether another browser on the same device uses the graphics chip: use Google Chrome; in Chrome open `chrome://settings/system` and make sure "Use graphics acceleration when available" is on, then restart Chrome; update Chrome.
+
+A second grey note exists: "This device's processor is slow at shading (… s a picture), so the server draws the photo instead. It lags slightly behind the light." It means the processor took more than 1.2 seconds over one picture, so the backend draws each one. Report it in the same way (test case F-03).
+
 ### A red bar says "Live shading is unavailable (…)"
 
-![No WebGL](screenshots/52-no-webgl-fallback.jpg)
+![The red bar](screenshots/141-no-shading-at-all-server-renders.jpg)
 
-Your browser cannot use the graphics chip the way the app needs (the usual words in the brackets are "WebGL2 is not available in this browser"). With the backend running the app still works, but each move of the light is drawn by the backend and arrives a moment late. If the backend cannot be reached (pill "offline"), the bar says so, offers a **Retry** link, and the light controls switch off until a picture arrives. On the static demo there is no backend at all: the bar then reads "… and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari." and the photo cannot be relit. Try, in this order: use Google Chrome; in Chrome open `chrome://settings/system` and make sure "Use graphics acceleration when available" is on, then restart Chrome; update Chrome. Whether or not that fixes it, report it with your computer model, browser version and the exact words in the brackets (test cases W-16, R-06 and H-07).
+This should be very rare: neither the graphics chip nor the processor can draw the picture in this browser. The brackets give both reasons. With the backend running the app still works, but each picture is drawn by the backend and arrives a moment late. If the backend cannot be reached (pill "offline"), the bar says so, offers a **Retry** link, and the light controls switch off until a picture arrives. On the static demo there is no backend at all: the bar then reads "… and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari." and the photo cannot be relit. Try another browser, and report it with your device, the browser and its version and the bar's exact words, whole (test cases F-04 and H-11).
 
 ### `pip install` fails
 
