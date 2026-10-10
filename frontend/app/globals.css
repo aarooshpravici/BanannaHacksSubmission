@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-ink: #07080b; /* page */
+  --color-surface: #0e1015; /* panels */
+  --color-raised: #171a21; /* controls on panels */
+  --color-accent: #fbd13d; /* banana */
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-scan: scan 2.2s ease-in-out infinite;
+  --animate-rise: rise 0.35s ease-out both;
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @keyframes scan {
+    0%,
+    100% {
+      transform: translateY(-10%);
+      opacity: 0;
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(1000%);
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 50% -200px, rgb(251 209 61 / 0.07), transparent 70%),
+    var(--color-ink);
+  background-attachment: fixed;
+  color: #e4e4e7;
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgb(251 209 61 / 0.3);
+}
+
+/* Transparent areas of cutouts sit on a checkerboard. */
+.checker {
+  background: repeating-conic-gradient(#20232b 0% 25%, #16181e 0% 50%) 50% / 22px 22px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgb(255 255 255 / 0.04) 25%, rgb(255 255 255 / 0.1) 50%, rgb(255 255 255 / 0.04) 75%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+/* Range inputs: a thin track filled up to --fill, with a round thumb. */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--track-fill, var(--color-accent)) var(--fill, 50%),
+    rgb(255 255 255 / 0.12) var(--fill, 50%)
+  );
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(0 0 0 / 0.35), 0 1px 4px rgb(0 0 0 / 0.5);
+  transition: transform 0.12s ease;
+}
+input[type="range"].slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+input[type="range"].slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(0 0 0 / 0.35);
+}
+input[type="range"].slider:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-ink), 0 0 0 4px rgb(251 209 61 / 0.6);
+}
+
+/* Slim scrollbars inside panels. */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.15) transparent;
+}
