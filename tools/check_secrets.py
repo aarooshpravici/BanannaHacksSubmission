@@ -9,7 +9,9 @@ Three kinds of check:
   1. file names that should never be committed (.env, private keys);
   2. text that looks like a credential (known key formats, hard-coded key assignments);
   3. the actual values in the local .env, searched for literally, so a key in a
-     format this script has never heard of is still caught.
+     format this script has never heard of is still caught;
+  4. this computer's home folder path, which contains the account name and has
+     no business in a public repository.
 Matches are reported by file and line with the value masked. Exits 1 if anything is found.
 
 Install the hook once per clone:
@@ -46,8 +48,9 @@ COMPILED = {name: re.compile(rx) for name, rx in PATTERNS.items()}
 
 
 def env_values() -> dict[str, bytes]:
-    """Secret-looking values from the local .env files, keyed by variable name."""
-    values = {}
+    """Secret-looking values from the local .env files, keyed by variable name,
+    plus this computer's home folder path."""
+    values = {"the home folder path of this computer": str(Path.home()).encode()}
     for env in (ROOT / ".env", ROOT / "frontend" / ".env.local", ROOT / "backend" / ".env"):
         if not env.exists():
             continue
@@ -70,7 +73,8 @@ def scan(label: str, path: str, data: bytes, literals: dict[str, bytes]) -> list
     for name, value in literals.items():
         if value in data:
             line = data[: data.index(value)].count(b"\n") + 1
-            found.append(f"{label}{path}:{line}: contains the real value of {name} from .env")
+            what = name if name.startswith("the ") else f"the real value of {name} from .env"
+            found.append(f"{label}{path}:{line}: contains {what}")
     if b"\0" in data[:8000]:
         return found  # binary: only the literal search applies
     text = data.decode(errors="replace")
@@ -115,7 +119,7 @@ def main() -> int:
         return 2
     for f in sorted(set(findings)):
         print("SECRET CHECK:", f)
-    names = ", ".join(sorted(literals)) or "none (no .env found, so only pattern checks ran)"
+    names = ", ".join(sorted(literals))
     print(f"{mode[2:]}: {checked} files checked, {len(set(findings))} problems. Literal values searched for: {names}")
     return 1 if findings else 0
 

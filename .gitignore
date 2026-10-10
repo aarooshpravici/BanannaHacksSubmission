@@ -33,3 +33,6 @@ out/
 *.onnx
 *.safetensors
 .cache/
+
+# local tool settings (launch.json holds absolute paths for this computer)
+.claude/
