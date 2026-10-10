@@ -72,5 +72,7 @@ def sheet(name: str, img: Image.Image) -> None:
 
 if __name__ == "__main__":
     R.estimate_normals(Image.new("RGB", (64, 64)))  # load the model so timings exclude it
-    for name, arr in [("portrait", data.astronaut()), ("object", data.coffee()), ("cat", data.chelsea())]:
+    # The rocket is the hard case for cast shadows: thin towers in front of a far night sky.
+    photos = [("portrait", data.astronaut()), ("object", data.coffee()), ("cat", data.chelsea()), ("rocket", data.rocket())]
+    for name, arr in photos:
         sheet(name, Image.fromarray(arr))
