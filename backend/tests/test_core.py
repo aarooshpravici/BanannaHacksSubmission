@@ -179,6 +179,15 @@ def test_palette_ignores_transparent_pixels():
     assert [s.hex for s in p] == ["#ff0000"]
 
 
+def test_palette_of_a_single_visible_pixel_or_flat_color():
+    dot = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
+    dot.putpixel((5, 5), (10, 200, 30, 255))
+    assert [s.hex for s in extract_palette(dot)] == ["#0ac81e"]
+    flat = extract_palette(Image.new("RGB", (40, 40), (0, 0, 0)))
+    assert [(s.hex, s.weight) for s in flat] == [("#000000", 1.0)]
+    assert palette_score(flat, flat) == pytest.approx(1.0)
+
+
 def test_palette_respects_mask():
     mask = np.zeros((40, 40), np.uint8)
     mask[:, 30:] = 255

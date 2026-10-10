@@ -45,6 +45,12 @@ def extract_palette(
     if len(pixels) == 0:
         return []
     k = min(k, len(np.unique(pixels.round(), axis=0)))
+    if k == 1:
+        # One flat color (or a single visible pixel): nothing to cluster, and
+        # k-means rejects it.
+        lab = pixels.mean(axis=0).astype(np.float32)
+        r, g, b = np.clip(cv2.cvtColor(lab.reshape(1, 1, 3), cv2.COLOR_Lab2RGB).reshape(3) * 255.0, 0, 255).round().astype(int)
+        return [Swatch(hex=f"#{r:02x}{g:02x}{b:02x}", weight=1.0, lab=tuple(map(float, lab)))]
     cv2.setRNGSeed(0)  # same image, same palette
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.5)
     _, labels, centers = cv2.kmeans(pixels, k, None, criteria, 3, cv2.KMEANS_PP_CENTERS)
