@@ -10,6 +10,8 @@
 import type { Light } from "./types";
 
 export const MAX_FALLOFF = 3.0; // relight.MAX_FALLOFF
+/** relight.TERMINATOR_SOFTNESS: how gradually a surface goes dark as it turns away from the light. */
+export const TERMINATOR_SOFTNESS = 0.6;
 export const SHADOW_STEPS = 48; // shadows(steps=48)
 export const SHADOW_MAX_SIDE = 256; // shadows(max_side=256)
 export const SHADOW_SOFTNESS = 0.02; // shadows(softness=0.02)
@@ -44,6 +46,13 @@ export function pyRound(x: number): number {
 /** _light_position: where the light is, in image widths. */
 export function lightPosition(width: number, height: number, relief: number, light: Light): Vec3 {
   return [light.x, (light.y * height) / width, relief + Math.max(light.height, 1e-3)];
+}
+
+/** _soft_terminator: max(cos, 0) with the corner rounded off. */
+export function softTerminator(cos: number): number {
+  const k = TERMINATOR_SOFTNESS;
+  const eased = Math.max(cos + k, 0.0) ** 2 / (4.0 * k);
+  return cos >= k ? cos : eased;
 }
 
 /** The size shadows() works at: longest side capped at max_side. */
@@ -372,7 +381,7 @@ export function relightPixels(scene: SceneArrays, light: Light, castShadows = tr
       const safe = Math.max(dist, 1e-6);
       const cos = (normals[p * 3] * tx + normals[p * 3 + 1] * ty + normals[p * 3 + 2] * tz) / safe;
       const falloff = Math.min((reference / safe) ** 2, MAX_FALLOFF);
-      let direct = Math.min(1, Math.max(0, cos)) * falloff;
+      let direct = Math.min(softTerminator(cos), 1.0) * falloff;
       if (shadow) direct *= sampleBilinear(shadow.map, shadow.width, shadow.height, i, j, w, h);
       const shading = light.ambient + light.intensity * direct;
 

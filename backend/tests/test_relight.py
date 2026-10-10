@@ -31,6 +31,20 @@ def _near_and_far_shadows() -> tuple[np.ndarray, np.ndarray]:
     return near, far
 
 
+def _ball_with_a_ridge() -> R.Geometry:
+    """A ball whose normals, but not its depth, have a rounded ridge down the middle.
+
+    That is what the two models give for a face: the depth map is a smooth
+    blob, and the nose, brow and cheeks exist only in the normals.
+    """
+    ys, xs = np.mgrid[0:N, 0:N]
+    r2 = ((xs - N / 2) ** 2 + (ys - N / 2) ** 2) / (N * 0.45) ** 2
+    ball = (0.6 * np.sqrt(np.clip(1.0 - r2, 0.0, 1.0))).astype(np.float32)
+    ridge = (0.5 * np.exp(-(((xs - N / 2) / 14.0) ** 2))).astype(np.float32)
+    detailed = R.build_geometry(ball + ridge, relief=0.3, smooth=0)
+    return R.build_geometry(ball, normals=detailed.normals, relief=0.3, smooth=0)
+
+
 def _edge_width(profile: np.ndarray) -> int:
     """Pixels a shadow's edge takes to go from 10% to 90% of its full darkness."""
     depth = 1.0 - profile.min()
@@ -85,6 +99,38 @@ def test_exposure_at_the_scene_centre_does_not_depend_on_light_distance(light_xy
     to_light = R._light_position(g, light) - R._pixel_positions(g)[c, c]
     g.normals[c, c] = to_light / np.linalg.norm(to_light)
     assert R.diffuse(g, light)[c, c] == pytest.approx(1.0, abs=0.03)
+
+
+def test_shading_eases_out_where_a_surface_turns_away_from_the_light():
+    k = R.TERMINATOR_SOFTNESS
+    cos = np.linspace(-1.0, 1.0, 201)
+    soft = R._soft_terminator(cos)
+    assert np.allclose(soft[cos >= k], cos[cos >= k]), "plain Lambert on surfaces that face the light"
+    assert (soft[cos <= -k] == 0).all(), "nothing on surfaces turned well away"
+    assert soft[100] == pytest.approx(k / 4), "an edge-on surface still catches a little"
+    assert (np.diff(soft) >= 0).all() and np.abs(np.diff(soft, 2)).max() < 0.001, "no corner anywhere"
+
+
+@pytest.mark.parametrize("light_x", [-0.1, 1.1])  # the page's Left and Right presets
+def test_a_ridge_lit_from_the_side_has_no_hard_line_on_its_far_flank(light_x):
+    # The line that used to run down a face: where the far flank of the nose
+    # turned edge-on to the light, plain Lambert went from lit to flat ambient
+    # within three pixels, 42 grey levels in one step.
+    g = _ball_with_a_ridge()
+    light = R.Light(light_x, 0.4, height=0.35, intensity=1.3, ambient=0.06)
+    c = N // 2
+    assert R.shadows(g, light, max_side=N)[c, c - 30 : c + 30].min() > 0.99, "this is shading, not a cast shadow"
+    row = np.asarray(R.relight(Image.new("RGB", (N, N), (180, 180, 180)), g, light))[c, :, 0].astype(int)
+    # From the crest of the ridge down its far flank, crest last.
+    flank = row[c - 30 : c + 1] if light_x > 0.5 else row[c : c + 31][::-1]
+    darkest = len(flank) - 1 - flank[::-1].argmin()
+    edge = flank[darkest:]
+    lo, hi = edge[0], edge[-1]
+    assert hi - lo > 80, "the flank is still clearly darker than the crest"
+    width = int(((edge > lo + 0.1 * (hi - lo)) & (edge < lo + 0.9 * (hi - lo))).sum())
+    assert width >= 5, "the edge from dark to lit is at least 5 pixels wide at 128 (it was 3)"
+    assert np.abs(np.diff(flank)).max() < 30
+    assert (flank == flank.min()).sum() <= 3, "no flat dark patch (16 pixels sat at exactly ambient)"
 
 
 def test_light_position_respects_non_square_images():

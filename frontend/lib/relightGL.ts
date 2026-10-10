@@ -7,7 +7,7 @@
 //                     ray goes into a near, mid or far layer    (shadows(), the loop)
 //   2. blur, rows     one Gaussian per layer, sigma 1, 3, 8 px  (cv2.GaussianBlur)
 //   3. blur, columns  then the three layers are multiplied into one shadow map
-//   4. shade          Lambert * falloff * shadow, multiplied into the photo in
+//   4. shade          soft Lambert * falloff * shadow, multiplied into the photo in
 //                     linear light with a highlight knee        (diffuse, apply_shading)
 //      sampling pass 3 bilinearly, which is the cv2.resize back to full size.
 //
@@ -27,6 +27,7 @@ import {
   SHADOW_GAP_NEAR,
   SHADOW_SOFTNESS,
   SHADOW_STEPS,
+  TERMINATOR_SOFTNESS,
   gaussianKernel,
   lightPosition,
   shadowHeightField,
@@ -168,6 +169,13 @@ vec3 linearToSrgb(vec3 c) {
   return mix(1.055 * pow(max(c, vec3(1e-8)), vec3(1.0 / 2.4)) - 0.055, c * 12.92, lessThanEqual(c, vec3(0.0031308)));
 }
 
+// _soft_terminator: max(cos, 0) with the corner rounded off.
+float softTerminator(float cosTheta) {
+  const float k = ${f(TERMINATOR_SOFTNESS)};
+  float eased = max(cosTheta + k, 0.0) * max(cosTheta + k, 0.0) / (4.0 * k);
+  return cosTheta >= k ? cosTheta : eased;
+}
+
 void main() {
   vec4 photo = texture(u_image, v_uv);
   vec3 rgb = mix(vec3(1.0), photo.rgb, photo.a); // to_rgb(): transparency flattens onto white
@@ -176,8 +184,9 @@ void main() {
   vec3 position = vec3(v_uv.x, v_uv.y * u_aspect, texture(u_depth, v_uv).r * u_relief);
   vec3 normal = normalize(texture(u_normals, v_uv).rgb * 2.0 - 1.0);
 
-  // diffuse(): Lambert, with inverse-square falloff measured relative to the
-  // centre of the scene so moving the light does not change overall exposure.
+  // diffuse(): Lambert, eased to nothing where the surface turns away, with
+  // inverse-square falloff measured relative to the centre of the scene so
+  // moving the light does not change overall exposure.
   vec3 toLight = u_light - position;
   float dist = max(length(toLight), 1e-6);
   float cosTheta = dot(normal, toLight) / dist;
@@ -185,7 +194,7 @@ void main() {
   float reference = length(u_light - centre);
   float ratio = reference / dist;
   float falloff = min(ratio * ratio, ${f(MAX_FALLOFF)});
-  float direct = clamp(cosTheta, 0.0, 1.0) * falloff;
+  float direct = min(softTerminator(cosTheta), 1.0) * falloff;
 
   // shading_map(): ambient + intensity * diffuse * shadows.
   if (u_shadows > 0.5) direct *= texture(u_shadow, v_uv).r;

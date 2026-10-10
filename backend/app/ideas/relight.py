@@ -150,14 +150,32 @@ def _pixel_positions(geom: Geometry) -> np.ndarray:
 
 # Cap on how much brighter than the scene centre a surface next to the light can get.
 MAX_FALLOFF = 3.0
+# How gradually a surface goes dark as it turns away from the light, as a cosine
+# of the angle to the light. Plain Lambert shading cuts to nothing exactly where
+# a surface is edge-on to the light, and estimated normals swing through that
+# angle within a few pixels along a nose, a brow or a cheek: the result was a
+# straight, hard-edged dark patch across a face that looked like a cast shadow.
+# With this, shading is plain Lambert above the value, eases to nothing at the
+# same amount past edge-on, and an edge-on surface gets a quarter of it. That is
+# roughly what a large lamp does compared with a bare bulb. Higher is softer but
+# flattens the modelling of a face; 0 would be plain Lambert.
+TERMINATOR_SOFTNESS = 0.6
+
+
+def _soft_terminator(cos: np.ndarray) -> np.ndarray:
+    """max(cos, 0) with the corner rounded off: see TERMINATOR_SOFTNESS."""
+    k = TERMINATOR_SOFTNESS
+    eased = np.maximum(cos + k, 0.0) ** 2 / (4.0 * k)
+    return np.where(cos >= k, cos, eased)
 
 
 def diffuse(geom: Geometry, light: Light) -> np.ndarray:
     """Lambert shading with distance falloff, (H, W).
 
     Brightness = cos(angle between surface normal and direction to the light),
-    times an inverse-square falloff measured relative to the centre of the
-    scene. So wherever the light is, a surface at the centre that faces it gets
+    eased to nothing where the surface turns away instead of cut off (see
+    TERMINATOR_SOFTNESS), times an inverse-square falloff measured relative to
+    the centre of the scene. So wherever the light is, a surface at the centre that faces it gets
     exactly 1.0: moving the light changes direction and gradient, not the
     overall exposure. (A plain inverse-square falloff made the whole photo go
     dark as soon as the light moved off to one side.)
@@ -170,7 +188,7 @@ def diffuse(geom: Geometry, light: Light) -> np.ndarray:
     centre = np.array([0.5, 0.5 * h / w, geom.relief / 2], dtype=np.float32)
     reference = np.linalg.norm(light_pos - centre)
     falloff = np.minimum((reference / np.maximum(dist, 1e-6)) ** 2, MAX_FALLOFF)
-    return np.clip(cos, 0.0, 1.0) * falloff
+    return np.minimum(_soft_terminator(cos), 1.0) * falloff
 
 
 # Cast shadows are sorted by how far the thing casting them stands in front of
