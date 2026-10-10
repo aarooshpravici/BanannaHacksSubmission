@@ -70,6 +70,7 @@ export default function AutocompletePage() {
   const candidatesPanel = useRef<HTMLDivElement>(null);
   const detectRequest = useRef(0);
   const planRequest = useRef(0);
+  const detectedAt = useRef(0); // index of the version the regions were detected on
 
   const current: Version | undefined = versions[index];
   const regions = detection.regions;
@@ -125,6 +126,7 @@ export default function AutocompletePage() {
     setSize({ width: image.width, height: image.height });
     setVersions([{ id: "original", image: image.base64, label: "Original" }]);
     setIndex(0);
+    detectedAt.current = 0;
     setDetection((d) => ({ generation: d.generation + 1, width: 0, height: 0, regions: [] }));
     setTool("select");
     setBrushSize(Math.max(12, Math.round(Math.max(image.width, image.height) * 0.04)));
@@ -144,22 +146,27 @@ export default function AutocompletePage() {
 
   // --- select -> plan -------------------------------------------------------------
 
+  /** Ask the planner what could go in `mask`. On its own this is a retry: it leaves the prompt and the candidates alone. */
+  const loadPlan = async (image: string, mask: string) => {
+    const id = ++planRequest.current;
+    setPlan({ status: "loading" });
+    try {
+      const out = await autocompletePlan({ image, mask });
+      if (planRequest.current === id) setPlan({ status: "done", data: out });
+    } catch (e) {
+      if (planRequest.current === id) setPlan({ status: "error", error: errorMessage(e) });
+    }
+  };
+
   /** Make `next` the selection and ask the planner what could go there. */
   const select = async (next: Selection) => {
     if (!current) return;
-    const id = ++planRequest.current;
     setSelection(next);
     setSelectionTint(null);
     setPrompt("");
     setFillBase(null);
     fill.reset();
-    setPlan({ status: "loading" });
-    try {
-      const out = await autocompletePlan({ image: current.image, mask: next.mask });
-      if (planRequest.current === id) setPlan({ status: "done", data: out });
-    } catch (e) {
-      if (planRequest.current === id) setPlan({ status: "error", error: errorMessage(e) });
-    }
+    await loadPlan(current.image, next.mask);
   };
 
   const selectRegion = (region: Region) => {
@@ -207,8 +214,8 @@ export default function AutocompletePage() {
       n: CANDIDATES,
       // A detected gap knows which neighbouring blocks the fill should look like.
       references: selection.kind === "region" ? selection.references : [],
-      // "Generate again" must not hand back the cached batch.
-      fresh: fill.status !== "idle",
+      // "Generate again" must not hand back the cached batch. A retry after an error should: it replaces nothing.
+      fresh: fill.status === "done",
     };
     await fill.run(() => autocompleteFill(request));
   };
@@ -227,6 +234,24 @@ export default function AutocompletePage() {
     setVersions((list) => [...list.slice(0, fillBase + 1), version]);
     setIndex(fillBase + 1);
     clearMaskCanvas();
+  };
+
+  /**
+   * Show another version (Undo, History). The regions belong to the version
+   * they were detected on and the fills made from it, so detect again when the
+   * target is older than that, or holds a fill of a gap from an earlier detection.
+   */
+  const goTo = (target: number) => {
+    setIndex(target);
+    const version = versions[target];
+    const known = `${detection.generation}:`;
+    const foreign = versions.slice(detectedAt.current + 1, target + 1).some((v) => v.regionKey !== undefined && !v.regionKey.startsWith(known));
+    if (!version || (target >= detectedAt.current && !foreign)) return;
+    detectedAt.current = target;
+    clearSelection();
+    clearMaskCanvas();
+    setDetection((d) => ({ generation: d.generation + 1, width: 0, height: 0, regions: [] }));
+    void detect(version.image);
   };
 
   // --- render ---------------------------------------------------------------------
@@ -272,6 +297,7 @@ export default function AutocompletePage() {
                 onClick={() => {
                   clearSelection();
                   clearMaskCanvas();
+                  detectedAt.current = index;
                   void detect(current.image);
                 }}
               >
@@ -335,7 +361,7 @@ export default function AutocompletePage() {
                 <Skeleton className="h-3 w-3/4" />
               </div>
             )}
-            {plan.status === "error" && <ErrorBanner message={plan.error} onRetry={selection ? () => void select(selection) : undefined} />}
+            {plan.status === "error" && <ErrorBanner message={plan.error} onRetry={selection && !generating ? () => void loadPlan((versions[fillBase ?? index] ?? current).image, selection.mask) : undefined} />}
             {plan.status === "done" && <p className="text-sm leading-6 text-zinc-300">{plan.data.analysis}</p>}
 
             {selection && plan.status !== "loading" && (
@@ -551,7 +577,7 @@ export default function AutocompletePage() {
                 onChange={(e) => setBrushSize(Number(e.target.value))}
                 style={{ "--fill": `${((brushSize - 8) / (Math.max(64, Math.round(Math.max(width, height) * 0.15)) - 8)) * 100}%` } as CSSProperties}
               />
-              <Button size="sm" variant="primary" disabled={!painted} onClick={selectPainted}>
+              <Button size="sm" variant="primary" disabled={!painted || generating} onClick={selectPainted}>
                 Use mask
               </Button>
               <Button size="sm" variant="ghost" disabled={!painted} onClick={clearMaskCanvas}>
@@ -560,7 +586,7 @@ export default function AutocompletePage() {
             </div>
           )}
           <div className="pointer-events-auto ml-auto flex items-center gap-2">
-            <Button size="sm" variant="glass" disabled={index === 0 || generating} onClick={() => setIndex((i) => Math.max(0, i - 1))}>
+            <Button size="sm" variant="glass" disabled={index === 0 || generating || detecting} onClick={() => goTo(Math.max(0, index - 1))}>
               <UndoIcon />
               Undo
             </Button>
@@ -583,8 +609,8 @@ export default function AutocompletePage() {
           <button
             key={`${version.id}-${i}`}
             type="button"
-            disabled={generating}
-            onClick={() => setIndex(i)}
+            disabled={generating || detecting}
+            onClick={() => goTo(i)}
             title={i === index ? `${version.label} (current)` : `Go back to ${version.label}`}
             className={cn(
               "group relative h-14 shrink-0 overflow-hidden rounded-lg border transition-colors",
