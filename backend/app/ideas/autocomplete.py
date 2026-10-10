@@ -6,6 +6,10 @@ buttons), not on pixels:
   2. group blocks of the same size and read the grid they sit on;
   3. report grid positions that have no block and are visually empty;
   4. separately, report large framed boxes with nothing inside.
+
+Known limits: blocks that touch or share borders (ruled tables, galleries with
+gutters under 6 px) are seen as one shape, and layouts over a photo or heavy
+grain cannot be read.
 """
 
 import threading
@@ -20,10 +24,23 @@ from ..images import to_rgb
 
 # --- layout blocks ------------------------------------------------------------
 
-MIN_AREA_FRAC = 0.004  # a block is at least 0.4% of the image
+# A block is at least 0.25% of the image. Lower sees smaller icons and avatars,
+# but at 0.2% words and badges in a half-size export start to count as blocks.
+MIN_AREA_FRAC = 0.0025
 MIN_SIDE_FRAC = 0.025  # and not a thin rule or a line of text
 MIN_FILL = 0.7  # the shape fills at least 70% of its bounding box (rectangles, rounded cards, circles)
-RECURSE_AREA_FRAC = 0.2  # look for blocks inside anything this large (panels, sections)
+# Look for blocks inside anything this large (panels, sections). Lower reaches
+# into smaller widgets; at 0.05 it also enters cards, whose own contents then
+# get read as patterns.
+RECURSE_AREA_FRAC = 0.1
+
+
+# Canny thresholds (weak, strong). Brightness is kept low enough to see the
+# faint outline of a white card on an off-white page; lower would pick up
+# gradient banding. Colour is higher: lower reads JPEG colour fringes as edges,
+# higher loses boundaries that are a hue change at equal brightness.
+LUMA_EDGE = (12, 36)
+CHROMA_EDGE = (40, 80)
 
 
 @dataclass(frozen=True)
@@ -49,11 +66,17 @@ class Block:
 
 
 def edge_map(img: Image.Image) -> np.ndarray:
-    """Boolean map of visible edges in any color channel, slightly thickened."""
+    """Boolean map of visible edges in brightness or colour, slightly thickened.
+
+    Colour is read less finely than brightness because JPEG stores it at half
+    resolution: around a saturated shape it bleeds out to the next 16 px
+    boundary, which would otherwise be read as part of the shape.
+    """
     rgb = cv2.GaussianBlur(np.asarray(to_rgb(img)), (3, 3), 0)
-    edges = np.zeros(rgb.shape[:2], np.uint8)
-    for c in range(3):
-        edges |= cv2.Canny(np.ascontiguousarray(rgb[..., c]), 12, 36)
+    ycc = cv2.cvtColor(rgb, cv2.COLOR_RGB2YCrCb)
+    edges = cv2.Canny(np.ascontiguousarray(ycc[..., 0]), *LUMA_EDGE)
+    for c in (1, 2):
+        edges |= cv2.Canny(np.ascontiguousarray(ycc[..., c]), *CHROMA_EDGE)
     return cv2.dilate(edges, np.ones((3, 3), np.uint8)) > 0
 
 
@@ -173,7 +196,40 @@ def _edge_density(edges: np.ndarray, x: float, y: float, w: float, h: float, ins
 
 SIZE_TOLERANCE = 0.12  # blocks within 12% in width and height count as the same kind
 EMPTY_EDGE_DENSITY = 0.006  # a slot with fewer edge pixels than this is empty
+# On a textured page (dot grid, ruled paper) an empty slot is as busy as the
+# page itself. The page's texture is the edge density of its emptiest tiles,
+# and a slot may hold that much times the headroom on top of the limit above.
+# More headroom tolerates uneven textures, but lets a slot holding faint
+# content pass as empty.
+TEXTURE_TILE = 48  # px; large enough to average over a texture's period, small enough that some tiles miss all content
+TEXTURE_FLOOR_PERCENTILE = 10  # low, so that the content covering most of a page does not count as its texture
+TEXTURE_HEADROOM = 1.5
 MIN_PLACEHOLDER_AREA_FRAC = 0.025
+# An empty box whose fill differs from its surroundings by more than this (0-255,
+# in any channel) is a solid element, not a placeholder. Lower drops more colour
+# blocks, but also stops reporting tinted or dark placeholders on a light page.
+MAX_PLACEHOLDER_CONTRAST = 64
+# Breaks of up to twice this many px in a box's outline are sealed when looking
+# for empty frames, so a dashed border still makes a box. Larger closes wider
+# dash gaps and open corners, but merges elements that sit closer than that.
+DASH_SEAL_RADIUS = 6
+# How exactly a row must be off-centre by one pitch before a slot is added at
+# its end. Looser finds more missing end cards in loosely drawn rows, but also
+# invents slots beside rows that are simply aligned to one margin.
+END_SLOT_TOLERANCE = 0.10
+# A parent whose area around its children has more edge pixels than this is
+# treated as a photo and not looked into. Higher looks inside busier panels
+# (more text, more controls) but starts reading patterns into photos.
+BUSY_PARENT_DENSITY = 0.05
+PARENT_RIM = 8  # px at a parent's rim left out of that measure: wide enough for its outline, narrow enough to keep its content
+# Above this share of empty cells, same-sized blocks in several rows and
+# columns are not read as a grid with holes. Higher finds grids that are
+# missing more of their cells, lower stays quiet on boards with uneven columns.
+MAX_EMPTY_GRID_FRAC = 1 / 3
+# Empty slots at the end of a grid's last row that are still reported. More
+# catches a row missing several cards, but flags every list whose item count
+# is not a multiple of its columns.
+MAX_TRAILING_SLOTS = 1
 
 
 @dataclass
@@ -253,24 +309,36 @@ def _fill_axis(pos: list[float], size: float) -> tuple[list[float], float | None
 
 
 def _extend_row(xs: list[float], pitch: float | None, w: float, left: float, right: float) -> list[float]:
-    """Columns missing at an end of a row, judged by how off-centre the row is.
+    """The column missing at one end of a row, judged by how off-centre the row is.
 
-    Designs centre their rows. If the free space on one side exceeds the other
-    by whole multiples of the pitch, and adding that many blocks would centre
-    the row, they are probably missing.
+    Designs often centre their rows. If the free space on one side exceeds the
+    other by one pitch, adding one block would centre the row, so it is
+    probably missing. Rows that are off-centre by more than one block are left
+    alone: they are far more often aligned to a margin on purpose (a nav bar,
+    a button row, cards flowed from the left) than short by several blocks.
     """
     if pitch is None or len(xs) < 2:
         return []
     space_left, space_right = xs[0] - left, right - (xs[-1] + w)
-    n = round(abs(space_right - space_left) / pitch)
-    if n < 1 or abs(abs(space_right - space_left) - n * pitch) > 0.25 * pitch:
+    if abs(abs(space_right - space_left) - pitch) > END_SLOT_TOLERANCE * pitch:
         return []
-    if space_right > space_left:
-        return [xs[-1] + pitch * i for i in range(1, n + 1)]
-    return [xs[0] - pitch * i for i in range(n, 0, -1)]
+    return [xs[-1] + pitch] if space_right > space_left else [xs[0] - pitch]
 
 
-def _pattern_gaps(group: list[Block], bounds: tuple[int, int, int, int], edges: np.ndarray) -> list[Gap]:
+def _texture_floor(edges: np.ndarray) -> float:
+    """Edge density of the emptiest parts of the page: 0 on a flat background, above 0 on a dot grid or paper texture."""
+    t = TEXTURE_TILE
+    H, W = edges.shape
+    if H < t or W < t:
+        return 0.0
+    tiles = edges[: H // t * t, : W // t * t].reshape(H // t, t, W // t, t).mean(axis=(1, 3))
+    return float(np.percentile(tiles, TEXTURE_FLOOR_PERCENTILE))
+
+
+def _pattern_gaps(group: list[Block], bounds: tuple[int, int, int, int], edges: np.ndarray, floor: float = 0.0) -> list[Gap]:
+    """Empty slots in the grid one set of same-sized blocks sits on. floor is the page's own texture (_texture_floor)."""
+    # A slot is empty when it holds no more than the page's own texture.
+    empty_limit = EMPTY_EDGE_DENSITY + TEXTURE_HEADROOM * floor
     w, h = float(np.median([b.w for b in group])), float(np.median([b.h for b in group]))
     xs, pitch_x, guessed_x = _fill_axis(_positions([b.x for b in group], 0.15 * w), w)
     ys, _, guessed_y = _fill_axis(_positions([b.y for b in group], 0.15 * h), h)
@@ -282,6 +350,7 @@ def _pattern_gaps(group: list[Block], bounds: tuple[int, int, int, int], edges: 
         return any(abs(b.x - x) <= 0.3 * w and abs(b.y - y) <= 0.3 * h for b in group)
 
     gaps = []
+    trailing = []  # empty slots after the last block of a short last row
     for y in ys:
         for x in xs:
             if occupied(x, y):
@@ -289,7 +358,7 @@ def _pattern_gaps(group: list[Block], bounds: tuple[int, int, int, int], edges: 
             if x < bounds[0] - 1 or y < bounds[1] - 1 or x + w > bounds[2] + 1 or y + h > bounds[3] + 1:
                 continue
             density = _edge_density(edges, x, y, w, h)
-            if density > EMPTY_EDGE_DENSITY:
+            if density > empty_limit:
                 continue  # something else already sits here
             row = [b for b in group if abs(b.y - y) <= 0.3 * h]
             col = [b for b in group if abs(b.x - x) <= 0.3 * w]
@@ -304,6 +373,7 @@ def _pattern_gaps(group: list[Block], bounds: tuple[int, int, int, int], edges: 
             else:
                 # A short last row: could be missing, could be the natural end of the list.
                 confidence, where = 0.55, "at the end of"
+                trailing.append((round(x), round(y)))
             confidence = min(0.95, confidence + (0.05 if len(group) >= 4 else 0.0))
             gaps.append(
                 Gap(
@@ -312,10 +382,48 @@ def _pattern_gaps(group: list[Block], bounds: tuple[int, int, int, int], edges: 
                     confidence, "pattern", tuple((b.x, b.y, b.w, b.h) for b in group),
                 )
             )
+    # Rows times columns is only a grid if most of its cells are taken. Columns
+    # of unequal length (a board, a masonry page) leave many cells empty by design.
+    if len(xs) >= 2 and len(ys) >= 2 and len(gaps) > MAX_EMPTY_GRID_FRAC * (len(gaps) + len(group)):
+        return []
+    # A last row short by one block may be missing its last card. Short by more,
+    # it is simply where the list ends (six items in four columns).
+    if len(trailing) > MAX_TRAILING_SLOTS:
+        gaps = [g for g in gaps if (g.x, g.y) not in trailing]
     return gaps
 
 
-def _placeholder_gaps(blocks: list[Block], edges: np.ndarray) -> list[Gap]:
+def _stands_out(rgb: np.ndarray, b: Block) -> bool:
+    """Whether a box's fill is a clearly different colour from what surrounds it."""
+    H, W = rgb.shape[:2]
+    inner = rgb[b.y + b.h // 4 : b.y1 - b.h // 4, b.x + b.w // 4 : b.x1 - b.w // 4].reshape(-1, 3)
+    near, far = 3, 8  # the ring starts past the box's own outline
+    ring = np.concatenate([
+        rgb[max(0, b.y - far) : max(0, b.y - near), b.x : b.x1].reshape(-1, 3),
+        rgb[min(H, b.y1 + near) : min(H, b.y1 + far), b.x : b.x1].reshape(-1, 3),
+        rgb[b.y : b.y1, max(0, b.x - far) : max(0, b.x - near)].reshape(-1, 3),
+        rgb[b.y : b.y1, min(W, b.x1 + near) : min(W, b.x1 + far)].reshape(-1, 3),
+    ])
+    if len(inner) == 0 or len(ring) == 0:
+        return False
+    return float(np.abs(np.median(inner, axis=0) - np.median(ring, axis=0)).max()) > MAX_PLACEHOLDER_CONTRAST
+
+
+def _sealed_boxes(edges: np.ndarray) -> list[Block]:
+    """Placeholder-sized boxes whose outline has breaks in it (a dashed border).
+
+    A broken outline lets the page background leak into the box, so no block
+    is found for it. Thickening every edge seals the breaks; the boxes found
+    that way are shrunk back by the same amount.
+    """
+    H, W = edges.shape
+    r = DASH_SEAL_RADIUS
+    sealed = cv2.dilate(edges.astype(np.uint8), np.ones((2 * r + 1, 2 * r + 1), np.uint8)) > 0
+    found = _blocks_in(sealed, 0, 0, 0, MIN_PLACEHOLDER_AREA_FRAC * W * H, MIN_SIDE_FRAC * min(W, H))
+    return [Block(b.x + r, b.y + r, b.w - 2 * r, b.h - 2 * r, b.fill) for b in found if min(b.w, b.h) > 4 * r]
+
+
+def _placeholder_gaps(blocks: list[Block], edges: np.ndarray, rgb: np.ndarray) -> list[Gap]:
     """Large framed boxes with nothing inside them."""
     H, W = edges.shape
     gaps = []
@@ -324,6 +432,8 @@ def _placeholder_gaps(blocks: list[Block], edges: np.ndarray) -> list[Gap]:
             continue
         if _edge_density(edges, b.x, b.y, b.w, b.h, inset=0.08) > EMPTY_EDGE_DENSITY / 2:
             continue
+        if _stands_out(rgb, b):
+            continue  # a solid colour block (a swatch, a hero band) is content, not an empty frame
         gaps.append(Gap(b.x, b.y, b.w, b.h, "Framed box with nothing inside it.", 0.6, "placeholder"))
     return gaps
 
@@ -340,6 +450,7 @@ def find_gaps(img: Image.Image, blocks: list[Block], edges: np.ndarray | None = 
         families.setdefault(_parent_of(b, blocks), []).append(b)
 
     gaps: list[Gap] = []
+    floor = _texture_floor(edges)
     for parent, children in families.items():
         if parent is not None:
             # Only look inside containers (panels, sections). The inside of a
@@ -347,14 +458,18 @@ def find_gaps(img: Image.Image, blocks: list[Block], edges: np.ndarray | None = 
             outside = np.ones_like(edges[parent.y : parent.y1, parent.x : parent.x1])
             for c in children:
                 outside[c.y - parent.y : c.y1 - parent.y, c.x - parent.x : c.x1 - parent.x] = False
+            # The parent's own outline is not content: counted, it makes an
+            # ordinary dialog or framed page look as busy as a photo.
+            r = PARENT_RIM
+            outside[:r], outside[-r:], outside[:, :r], outside[:, -r:] = False, False, False, False
             around = edges[parent.y : parent.y1, parent.x : parent.x1][outside]
-            if around.size == 0 or around.mean() > 0.05:
+            if around.size == 0 or around.mean() > BUSY_PARENT_DENSITY:
                 continue
         bounds = (0, 0, W, H) if parent is None else (parent.x, parent.y, parent.x1, parent.y1)
         for group in _size_groups(children):
             if len(group) >= 2:
-                gaps += _pattern_gaps(group, bounds, edges)
-    gaps += _placeholder_gaps(blocks, edges)
+                gaps += _pattern_gaps(group, bounds, edges, floor)
+    gaps += _placeholder_gaps(dedupe(blocks + _sealed_boxes(edges)), edges, np.asarray(to_rgb(img)))
 
     # A gap inside another gap is the same finding seen twice; keep the stronger.
     kept: list[Gap] = []

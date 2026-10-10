@@ -12,6 +12,9 @@ from PIL import Image, ImageDraw
 from app.ideas import autocomplete as A
 from scripts.make_mockups import DESIGNS
 
+from .designs_independent import DESIGNS as INDEPENDENT
+from .designs_independent import KNOWN_LIMITS
+
 W, H = 1200, 800
 
 
@@ -74,6 +77,24 @@ def test_complete_centred_row_reports_nothing():
     assert _gaps(_row([140, 500, 860])) == []
 
 
+def test_row_aligned_to_one_margin_reports_nothing():
+    # A toolbar or a button row sits at one side on purpose: off-centre by several blocks, not short of them.
+    assert _gaps(_row([60, 180, 300], y=40, w=100, h=44)) == []
+    assert _gaps(_row([920, 1040], y=700, w=100, h=44)) == []
+
+
+def test_last_row_short_by_one_is_reported_but_short_by_more_is_the_end_of_the_list():
+    cells = [(x, y) for y in (100, 420) for x in (60, 340, 620, 900)]
+    seven = _gaps([A.Block(x, y, 240, 280) for x, y in cells[:7]])
+    assert [(g.x, g.y) for g in seven] == [(900, 420)] and 0.5 <= seven[0].confidence < 0.9
+    assert _gaps([A.Block(x, y, 240, 280) for x, y in cells[:6]]) == []
+
+
+def test_columns_of_unequal_length_are_not_a_grid_with_holes():
+    board = [A.Block(60 + 280 * col, 100 + 130 * row, 250, 110) for col, n in enumerate([3, 2, 4, 1]) for row in range(n)]
+    assert _gaps(board) == []
+
+
 def test_single_block_and_mismatched_sizes_report_nothing():
     assert _gaps(_row([140])) == []
     assert _gaps([A.Block(140, 300, 200, 250), A.Block(500, 300, 320, 120)]) == []
@@ -94,6 +115,21 @@ def test_empty_framed_box_is_reported_as_a_placeholder():
     card, box = A.Block(100, 200, 300, 300), A.Block(600, 200, 400, 300)
     gaps = A.find_gaps(_canvas(), [card, box], _edges([card]))
     assert [(g.bbox, g.kind) for g in gaps] == [((600, 200, 400, 300), "placeholder")]
+
+
+def test_solid_colour_block_is_not_a_placeholder():
+    card, box = A.Block(100, 200, 300, 300), A.Block(600, 200, 400, 300)
+    page = _canvas()
+    ImageDraw.Draw(page).rectangle((box.x, box.y, box.x1 - 1, box.y1 - 1), fill=(79, 70, 229))  # a brand-colour swatch
+    assert A.find_gaps(page, [card, box], _edges([card])) == []
+
+
+def test_panel_outline_does_not_hide_the_blocks_inside_it():
+    panel = A.Block(100, 150, 1000, 500)
+    cards = [A.Block(x, 250, 200, 300) for x in (190, 500)]
+    edges = _edges(cards)
+    edges[150:158, 100:1100] = edges[642:650, 100:1100] = edges[150:650, 100:108] = edges[150:650, 1092:1100] = True  # the panel's own outline
+    assert [(g.x, g.y) for g in A.find_gaps(_canvas(), [panel, *cards], edges)] == [(810, 250)]
 
 
 def test_gaps_inside_a_panel_use_the_panel_as_their_frame():
@@ -124,6 +160,18 @@ def test_mockup_gaps_are_found_exactly(name):
     assert len(gaps) == len(truth), [(g.bbox, g.reason) for g in gaps]
     for box in truth:
         assert any(A.iou(A.Block(*box), A.Block(*g.bbox)) >= 0.6 for g in gaps)
+
+
+@pytest.mark.parametrize("name", list(INDEPENDENT))
+def test_designs_by_an_independent_reviewer(name):
+    img, truth = INDEPENDENT[name]()
+    gaps = [g for g in A.detect(img) if g.confidence >= 0.5]
+    correct = len(gaps) == len(truth) and all(any(A.iou(A.Block(*box), A.Block(*g.bbox)) >= 0.6 for g in gaps) for box in truth)
+    if name in KNOWN_LIMITS:
+        if correct:
+            pytest.fail("now detected correctly: take it out of KNOWN_LIMITS")
+        pytest.xfail(KNOWN_LIMITS[name])
+    assert correct, [(g.bbox, g.confidence, g.reason) for g in gaps]
 
 
 def test_detection_is_fast():
