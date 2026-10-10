@@ -1,0 +1,30 @@
+# web
+fastapi
+uvicorn[standard]
+pydantic>=2
+pydantic-settings
+python-dotenv
+httpx
+
+# images / cv
+pillow
+numpy
+opencv-python-headless
+
+# local models (SAM, DINOv2, CLIP, depth) and background removal
+torch
+torchvision
+transformers
+rembg[cpu]
+
+# hosted providers
+fal-client
+replicate
+anthropic
+google-genai
+
+# tests
+pytest
+
+# sample images for proofs and tests
+scikit-image

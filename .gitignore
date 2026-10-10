@@ -1,0 +1,24 @@
+# secrets
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# node
+node_modules/
+.next/
+out/
+
+# model weights and caches
+*.pt
+*.pth
+*.onnx
+*.safetensors
+.cache/
