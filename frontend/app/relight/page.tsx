@@ -49,7 +49,7 @@ const cssColor = (c: [number, number, number]) => `rgb(${c.map((v) => Math.round
  * position (debounced), instead of shading in the browser.
  */
 function useServerPreview(enabled: boolean, scene: RelightScene | null, light: Light, shadows: boolean) {
-  const [state, setState] = useState<{ image: string | null; error: string | null }>({ image: null, error: null });
+  const [state, setState] = useState<{ sceneId: string | null; image: string | null; error: string | null }>({ sceneId: null, image: null, error: null });
   useEffect(() => {
     if (!enabled || !scene) return;
     const controller = new AbortController();
@@ -57,7 +57,7 @@ function useServerPreview(enabled: boolean, scene: RelightScene | null, light: L
     const timer = setTimeout(async () => {
       try {
         const render = await relightRender({ scene_id: scene.scene_id, light, shadows }, controller.signal);
-        if (!cancelled) setState({ image: render.image, error: null });
+        if (!cancelled) setState({ sceneId: scene.scene_id, image: render.image, error: null });
       } catch (error) {
         if (!cancelled && !isAbort(error)) setState((s) => ({ ...s, error: errorMessage(error) }));
       }
@@ -68,7 +68,8 @@ function useServerPreview(enabled: boolean, scene: RelightScene | null, light: L
       controller.abort();
     };
   }, [enabled, scene, light, shadows]);
-  return state;
+  // The last render outlives a change of photo: never show or export it over another scene.
+  return enabled && scene && state.sceneId === scene.scene_id ? state : { ...state, image: null };
 }
 
 export default function RelightPage() {
@@ -151,8 +152,21 @@ export default function RelightPage() {
     setBase((b) => ({ ...b, x, y }));
   };
 
-  const nudge = (dx: number, dy: number) =>
-    setBase((b) => ({ ...b, x: round(clamp(b.x + dx, -OUTSIDE, 1 + OUTSIDE)), y: round(clamp(b.y + dy, -OUTSIDE, 1 + OUTSIDE)) }));
+  /** Keep a position set without the pointer (preset, arrow keys) inside the stage too, or the handle is clipped away. */
+  const insideStage = (x: number, y: number) => {
+    const box = imageBox.current?.getBoundingClientRect();
+    const bounds = surface.current?.getBoundingClientRect();
+    if (!box || !bounds || box.width === 0) return { x, y };
+    return {
+      x: round(clamp(x, (bounds.left + 18 - box.left) / box.width, (bounds.right - 18 - box.left) / box.width)),
+      y: round(clamp(y, (bounds.top + 18 - box.top) / box.height, (bounds.bottom - 18 - box.top) / box.height)),
+    };
+  };
+
+  const nudge = (dx: number, dy: number) => {
+    const p = insideStage(clamp(base.x + dx, -OUTSIDE, 1 + OUTSIDE), clamp(base.y + dy, -OUTSIDE, 1 + OUTSIDE));
+    setBase((b) => ({ ...b, ...p }));
+  };
 
   // --- actions --------------------------------------------------------------------
 
@@ -172,7 +186,9 @@ export default function RelightPage() {
     if (!scene) return;
     // Freeze what the live preview shows now: it is the "before" of the comparison.
     setSnapshot(gpuProblem === null ? (canvas.current?.toDataURL("image/jpeg", 0.92) ?? null) : server.image ? toDataUrl(server.image) : null);
-    const result = await enhance.run(() => relightEnhance({ scene_id: scene.scene_id, light, prompt: prompt.trim() }));
+    // A new run clears the last result, which would leave the Enhanced tab empty, and stuck there if the run fails.
+    setTab("live");
+    const result = await enhance.run(() => relightEnhance({ scene_id: scene.scene_id, light, shadows, prompt: prompt.trim() }));
     if (result) setTab("enhanced");
   };
 
@@ -251,7 +267,8 @@ export default function RelightPage() {
                     key={preset.label}
                     size="sm"
                     onClick={() => {
-                      setBase((b) => ({ ...b, ...preset.light }));
+                      const p = insideStage(preset.light.x ?? base.x, preset.light.y ?? base.y);
+                      setBase((b) => ({ ...b, ...preset.light, ...p }));
                       setWarmth(preset.warmth ?? 0);
                     }}
                   >

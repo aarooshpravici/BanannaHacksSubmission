@@ -291,7 +291,7 @@ export async function relightEnhance(body: RelightEnhanceIn): Promise<JobRef> {
   await sleep(between(150, 300));
   if (!scenes.has(body.scene_id)) throw new ApiError("unknown scene id; upload the photo again", 404);
   return submit(between(3000, 4200), async () => {
-    const lit = renderScene(body.scene_id, body.light, true);
+    const lit = renderScene(body.scene_id, body.light, body.shadows ?? true);
     // Stand-in for the diffusion clean-up: more contrast and a soft bloom.
     const out = makeCanvas(lit.width, lit.height);
     const ctx = ctx2d(out);

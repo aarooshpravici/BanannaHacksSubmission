@@ -116,6 +116,8 @@ export interface RelightEnhanceIn {
   light?: LightIn;
   /** Default "" */
   prompt?: string;
+  /** Default true. Whether the render sent to the model has cast shadows. */
+  shadows?: boolean;
 }
 
 // --- design autocomplete --------------------------------------------------------
@@ -220,6 +222,8 @@ export interface GenerateIn {
   target_view: View;
   /** The user's edited checklist, if they changed it. */
   features?: Feature[] | null;
+  /** Default false. True skips the cache, for regenerating a view that already has a result. */
+  fresh?: boolean;
 }
 
 export interface ChecklistItem {
