@@ -157,13 +157,34 @@ input[type="range"].slider:focus-visible {
 }
 
 /*
+ * The sun on the photo. The page sets --light-x / --light-y (the light's place,
+ * 0..1 across the photo, and beyond) and --photo-ratio (width / height).
+ *
+ * The light may be further out than the stage reaches: a preset puts it at the
+ * same spot whatever the window's size. Only the drawn sun is held back, so it
+ * is never clipped away; the lighting itself is not changed by this.
+ *
+ * 100cqw x 100cqh is the area the photo is fitted into (<FitBox>), which the
+ * stage overlaps by --stage-inset-x / --stage-inset-y on each side.
+ */
+.light-handle {
+  --photo-w: min(100cqw, var(--photo-ratio) * 100cqh);
+  --photo-h: min(100cqh, 100cqw / var(--photo-ratio));
+  /* From the photo's edge out to where the middle of the sun has to stop. */
+  --reach-x: calc((100cqw - var(--photo-w)) / 2 + var(--stage-inset-x) - var(--handle-margin));
+  --reach-y: calc((100cqh - var(--photo-h)) / 2 + var(--stage-inset-y) - var(--handle-margin));
+  left: clamp(calc(-1 * var(--reach-x)), calc(var(--light-x) * var(--photo-w)), calc(var(--photo-w) + var(--reach-x)));
+  top: clamp(calc(-1 * var(--reach-y)), calc(var(--light-y) * var(--photo-h)), calc(var(--photo-h) + var(--reach-y)));
+}
+
+/*
  * The stage on a stacked (narrow) page: exactly as tall as the photo needs.
  * --stage-ratio is the photo's height / width, set by <Stage hug>.
  * 64rem is Tailwind's lg, where the sidebar moves beside the stage.
  */
 @media (width < 64rem) {
   .stage-hug {
-    /* Page padding (2 x 1rem) plus the stage's side insets (2 x 1.5rem, see inset-x-6 on the page): what the photo's width loses to margins. */
+    /* Page padding (2 x 1rem) plus the stage's side insets (2 x 1.5rem, see --stage-inset-x on the page): what the photo's width loses to margins. */
     --stage-side-margins: 5rem;
     /* The strips above and below the photo that hold the stage's buttons (2 x 4rem). */
     --stage-bars: 8rem;
@@ -172,7 +193,7 @@ input[type="range"].slider:focus-visible {
     flex: none;
     height: min(calc((100vw - var(--stage-side-margins)) * var(--stage-ratio) + var(--stage-bars)), var(--stage-max-height));
   }
-  /* From 40rem (Tailwind's sm) the side insets are 2 x 3.5rem (sm:inset-x-14 on the page). */
+  /* From 40rem (Tailwind's sm) the side insets are 2 x 3.5rem (sm:[--stage-inset-x:3.5rem] on the page). */
   @media (width >= 40rem) {
     .stage-hug {
       --stage-side-margins: 9rem;

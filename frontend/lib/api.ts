@@ -1,7 +1,7 @@
 // One typed function per backend endpoint. In mock mode (lib/config.ts) every
 // call is answered by lib/mock.ts instead, with the same types and errors.
 
-import { API_URL, MOCK } from "./config";
+import { API_URL, DEMO, MOCK } from "./config";
 import type {
   Health,
   JobRef,
@@ -62,6 +62,8 @@ async function readDetail(res: Response): Promise<string> {
 export const BACKEND_UNREACHABLE_EVENT = "relight:backend-unreachable";
 
 async function request<T>(method: "GET" | "POST", path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  // The static demo has no backend. The page never asks for one there; this makes sure of it.
+  if (DEMO) throw new ApiError("This demo runs in your browser, without the Relight server.", 0);
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, {

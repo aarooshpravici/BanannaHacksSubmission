@@ -22,6 +22,32 @@ then restart `npm run dev`. The dot in the top-right corner shows which mode you
 With neither variable set, `npm run dev` uses mock mode and a production build uses the real backend.
 `NEXT_PUBLIC_*` values are baked in at build time, so set them before `npm run build`.
 
+## Static demo (no server at all)
+
+```bash
+npm run build:demo                                             # served from the root of a site
+NEXT_PUBLIC_BASE_PATH=/BanannaHacksSubmission npm run build:demo   # served from a sub-folder
+```
+
+This writes a plain static site to `out/` (about 2.3 MB). Upload the contents of that folder to any
+static host. In it the four sample photos work fully in the browser: drag, sliders, presets, Sweep,
+hold to compare, Export PNG and the Geometry maps. Nothing calls a backend: the status pill reads
+`demo: runs in your browser`, the drop box is replaced by a note that uploading needs the Relight
+server, and Enhance is switched off with the same reason.
+
+- `NEXT_PUBLIC_BASE_PATH` is the folder the site is served from. For
+  `https://example.github.io/BanannaHacksSubmission/` it is `/BanannaHacksSubmission`. Leave it unset
+  when the site sits at the root of its address. A build only works at the path it was built for.
+- The build adds an empty `out/.nojekyll`, which GitHub Pages needs before it will serve the `_next` folder.
+- To look at it locally, serve it from a folder that matches the base path:
+
+  ```bash
+  mkdir -p /tmp/site && cp -R out /tmp/site/BanannaHacksSubmission
+  python3 -m http.server 3142 --directory /tmp/site      # http://localhost:3142/BanannaHacksSubmission/
+  ```
+
+`npm run build:demo` sets `NEXT_PUBLIC_DEMO=1`. Without it, `npm run dev` and `npm run build` behave as described above.
+
 ## Layout
 
 - `lib/types.ts` mirrors `backend/app/schemas.py` field for field. Change them together.

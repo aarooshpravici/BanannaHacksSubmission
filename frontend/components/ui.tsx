@@ -22,9 +22,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: keyof typeof BUTTON_SIZES;
   /** Shows a spinner and disables the button. */
   busy?: boolean;
+  /** Outlined in the accent colour while what the button started is still going on. */
+  active?: boolean;
 }
 
-export function Button({ variant = "secondary", size = "md", busy = false, disabled, className, children, ...rest }: ButtonProps) {
+export function Button({ variant = "secondary", size = "md", busy = false, active = false, disabled, className, children, ...rest }: ButtonProps) {
   return (
     <button
       type="button"
@@ -35,6 +37,8 @@ export function Button({ variant = "secondary", size = "md", busy = false, disab
         "disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none",
         BUTTON_VARIANTS[variant],
         BUTTON_SIZES[size],
+        // Marked important: the variant sets the same two properties, and which class wins otherwise is down to the stylesheet's order.
+        active && "border-accent/60! text-accent!",
         className,
       )}
       {...rest}
@@ -92,11 +96,13 @@ interface ToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   hint?: string;
+  /** Greyed out and inert. Say why in `hint`. */
+  disabled?: boolean;
 }
 
-export function Toggle({ label, checked, onChange, hint }: ToggleProps) {
+export function Toggle({ label, checked, onChange, hint, disabled = false }: ToggleProps) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-4" title={hint}>
+    <label className={cn("flex items-center justify-between gap-4", disabled ? "cursor-not-allowed" : "cursor-pointer")} title={hint}>
       <span>
         <span className="block text-[13px] font-medium text-zinc-200">{label}</span>
         {hint && <span className="mt-0.5 hidden text-xs leading-4 text-zinc-500 tall:block">{hint}</span>}
@@ -106,9 +112,10 @@ export function Toggle({ label, checked, onChange, hint }: ToggleProps) {
         role="switch"
         aria-checked={checked}
         aria-label={label}
+        disabled={disabled}
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative h-6 w-10 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/70",
+          "relative h-6 w-10 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/70 disabled:cursor-not-allowed disabled:opacity-45",
           checked ? "bg-accent" : "bg-white/15",
         )}
       >

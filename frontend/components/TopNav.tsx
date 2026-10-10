@@ -5,19 +5,20 @@ import { useEffect, useState } from "react";
 import { BananaMark } from "./icons";
 import { BACKEND_UNREACHABLE_EVENT, getHealth, isAbort } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { API_URL, MOCK } from "@/lib/config";
+import { API_URL, DEMO, MOCK } from "@/lib/config";
 import type { Health } from "@/lib/types";
 
-type Status = { kind: "mock" } | { kind: "checking" } | { kind: "online"; health: Health } | { kind: "offline" };
+type Status = { kind: "demo" } | { kind: "mock" } | { kind: "checking" } | { kind: "online"; health: Health } | { kind: "offline" };
 
 const HEALTH_POLL_MS = 10_000;
 
 /** A small dot that says whether the backend is reachable (or that we are mocking it). */
 function BackendStatus() {
-  const [status, setStatus] = useState<Status>(MOCK ? { kind: "mock" } : { kind: "checking" });
+  const [status, setStatus] = useState<Status>(DEMO ? { kind: "demo" } : MOCK ? { kind: "mock" } : { kind: "checking" });
 
   useEffect(() => {
-    if (MOCK) return;
+    // Neither has a backend to ask.
+    if (DEMO || MOCK) return;
     const controller = new AbortController();
     const check = async () => {
       try {
@@ -41,9 +42,15 @@ function BackendStatus() {
   }, []);
 
   let dot = "bg-zinc-500";
+  let prefix = "backend:";
   let label = "checking";
   let title = `Checking ${API_URL}`;
-  if (status.kind === "mock") {
+  if (status.kind === "demo") {
+    dot = "bg-emerald-400";
+    prefix = "demo:";
+    label = "runs in your browser";
+    title = "Static demo: the sample photos are shaded entirely in your browser and no server is contacted. Uploading your own photo and Enhance need the Relight server.";
+  } else if (status.kind === "mock") {
     dot = "bg-accent";
     label = "mock";
     title = "Mock mode: responses are generated in the browser, no backend is called. Set NEXT_PUBLIC_MOCK=0 to use the real one.";
@@ -67,7 +74,7 @@ function BackendStatus() {
         )}
         <span className={cn("relative inline-flex h-2 w-2 rounded-full", dot)} />
       </span>
-      <span className="hidden sm:inline">backend:</span>
+      <span className="hidden sm:inline">{prefix}</span>
       <span className="font-medium text-zinc-100">{label}</span>
     </div>
   );

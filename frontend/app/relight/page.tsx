@@ -1,6 +1,6 @@
 "use client";
 
-import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BeforeAfter } from "@/components/BeforeAfter";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { CollapsiblePanel } from "@/components/CollapsiblePanel";
@@ -12,7 +12,7 @@ import { RelightCanvas } from "@/components/relight/RelightCanvas";
 import { Button, Segmented, Slider, Toggle } from "@/components/ui";
 import { ApiError, errorMessage, isAbort, relightAdoptScene, relightEnhance, relightRender, relightScene } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { API_URL } from "@/lib/config";
+import { API_URL, DEMO, MOCK, REPO_URL } from "@/lib/config";
 import { type LoadedImage, downloadBase64AsPng, downloadCanvas, toDataUrl } from "@/lib/image";
 import { SAMPLES, type SamplePhoto, isSampleScene, loadSampleScene, sampleThumbUrl } from "@/lib/samples";
 import type { Light, RelightRender, RelightScene } from "@/lib/types";
@@ -20,6 +20,8 @@ import { useJob } from "@/lib/useJob";
 
 /** How far outside the photo the light may be dragged, in image widths/heights. */
 const OUTSIDE = 0.5;
+/** How close the middle of the sun may come to the stage's edge, in pixels: close enough to reach past a photo that fills the stage, far enough that most of the sun stays in view. Also read by .light-handle in globals.css. */
+const HANDLE_MARGIN_PX = 18;
 const WARM: [number, number, number] = [1.0, 0.86, 0.68];
 const COOL: [number, number, number] = [0.7, 0.86, 1.0];
 
@@ -46,7 +48,12 @@ const SWEEP_BLEND = 0.15;
 /** Enhance and server renders, for a built-in sample with no backend to send it to. */
 const ENHANCE_OFFLINE = `Enhance needs the backend, which cannot be reached at ${API_URL}. The live preview and Export PNG still work without it.`;
 const ENHANCE_HINT = "A photoreal pass over this lighting. Takes a few seconds.";
-const SERVER_RENDER_OFFLINE = `This browser cannot shade the photo itself, so it needs the backend, which cannot be reached at ${API_URL}.`;
+const SERVER_RENDER_OFFLINE = `Cannot reach the backend at ${API_URL}. Is it running?`;
+/** The static demo: why uploading and Enhance are missing. */
+const DEMO_UPLOAD_NOTE = "Uploading your own photo needs the Relight server, which this demo runs without.";
+const DEMO_ENHANCE_NOTE = "Enhance needs the Relight server, which this demo runs without.";
+/** Shown in the prompt box. Short enough for one line of the sidebar at every window size, so it is never cut off. */
+const PROMPT_PLACEHOLDER = "Optional: a mood, such as golden hour";
 
 const PRESETS: { label: string; light: Partial<LightBase>; warmth?: number }[] = [
   { label: "Left", light: { x: -0.1, y: 0.4, height: 0.35, intensity: 1.3 } },
@@ -77,6 +84,9 @@ const cssColor = (c: [number, number, number]) => `rgb(${c.map((v) => Math.round
  */
 function useServerPreview(enabled: boolean, scene: RelightScene | null, light: Light, shadows: boolean, withBackendScene: WithBackendScene) {
   const [state, setState] = useState<{ sceneId: string | null; image: string | null; error: string | null }>({ sceneId: null, image: null, error: null });
+  // Bumped by retry(). While renders fail the light is locked, so moving it cannot be what asks again.
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
   useEffect(() => {
     if (!enabled || !scene) return;
     const controller = new AbortController();
@@ -94,9 +104,10 @@ function useServerPreview(enabled: boolean, scene: RelightScene | null, light: L
       clearTimeout(timer);
       controller.abort();
     };
-  }, [enabled, scene, light, shadows, withBackendScene]);
+  }, [enabled, scene, light, shadows, withBackendScene, attempt]);
   // The last render outlives a change of photo: never show or export it over another scene.
-  return enabled && scene && state.sceneId === scene.scene_id ? state : { ...state, image: null };
+  const image = enabled && scene && state.sceneId === scene.scene_id ? state.image : null;
+  return { image, error: enabled ? state.error : null, retry };
 }
 
 export default function RelightPage() {
@@ -158,7 +169,8 @@ export default function RelightPage() {
   }, []);
 
   const enhance = useJob<RelightRender>();
-  const server = useServerPreview(gpuProblem !== null, scene, light, shadows, withBackendScene);
+  // The static demo has no server to render on.
+  const server = useServerPreview(gpuProblem !== null && !DEMO, scene, light, shadows, withBackendScene);
 
   const stopSweep = useCallback(() => {
     if (sweepFrame.current !== null) cancelAnimationFrame(sweepFrame.current);
@@ -247,8 +259,12 @@ export default function RelightPage() {
     setSceneError(null);
     setPicking(null);
     setSampleError(null);
+    // A new photo starts clean: nothing set for the last one carries over.
     setBase(START);
     setWarmth(0);
+    setShadows(true);
+    setDetail(true);
+    setPrompt("");
     setTab("live");
     setSnapshot(null);
     enhance.reset();
@@ -261,28 +277,36 @@ export default function RelightPage() {
     const bounds = surface.current?.getBoundingClientRect();
     if (!box || !bounds || box.width === 0) return;
     // The handle may leave the photo but not the stage.
-    const cx = clamp(event.clientX, bounds.left + 18, bounds.right - 18);
-    const cy = clamp(event.clientY, bounds.top + 18, bounds.bottom - 18);
+    const cx = clamp(event.clientX, bounds.left + HANDLE_MARGIN_PX, bounds.right - HANDLE_MARGIN_PX);
+    const cy = clamp(event.clientY, bounds.top + HANDLE_MARGIN_PX, bounds.bottom - HANDLE_MARGIN_PX);
     const x = round(clamp((cx - box.left) / box.width, -OUTSIDE, 1 + OUTSIDE));
     const y = round(clamp((cy - box.top) / box.height, -OUTSIDE, 1 + OUTSIDE));
     setBase((b) => ({ ...b, x, y }));
   };
 
-  /** Keep a position set without the pointer (preset, arrow keys) inside the stage too, or the handle is clipped away. */
+  /**
+   * The arrow keys move the light by hand, like a drag, so they stop at the
+   * stage's edge as a drag does. Presets and Sweep do not come through here:
+   * they put the light where they say whatever the window's size, and only the
+   * drawn sun is held on the stage (.light-handle in globals.css).
+   */
   const insideStage = (x: number, y: number) => {
     const box = imageBox.current?.getBoundingClientRect();
     const bounds = surface.current?.getBoundingClientRect();
     if (!box || !bounds || box.width === 0) return { x, y };
     return {
-      x: round(clamp(x, (bounds.left + 18 - box.left) / box.width, (bounds.right - 18 - box.left) / box.width)),
-      y: round(clamp(y, (bounds.top + 18 - box.top) / box.height, (bounds.bottom - 18 - box.top) / box.height)),
+      x: round(clamp(x, (bounds.left + HANDLE_MARGIN_PX - box.left) / box.width, (bounds.right - HANDLE_MARGIN_PX - box.left) / box.width)),
+      y: round(clamp(y, (bounds.top + HANDLE_MARGIN_PX - box.top) / box.height, (bounds.bottom - HANDLE_MARGIN_PX - box.top) / box.height)),
     };
   };
 
   const nudge = (dx: number, dy: number) => {
     stopSweep();
     const p = insideStage(clamp(base.x + dx, -OUTSIDE, 1 + OUTSIDE), clamp(base.y + dy, -OUTSIDE, 1 + OUTSIDE));
-    setBase((b) => ({ ...b, ...p }));
+    // A preset may have left the light past the stage's edge: a step further out leaves it there, it is not pulled back to the edge.
+    const x = dx > 0 ? Math.max(p.x, base.x) : dx < 0 ? Math.min(p.x, base.x) : base.x;
+    const y = dy > 0 ? Math.max(p.y, base.y) : dy < 0 ? Math.min(p.y, base.y) : base.y;
+    setBase((b) => ({ ...b, x, y }));
   };
 
   /**
@@ -300,11 +324,9 @@ export default function RelightPage() {
       const angle = startAngle + t * 2 * Math.PI;
       // 0 at both ends (the user's own position), 1 while on the orbit.
       const onOrbit = smoothstep(clamp(Math.min(t, 1 - t) / SWEEP_BLEND, 0, 1));
-      const p = insideStage(
-        from.x + (SWEEP_CENTRE.x + SWEEP_RADIUS * Math.cos(angle) - from.x) * onOrbit,
-        from.y + (SWEEP_CENTRE.y + SWEEP_RADIUS * Math.sin(angle) - from.y) * onOrbit,
-      );
-      setBase((b) => ({ ...b, ...p }));
+      const x = round(from.x + (SWEEP_CENTRE.x + SWEEP_RADIUS * Math.cos(angle) - from.x) * onOrbit);
+      const y = round(from.y + (SWEEP_CENTRE.y + SWEEP_RADIUS * Math.sin(angle) - from.y) * onOrbit);
+      setBase((b) => ({ ...b, x, y }));
       if (t < 1) sweepFrame.current = requestAnimationFrame(frame);
       else stopSweep();
     };
@@ -338,41 +360,59 @@ export default function RelightPage() {
   // --- render ---------------------------------------------------------------------
 
   if (!photo) {
+    const samples = (
+      <div className="mt-4">
+        <p className="text-sm text-zinc-400">{DEMO ? "Pick a sample photo:" : "Or try a sample photo:"}</p>
+        <div className="mt-2 grid grid-cols-4 gap-2">
+          {SAMPLES.map((sample) => (
+            <button
+              key={sample.name}
+              type="button"
+              disabled={picking !== null}
+              aria-label={`Sample photo: ${sample.label}`}
+              onClick={() => void pickSample(sample)}
+              className={cn(
+                "overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] text-left transition-colors hover:border-accent/60 hover:bg-white/[0.07]",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/70 disabled:cursor-progress",
+                picking !== null && picking !== sample.name && "opacity-50",
+              )}
+            >
+              <img src={sampleThumbUrl(sample)} alt={sample.alt} draggable={false} className="aspect-[4/3] w-full object-cover" />
+              <span className="block truncate px-2 py-1.5 text-xs font-medium text-zinc-300">{sample.label}</span>
+            </button>
+          ))}
+        </div>
+        <ErrorBanner message={sampleError} onDismiss={() => setSampleError(null)} className="mt-3" />
+      </div>
+    );
+    // The static demo has no server to analyse an upload, so it says so where the drop box would be.
+    if (DEMO) {
+      return (
+        <PageIntro
+          eyebrow="Move the light"
+          title="Relight a photo by dragging the light."
+          lead="Pick a sample photo. Its depth and surface normals were estimated ahead of time, and your browser shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly."
+        >
+          <div className="rounded-2xl border border-white/10 bg-white/[0.025] px-5 py-4 text-sm leading-6 text-zinc-400">
+            <p className="font-medium text-zinc-200">This is the in-browser demo.</p>
+            <p className="mt-1">
+              {DEMO_UPLOAD_NOTE} To try your own photos, run it on your computer:{" "}
+              <a href={REPO_URL} target="_blank" rel="noreferrer" className="break-words font-medium text-accent underline-offset-2 hover:underline">
+                {REPO_URL.replace("https://", "")}
+              </a>
+            </p>
+          </div>
+          {samples}
+        </PageIntro>
+      );
+    }
     return (
       <PageIntro
         eyebrow="Move the light"
         title="Relight a photo by dragging the light."
         lead="Upload a photo. We estimate its depth and surface normals once, then your browser shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly."
       >
-        <UploadDropzone
-          onImage={(image) => void load(image, detail)}
-          title="Drop a photo here"
-          footer={
-            <div className="mt-4">
-              <p className="text-sm text-zinc-400">Or try a sample photo:</p>
-              <div className="mt-2 grid grid-cols-4 gap-2">
-                {SAMPLES.map((sample) => (
-                  <button
-                    key={sample.name}
-                    type="button"
-                    disabled={picking !== null}
-                    aria-label={`Sample photo: ${sample.label}`}
-                    onClick={() => void pickSample(sample)}
-                    className={cn(
-                      "overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] text-left transition-colors hover:border-accent/60 hover:bg-white/[0.07]",
-                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/70 disabled:cursor-progress",
-                      picking !== null && picking !== sample.name && "opacity-50",
-                    )}
-                  >
-                    <img src={sampleThumbUrl(sample)} alt={sample.alt} draggable={false} className="aspect-[4/3] w-full object-cover" />
-                    <span className="block truncate px-2 py-1.5 text-xs font-medium text-zinc-300">{sample.label}</span>
-                  </button>
-                ))}
-              </div>
-              <ErrorBanner message={sampleError} onDismiss={() => setSampleError(null)} className="mt-3" />
-            </div>
-          }
-        />
+        <UploadDropzone onImage={(image) => void load(image, detail)} title="Drop a photo here" footer={samples} />
       </PageIntro>
     );
   }
@@ -386,7 +426,39 @@ export default function RelightPage() {
   const canShade = scene !== null && (ready || gpuProblem !== null);
   // There is a relit picture on screen: the live canvas, or (without WebGL2) a render from the server.
   const canShow = canShade && (gpuProblem === null || server.image !== null);
+  // Without WebGL2 the picture only changes when the server sends a render. With no server (the demo) or a failing one, nothing the light controls do can show.
+  const stuck = gpuProblem !== null && (DEMO || server.error !== null);
+  const canLight = canShade && !stuck;
   const failed = scene === null && !loading && sceneError !== null;
+  // One bar for the missing live shading, saying what is true now.
+  const gpuMessage =
+    gpuProblem === null
+      ? null
+      : DEMO
+        ? `Live shading is unavailable (${gpuProblem}), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.`
+        : server.error !== null
+          ? `Live shading is unavailable (${gpuProblem}), and the server render that would replace it failed: ${server.error} The light controls are off until a render arrives.`
+          : `Live shading is unavailable (${gpuProblem}). Showing server renders instead, which lag slightly behind the light.`;
+  // A built-in sample comes with detailed normals. Only a real backend can work them out again without.
+  const detailFixed = scene !== null && isSampleScene(scene) && (DEMO || MOCK);
+  const enhanceError = enhance.status === "error" ? enhance.error : null;
+  const failedCard = (
+    <div role="alert" className="flex max-w-sm animate-rise flex-col items-center gap-2.5 rounded-2xl border border-rose-500/40 bg-ink/90 px-5 py-4 text-center shadow-2xl backdrop-blur max-lg:mx-auto">
+      <span className="flex items-center gap-2 text-sm font-semibold text-rose-100">
+        <AlertIcon className="text-rose-400" />
+        This photo could not be analysed
+      </span>
+      <p className="break-words text-sm leading-5 text-rose-100/90">{sceneError}</p>
+      <div className="flex gap-2">
+        <Button size="sm" variant="primary" onClick={() => void load(photo, detail)}>
+          Retry
+        </Button>
+        <Button size="sm" onClick={startOver}>
+          Choose another photo
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <Workspace
@@ -398,10 +470,10 @@ export default function RelightPage() {
             actions={
               <Button
                 size="sm"
-                disabled={!canShade || !live}
+                disabled={!canLight || !live}
                 aria-pressed={sweeping}
+                active={sweeping}
                 title="Moves the light once around the subject in about six seconds, then gives it back. Handy for recording a demo."
-                className={cn(sweeping && "border-accent/60 text-accent")}
                 onClick={sweeping ? stopSweep : startSweep}
               >
                 <OrbitIcon />
@@ -409,7 +481,7 @@ export default function RelightPage() {
               </Button>
             }
           >
-            <div className={cn("flex flex-col gap-3 lg:short:gap-2", !canShade && "pointer-events-none opacity-50")}>
+            <div className={cn("flex flex-col gap-3 lg:short:gap-2", !canLight && "pointer-events-none opacity-50")} inert={!canLight}>
               <div className="flex items-center justify-between rounded-xl bg-black/30 px-3 py-1.5 font-mono text-xs tabular-nums text-zinc-400">
                 <span>
                   x <span className="text-zinc-100">{light.x.toFixed(2)}</span>
@@ -451,16 +523,17 @@ export default function RelightPage() {
                 track={`linear-gradient(to right, ${cssColor(COOL)}, #ffffff, ${cssColor(WARM)})`}
               />
               <Toggle label="Cast shadows" hint="Objects block the light." checked={shadows} onChange={setShadows} />
+              {/* The five share one row: each starts with next to no padding of its own and takes an equal share of what is left, so the row fits a 360 px phone and fills the sidebar alike. */}
               <div className="flex flex-wrap gap-1.5">
                 {PRESETS.map((preset) => (
                   <Button
                     key={preset.label}
                     size="sm"
-                    className="px-2"
+                    className="flex-auto px-0.5!"
                     onClick={() => {
                       stopSweep();
-                      const p = insideStage(preset.light.x ?? base.x, preset.light.y ?? base.y);
-                      setBase((b) => ({ ...b, ...preset.light, ...p }));
+                      // Exactly the preset's numbers, on every window and photo, so the same preset always gives the same lighting.
+                      setBase((b) => ({ ...b, ...preset.light }));
                       setWarmth(preset.warmth ?? 0);
                     }}
                   >
@@ -470,7 +543,8 @@ export default function RelightPage() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="px-2"
+                  className="flex-auto px-0.5!"
+                  title="Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone."
                   onClick={() => {
                     stopSweep();
                     setBase(START);
@@ -478,23 +552,33 @@ export default function RelightPage() {
                     setShadows(true);
                   }}
                 >
-                  Reset
+                  Reset light
                 </Button>
               </div>
             </div>
           </Panel>
 
           {/* On a short window beside the stage the hint moves to the button's tooltip and the box loses a row, so the sidebar fits. */}
-          <Panel title="Enhance" hint={ENHANCE_HINT} hintClassName="lg:short:hidden">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={2}
-              placeholder="Optional: describe the mood, e.g. golden hour, soft window light"
-              className="block w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-accent/60 focus:outline-none lg:short:h-[2.375rem] lg:short:placeholder:truncate"
-            />
-            <div className="mt-2.5 flex items-center gap-2">
-              <Button variant="primary" className="flex-1" title={ENHANCE_HINT} disabled={!canShade} busy={enhance.status === "pending"} onClick={() => void runEnhance()}>
+          {/* The static demo has no server for Enhance: the reason takes the place of the hint and of the prompt box, which would have nothing to do. */}
+          <Panel title="Enhance" hint={DEMO ? DEMO_ENHANCE_NOTE : ENHANCE_HINT} hintClassName={DEMO ? undefined : "lg:short:hidden"}>
+            {!DEMO && (
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={2}
+                placeholder={PROMPT_PLACEHOLDER}
+                className="mb-2.5 block w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-accent/60 focus:outline-none lg:short:h-[2.375rem]"
+              />
+            )}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                className="flex-1"
+                title={DEMO ? DEMO_ENHANCE_NOTE : ENHANCE_HINT}
+                disabled={DEMO || !canLight}
+                busy={enhance.status === "pending"}
+                onClick={() => void runEnhance()}
+              >
                 {enhance.status !== "pending" && <SparklesIcon />}
                 {enhance.status === "pending" ? "Enhancing…" : enhanced ? "Enhance again" : "Enhance"}
               </Button>
@@ -504,7 +588,8 @@ export default function RelightPage() {
                 </Button>
               )}
             </div>
-            <ErrorBanner message={enhance.status === "error" ? enhance.error : null} onDismiss={enhance.reset} className="mt-3" />
+            {/* Beside the stage the sidebar has no room to spare, so there the message goes above the photo instead (below). */}
+            <ErrorBanner message={enhanceError} onDismiss={enhance.reset} className="mt-3 lg:hidden" />
           </Panel>
 
           <CollapsiblePanel
@@ -543,8 +628,9 @@ export default function RelightPage() {
             <div className="mt-3">
               <Toggle
                 label="Detailed normals"
-                hint="Slower to analyse, much better surface detail."
+                hint={detailFixed ? "Always on for a sample photo: its maps were made ahead of time with detailed normals." : "Slower to analyse, much better surface detail."}
                 checked={detail}
+                disabled={detailFixed}
                 onChange={(next) => {
                   // A sample already works without the backend: keep it on screen unless the new analysis succeeds.
                   const keep = scene !== null && isSampleScene(scene);
@@ -565,19 +651,16 @@ export default function RelightPage() {
       }
     >
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
-      {gpuProblem !== null && (
-        <ErrorBanner message={`Live shading is unavailable (${gpuProblem}). Showing server renders instead, which lag slightly behind the light.`} />
-      )}
-      <ErrorBanner message={server.error} />
+      <ErrorBanner message={enhanceError} onDismiss={enhance.reset} className="max-lg:hidden" />
+      <ErrorBanner message={gpuMessage} onRetry={!DEMO && server.error !== null ? server.retry : undefined} />
 
-      {/* A wide photo on a phone gives a stage too low for the failed-load card: keep room for it. */}
-      <Stage hug={{ width, height }} className={cn(failed && "max-lg:min-h-80!")}>
+      <Stage hug={{ width, height }}>
         {/* The whole stage is the drag surface, so the light can be pulled past the photo's edge. */}
         <div
           ref={surface}
-          className={cn("absolute inset-0 touch-none", live && canShade && (dragging ? "cursor-grabbing" : "cursor-crosshair"))}
+          className={cn("absolute inset-0 touch-none", live && canLight && (dragging ? "cursor-grabbing" : "cursor-crosshair"))}
           onPointerDown={(e) => {
-            if (!live || !canShade || e.button !== 0) return;
+            if (!live || !canLight || e.button !== 0) return;
             stopSweep(); // the user has taken the light
             e.currentTarget.setPointerCapture(e.pointerId);
             setDragging(true);
@@ -589,7 +672,8 @@ export default function RelightPage() {
           onPointerUp={() => setDragging(false)}
           onPointerCancel={() => setDragging(false)}
         >
-          <div className="absolute inset-x-6 bottom-16 top-16 sm:inset-x-14">
+          {/* The margins round the photo. .light-handle (globals.css) reads the two variables to know where the stage ends. */}
+          <div className="absolute inset-x-(--stage-inset-x) inset-y-(--stage-inset-y) [--stage-inset-x:1.5rem] [--stage-inset-y:4rem] sm:[--stage-inset-x:3.5rem]">
             {/* Live preview. Stays mounted behind the Enhanced tab so the GPU scene survives. */}
             <div className={cn("absolute inset-0", !live && "invisible")}>
               <FitBox width={width} height={height}>
@@ -613,7 +697,7 @@ export default function RelightPage() {
                   {(loading || (scene !== null && !canShade)) && <BusyOverlay>{loading ? "Estimating depth and surface normals…" : "Preparing the shader…"}</BusyOverlay>}
                 </div>
 
-                {canShade && (
+                {canLight && (
                   <button
                     type="button"
                     aria-label={`Light position, x ${light.x.toFixed(2)}, y ${light.y.toFixed(2)}. Use the arrow keys to move.`}
@@ -627,10 +711,10 @@ export default function RelightPage() {
                       e.preventDefault();
                     }}
                     className={cn(
-                      "absolute z-10 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/80",
+                      "light-handle absolute z-10 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/80",
                       dragging ? "cursor-grabbing" : "cursor-grab",
                     )}
-                    style={{ left: `${light.x * 100}%`, top: `${light.y * 100}%` }}
+                    style={{ "--light-x": light.x, "--light-y": light.y, "--photo-ratio": width / height, "--handle-margin": `${HANDLE_MARGIN_PX}px` } as CSSProperties}
                   >
                     <span
                       aria-hidden
@@ -651,26 +735,8 @@ export default function RelightPage() {
               </FitBox>
             </div>
 
-            {/* A failed load must not pass for a loaded scene: the photo is dimmed and this sits on top of it. */}
-            {failed && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center">
-                <div role="alert" className="flex max-w-sm animate-rise flex-col items-center gap-2.5 rounded-2xl border border-rose-500/40 bg-ink/90 px-5 py-4 text-center shadow-2xl backdrop-blur">
-                  <span className="flex items-center gap-2 text-sm font-semibold text-rose-100">
-                    <AlertIcon className="text-rose-400" />
-                    This photo could not be analysed
-                  </span>
-                  <p className="break-words text-sm leading-5 text-rose-100/90">{sceneError}</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="primary" onClick={() => void load(photo, detail)}>
-                      Retry
-                    </Button>
-                    <Button size="sm" onClick={startOver}>
-                      Choose another photo
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* A failed load must not pass for a loaded scene: the photo is dimmed and, beside the sidebar, this sits on top of it. */}
+            {failed && <div className="absolute inset-0 z-20 flex items-center justify-center max-lg:hidden">{failedCard}</div>}
 
             {!live && enhanced && snapshot && (
               <FitBox width={width} height={height}>
@@ -694,8 +760,8 @@ export default function RelightPage() {
             )}
           </div>
           <Button size="sm" variant="glass" className="pointer-events-auto" onClick={startOver}>
-            <UploadIcon />
-            New photo
+            {!DEMO && <UploadIcon />}
+            {DEMO ? "Other samples" : "New photo"}
           </Button>
         </div>
 
@@ -707,7 +773,8 @@ export default function RelightPage() {
             <Button
               size="sm"
               variant="glass"
-              className={cn("pointer-events-auto", comparing && "border-accent/60 text-accent")}
+              className="pointer-events-auto"
+              active={comparing}
               disabled={!canShow}
               onPointerDown={() => setComparing(true)}
               onPointerUp={() => setComparing(false)}
@@ -736,6 +803,8 @@ export default function RelightPage() {
           )}
         </div>
       </Stage>
+      {/* On a stacked page the stage is only as tall as the photo, so the card goes under it, where it cannot hide a wide one. */}
+      {failed && <div className="lg:hidden">{failedCard}</div>}
     </Workspace>
   );
 }

@@ -2,6 +2,8 @@
 // estimated, shipped as static files under public/samples/<name>/ (written by
 // backend/scripts/make_samples.py). Picking one needs no backend at all.
 
+import { isAbort } from "./api";
+import { BASE_PATH } from "./config";
 import { blobToBase64 } from "./image";
 import type { RelightScene } from "./types";
 
@@ -19,7 +21,7 @@ export const SAMPLES: SamplePhoto[] = [
   { name: "rocket", label: "Rocket", alt: "A rocket on its launch pad at night" },
 ];
 
-const sampleUrl = (sample: SamplePhoto, file: string) => `/samples/${sample.name}/${file}`;
+const sampleUrl = (sample: SamplePhoto, file: string) => `${BASE_PATH}/samples/${sample.name}/${file}`;
 
 export const sampleThumbUrl = (sample: SamplePhoto) => sampleUrl(sample, "thumb.jpg");
 
@@ -29,7 +31,14 @@ const SAMPLE_ID_PREFIX = "sample:";
 export const isSampleScene = (scene: RelightScene) => scene.scene_id.startsWith(SAMPLE_ID_PREFIX);
 
 async function fetchFile(url: string, signal?: AbortSignal): Promise<Response> {
-  const res = await fetch(url, { signal });
+  let res: Response;
+  try {
+    res = await fetch(url, { signal });
+  } catch (error) {
+    if (isAbort(error)) throw error;
+    // The browser's own text here is "Failed to fetch", which tells the user nothing.
+    throw new Error("Could not load the sample photo. Check your connection and try again.");
+  }
   if (!res.ok) throw new Error(`Could not load the sample photo (${res.status}).`);
   return res;
 }
