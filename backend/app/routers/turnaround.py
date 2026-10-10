@@ -33,7 +33,7 @@ def analyze(body: ImageIn) -> AnalyzeOut:
 
 
 def _generate(character: T.Character, body: GenerateIn) -> dict:
-    result = T.generate_view(character, body.target_view, body.features)
+    result = T.generate_view(character, body.target_view, body.features, fresh=body.fresh)
     best = result.best
     return ViewResult(
         image=encode_image(best.item),

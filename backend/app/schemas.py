@@ -93,6 +93,7 @@ class RelightRender(BaseModel):
 class RelightEnhanceIn(BaseModel):
     scene_id: str
     light: LightIn = LightIn()
+    shadows: bool = True  # match the preview on screen, which can have cast shadows switched off
     prompt: str = ""
 
 
@@ -192,6 +193,7 @@ class GenerateIn(BaseModel):
     character_id: str
     target_view: View
     features: list[Feature] | None = None  # the user's edited checklist, if they changed it
+    fresh: bool = False  # true for "regenerate": skip the cache
 
 
 class ChecklistItem(BaseModel):

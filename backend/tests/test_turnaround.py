@@ -67,6 +67,39 @@ def test_retry_feeds_the_critics_verdict_back_into_the_next_prompt(monkeypatch):
     assert "scar over left eye" in prompts[1].split("showed these")[1]
 
 
+def test_fresh_request_reaches_the_generator_on_every_attempt(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    from app.routers import turnaround as router
+
+    seen = []
+    totals = iter([0.1, 0.9, 0.1, 0.9])  # each request: a failed first attempt, then a passing retry
+
+    def fake_edit(reference, prompt, **kwargs):
+        seen.append(kwargs["fresh"])
+        return [Image.new("RGB", (8, 8))]
+
+    def fake_check(candidate, character, features, target_view):
+        total = next(totals)
+        return {"identity": total, "palette": total, "checklist": total}, []
+
+    monkeypatch.setattr(T.generation, "edit_image", fake_edit)
+    monkeypatch.setattr(T, "check", fake_check)
+    character = T.Character("fresh-test", Image.new("RGBA", (8, 8)), Image.new("RGB", (8, 8)), "front", SPEC)
+    monkeypatch.setitem(router._characters, character.id, character)
+    client = TestClient(app)
+    for body in ({"fresh": True}, {}):  # the flag is off unless asked for
+        job_id = client.post("/turnaround/generate", json={"character_id": character.id, "target_view": "side", **body}).json()["job_id"]
+        for _ in range(200):
+            status = client.get(f"/jobs/{job_id}").json()
+            if status["status"] != "pending":
+                break
+            time.sleep(0.02)
+        assert status["status"] == "done", status
+    assert seen == [True, True, False, False]
+
+
 @pytest.mark.models
 def test_checklist_score_weights_critical_features_and_penalizes_wrongly_shown_ones(monkeypatch):
     character = T.analyze(_drawing())

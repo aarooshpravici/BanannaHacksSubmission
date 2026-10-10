@@ -126,6 +126,22 @@ def test_shading_is_ambient_in_shadow_and_above_one_under_a_strong_light():
     assert above[64, 64] > 0.3 + 1.5  # top of the block, right under the light, nearer than the scene centre
 
 
+def test_enhance_renders_its_input_with_the_shadow_setting_on_screen():
+    from app.images import decode_image
+    from app.routers import relight as router
+
+    scene = router._Scene(Image.new("RGB", (N, N), (180, 180, 180)), R.build_geometry(_block(), relief=0.3, smooth=0))
+    light = R.Light(-0.2, 0.5, height=0.15)
+
+    # In mock mode the provider hands back its input, so this is the image it would be sent.
+    def sent(**kwargs):
+        return np.asarray(decode_image(router._enhance(scene, light, "", **kwargs)["image"])).astype(float)
+
+    off, on = sent(shadows=False), sent(shadows=True)
+    assert off[64, 85].mean() > on[64, 85].mean() * 1.2, "no cast shadow beside the block when shadows are off"
+    assert np.array_equal(sent(), on), "shadows stay on unless the request says otherwise"
+
+
 @pytest.mark.models
 def test_depth_model_puts_the_foreground_in_front():
     from skimage import data

@@ -81,8 +81,8 @@ def render(body: RelightRenderIn) -> RelightRender:
     return RelightRender(image=encode_image(out, "JPEG"))
 
 
-def _enhance(s: _Scene, light: R.Light, prompt: str) -> dict:
-    preview = R.relight(s.image, s.geom, light)
+def _enhance(s: _Scene, light: R.Light, prompt: str, shadows: bool = True) -> dict:
+    preview = R.relight(s.image, s.geom, light, cast_shadows=shadows)
     # The hosted relighter only takes a coarse direction, so give it the side
     # of the image the light is nearest to.
     dx, dy = light.x - 0.5, light.y - 0.5
@@ -94,4 +94,4 @@ def _enhance(s: _Scene, light: R.Light, prompt: str) -> dict:
 @router.post("/enhance")
 def enhance(body: RelightEnhanceIn) -> JobRef:
     s = _get_scene(body.scene_id)
-    return JobRef(job_id=jobs.submit(_enhance, s, _light(body.light), body.prompt))
+    return JobRef(job_id=jobs.submit(_enhance, s, _light(body.light), body.prompt, body.shadows))

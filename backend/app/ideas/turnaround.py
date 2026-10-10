@@ -165,8 +165,20 @@ def check(candidate: Image.Image, character: Character, features: list[Feature],
 
 
 def generate_view(
-    character: Character, target_view: str, features: list[Feature] | None = None, *, n: int = 3, max_retries: int = 2
+    character: Character,
+    target_view: str,
+    features: list[Feature] | None = None,
+    *,
+    n: int = 3,
+    max_retries: int = 2,
+    fresh: bool = False,
 ) -> LoopResult[Image.Image]:
+    """Generate, score and if needed retry one view; best candidate first.
+
+    `fresh` makes every attempt skip the image cache, for a "regenerate"
+    button. The critic needs no flag of its own: its saved answers are keyed on
+    the candidate's pixels, so a new image is always judged anew.
+    """
     features = features if features is not None else character.spec.features
     # One entry per id: a duplicated id would be counted twice by the checklist.
     features = list({f.id: f for f in features}.values())
@@ -177,7 +189,7 @@ def generate_view(
         missing = [by_id[c.feature_id] for c in verdict if c.expected_visible and not c.present]
         unwanted = [by_id[c.feature_id] for c in verdict if c.present and not c.expected_visible]
         prompt = view_prompt(character.spec, features, target_view, missing, unwanted)
-        return generation.edit_image(character.reference, prompt, n=n, seed=attempt)
+        return generation.edit_image(character.reference, prompt, n=n, seed=attempt, fresh=fresh)
 
     return generate_and_rank(
         generate,
