@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { errorMessage, getJob } from "./api";
 import type { JobRef } from "./types";
 
@@ -16,7 +16,7 @@ export interface Job<T> extends JobState<T> {
   /**
    * Submit a job and poll it to completion. `submit` is the API call that
    * returns the JobRef. Resolves with the result, or null if the job failed
-   * (see `error`) or was superseded by another run, a reset or an unmount.
+   * (see `error`) or was superseded by another run or a reset.
    */
   run: (submit: () => Promise<JobRef>) => Promise<T | null>;
   /** Forget the current job and go back to "idle". */
@@ -31,7 +31,13 @@ const TIMEOUT_MS = 5 * 60 * 1000;
 /**
  * Background jobs: POST returns a JobRef straight away, then GET /jobs/{id} is
  * polled about once a second until the status is no longer "pending".
- * Polling stops when the component unmounts.
+ *
+ * Polling is deliberately not stopped in an effect cleanup. With
+ * cacheComponents on, Next hides a route the user navigates away from instead
+ * of unmounting it: the cleanup would run, the state would stay "pending" and
+ * nothing would start polling again on the way back. Left running, the result
+ * is on screen when the user returns. After a real unmount the loop still ends
+ * with the job, or at the timeout, and React ignores the late state update.
  */
 export function useJob<T>(pollMs = 1000): Job<T> {
   const [state, setState] = useState<JobState<T>>(IDLE);
@@ -51,8 +57,6 @@ export function useJob<T>(pollMs = 1000): Job<T> {
     controller.current?.abort();
     controller.current = null;
   }, []);
-
-  useEffect(() => stop, [stop]);
 
   const run = useCallback(
     async (submit: () => Promise<JobRef>): Promise<T | null> => {
