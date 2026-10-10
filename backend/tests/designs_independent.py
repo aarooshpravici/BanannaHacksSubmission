@@ -350,6 +350,104 @@ def ruled_table_missing_cell():
     return p.render(), truth
 
 
+# --- side effects of the fixes above, found by a second reviewer ------------------
+
+
+def dense_card_page_slot_holds_text_complete():
+    """A page packed with an 8x6 grid of small cards; one cell holds three lines of loose text instead of a card."""
+    p = Page(1200, 800, WHITE)
+    for j in range(6):
+        for i in range(8):
+            x, y = 16 + i * 148, 12 + j * 132
+            if (i, j) == (3, 2):
+                p.bars(x + 10, y + 30, [90, 70, 100], G400, gap=22, thick=6)
+                continue
+            p.box(x, y, 136, 120, fill=WHITE, outline=G300, r=8)
+            p.box(x + 10, y + 10, 28, 28, fill=ACCENTS[(i + j) % 7], r=6)
+            p.bars(x + 10, y + 50, [110, 90, 100, 70], G400, gap=16, thick=6)
+    return p.render(), []
+
+
+def _pastel_cards():
+    p = Page(1200, 800, G100)
+    truth = []
+    for i, x in enumerate((100, 440, 780)):
+        if i == 1:
+            truth.append([x, 250, 320, 300])
+            continue
+        p.box(x, 250, 320, 300, fill=(255, 228, 230), r=12)
+        p.bars(x + 24, 290, [200, 160], G500)
+    return p.render(), truth
+
+
+def pastel_cards_missing():
+    """Three borderless pale-rose cards on a light grey page; the middle one is missing."""
+    return _pastel_cards()
+
+
+def pastel_cards_jpeg_missing():
+    """The same pastel cards exported as a JPEG."""
+    img, truth = _pastel_cards()
+    return _as_jpeg(img), truth
+
+
+def jpeg_icon_grid_on_grey_missing():
+    """A 5x3 grid of saturated round icons on a light grey page, as a JPEG whose 16 px colour squares do not line up with the grid."""
+    p = Page(1200, 800, G100)
+    truth = []
+    for i in range(15):
+        x, y = 203 + (i % 5) * 120, 157 + (i // 5) * 120
+        if i == 7:
+            truth.append([x, y, 72, 72])
+            continue
+        p.oval(x, y, 72, 72, fill=ACCENTS[i % 7])
+    return _as_jpeg(p.render()), truth
+
+
+def _card_grid(xs, ys, w, h, missing):
+    p = Page(1200, 800, G100)
+    truth = []
+    for r, y in enumerate(ys):
+        for c, x in enumerate(xs):
+            if (r, c) in missing:
+                truth.append([x, y, w, h])
+            else:
+                _card(p, x, y, w, h, i=r * len(xs) + c)
+    return p.render(), truth
+
+
+def off_centre_grid_missing_inside():
+    """Two rows of cards in the first three columns of a four-column page grid; the middle card of the top row is missing."""
+    return _card_grid([60, 335, 610], [100, 420], 255, 280, {(0, 1)})
+
+
+def grid_missing_two_corners():
+    """A centred 3x3 grid of cards with the top-left and bottom-right cards missing."""
+    return _card_grid([140, 460, 780], [60, 300, 540], 280, 200, {(0, 0), (2, 2)})
+
+
+def _card_and_empty_box(bg, card_fill, card_outline, **box):
+    p = Page(1200, 800, bg)
+    _card(p, 100, 200, 300, 300, fill=card_fill, outline=card_outline)
+    p.box(600, 200, 400, 300, r=8, **box)
+    return p.render(), [[600, 200, 400, 300]]
+
+
+def light_placeholder_on_dark():
+    """A dark page with one filled card and one empty white box."""
+    return _card_and_empty_box(NAVY, (30, 41, 59), (51, 65, 85), fill=WHITE)
+
+
+def mid_grey_placeholder_on_white():
+    """A white page with one filled card and one empty mid-grey box."""
+    return _card_and_empty_box(WHITE, WHITE, G200, fill=G400)
+
+
+def thick_border_placeholder():
+    """A white page with one filled card and one empty box with a 6 px dark border."""
+    return _card_and_empty_box(WHITE, WHITE, G200, fill=WHITE, outline=G900, bw=6)
+
+
 DESIGNS = {
     "toolbar_left_aligned_complete": toolbar_left_aligned_complete,
     "settings_form_complete": settings_form_complete,
@@ -365,10 +463,22 @@ DESIGNS = {
     "dark_grid_missing_corner": dark_grid_missing_corner,
     "left_flowed_row_complete": left_flowed_row_complete,
     "ruled_table_missing_cell": ruled_table_missing_cell,
+    "dense_card_page_slot_holds_text_complete": dense_card_page_slot_holds_text_complete,
+    "pastel_cards_missing": pastel_cards_missing,
+    "pastel_cards_jpeg_missing": pastel_cards_jpeg_missing,
+    "jpeg_icon_grid_on_grey_missing": jpeg_icon_grid_on_grey_missing,
+    "off_centre_grid_missing_inside": off_centre_grid_missing_inside,
+    "grid_missing_two_corners": grid_missing_two_corners,
+    "light_placeholder_on_dark": light_placeholder_on_dark,
+    "mid_grey_placeholder_on_white": mid_grey_placeholder_on_white,
+    "thick_border_placeholder": thick_border_placeholder,
 }
 
 # Designs the detector still gets wrong, each with the reason.
 KNOWN_LIMITS = {
     "left_flowed_row_complete": "three of four columns filled from the left looks exactly like a centred row of four missing its last card",
     "ruled_table_missing_cell": "cells that share borders are one connected shape, so no single cell is seen as a block",
+    "pastel_cards_jpeg_missing": "JPEG halves colour resolution, which takes a pale tint's edge under the faint colour threshold",
+    "off_centre_grid_missing_inside": "the hole is found, but the unused fourth column is reported too (same ambiguity as left_flowed_row_complete)",
+    "mid_grey_placeholder_on_white": "an empty box much darker than the page cannot be told from a solid grey element",
 }

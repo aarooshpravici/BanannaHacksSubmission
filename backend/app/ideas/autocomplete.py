@@ -41,6 +41,16 @@ RECURSE_AREA_FRAC = 0.1
 # higher loses boundaries that are a hue change at equal brightness.
 LUMA_EDGE = (12, 36)
 CHROMA_EDGE = (40, 80)
+# Colour edges too faint for the thresholds above (a borderless pastel card on
+# a light grey page) still count, but only away from every strong colour edge,
+# because next to one they are JPEG fringes. Lower thresholds see paler tints
+# but also the colour noise of a heavily compressed export.
+FAINT_CHROMA_EDGE = (12, 36)
+# How far (px) a strong colour edge spoils faint ones. JPEG stores colour in
+# 16 px squares, so a fringe reaches at most that far from the shape causing
+# it. Larger also hides a pale card that sits closer than this to a saturated
+# element.
+FRINGE_REACH = 16
 
 
 @dataclass(frozen=True)
@@ -70,13 +80,20 @@ def edge_map(img: Image.Image) -> np.ndarray:
 
     Colour is read less finely than brightness because JPEG stores it at half
     resolution: around a saturated shape it bleeds out to the next 16 px
-    boundary, which would otherwise be read as part of the shape.
+    boundary, which would otherwise be read as part of the shape. Faint colour
+    edges are therefore only believed where no strong colour edge is near.
     """
     rgb = cv2.GaussianBlur(np.asarray(to_rgb(img)), (3, 3), 0)
     ycc = cv2.cvtColor(rgb, cv2.COLOR_RGB2YCrCb)
     edges = cv2.Canny(np.ascontiguousarray(ycc[..., 0]), *LUMA_EDGE)
+    strong, faint = np.zeros_like(edges), np.zeros_like(edges)
     for c in (1, 2):
-        edges |= cv2.Canny(np.ascontiguousarray(ycc[..., c]), *CHROMA_EDGE)
+        channel = np.ascontiguousarray(ycc[..., c])
+        strong |= cv2.Canny(channel, *CHROMA_EDGE)
+        faint |= cv2.Canny(channel, *FAINT_CHROMA_EDGE)
+    reach = 2 * FRINGE_REACH + 1
+    faint[cv2.dilate(strong, np.ones((reach, reach), np.uint8)) > 0] = 0
+    edges |= strong | faint
     return cv2.dilate(edges, np.ones((3, 3), np.uint8)) > 0
 
 
@@ -166,10 +183,16 @@ def iou(a: Block, b: Block) -> float:
     return inter / (a.area + b.area - inter) if inter else 0.0
 
 
-def dedupe(blocks: list[Block], threshold: float = 0.7) -> list[Block]:
+SAME_BLOCK_IOU = 0.7  # two boxes overlapping this much are the same block seen twice
+
+
+def dedupe(blocks: list[Block], threshold: float = SAME_BLOCK_IOU) -> list[Block]:
     """Drop near-duplicate blocks, keeping layout blocks over SAM ones."""
     kept: list[Block] = []
-    for b in sorted(blocks, key=lambda b: (b.source != "layout", -b.fill)):
+    # Of two near-identical boxes the outer one is kept. The inner one is the
+    # same element found again inside its own outline, and a gap reported at
+    # that size would leave the outline out of the region to fill.
+    for b in sorted(blocks, key=lambda b: (b.source != "layout", -b.area)):
         if all(iou(b, k) < threshold for k in kept):
             kept.append(b)
     return kept
@@ -198,17 +221,33 @@ SIZE_TOLERANCE = 0.12  # blocks within 12% in width and height count as the same
 EMPTY_EDGE_DENSITY = 0.006  # a slot with fewer edge pixels than this is empty
 # On a textured page (dot grid, ruled paper) an empty slot is as busy as the
 # page itself. The page's texture is the edge density of its emptiest tiles,
-# and a slot may hold that much times the headroom on top of the limit above.
-# More headroom tolerates uneven textures, but lets a slot holding faint
+# looking only at tiles that lie clear of every block and of the slot being
+# judged, and a slot may hold that much times the headroom on top of the limit
+# above. More headroom tolerates uneven textures, but lets a slot holding faint
 # content pass as empty.
 TEXTURE_TILE = 48  # px; large enough to average over a texture's period, small enough that some tiles miss all content
 TEXTURE_FLOOR_PERCENTILE = 10  # low, so that the content covering most of a page does not count as its texture
 TEXTURE_HEADROOM = 1.5
+# With fewer free tiles than this the texture is not measured (taken as flat).
+# On a page packed with blocks the few tiles left over hold loose content, not
+# background. Lower reads the texture of fuller pages, but trusts fewer samples.
+MIN_TEXTURE_TILES = 8
+# Nothing busier than this is believed to be texture. A 2 px dot every 24 px
+# measures about 0.056; three lines of loose text in a card-sized slot about
+# 0.13. Higher accepts denser textures, but a slot holding text then passes as
+# empty on a page whose free space is all text.
+MAX_TEXTURE_FLOOR = 0.08
 MIN_PLACEHOLDER_AREA_FRAC = 0.025
 # An empty box whose fill differs from its surroundings by more than this (0-255,
 # in any channel) is a solid element, not a placeholder. Lower drops more colour
 # blocks, but also stops reporting tinted or dark placeholders on a light page.
 MAX_PLACEHOLDER_CONTRAST = 64
+# The exception: a box lighter than its surroundings whose channels lie within
+# this of each other (white, light grey, a pale tint) is the ordinary empty card
+# of a dark page, whatever the contrast. Pale tints stay under about 55 and
+# brand colours start near 100. Higher keeps more strongly tinted empty cards,
+# but starts reporting bright colour blocks on dark pages.
+MAX_PLACEHOLDER_TINT = 60
 # Breaks of up to twice this many px in a box's outline are sealed when looking
 # for empty frames, so a dashed border still makes a box. Larger closes wider
 # dash gaps and open corners, but merges elements that sit closer than that.
@@ -325,40 +364,73 @@ def _extend_row(xs: list[float], pitch: float | None, w: float, left: float, rig
     return [xs[-1] + pitch] if space_right > space_left else [xs[0] - pitch]
 
 
-def _texture_floor(edges: np.ndarray) -> float:
-    """Edge density of the emptiest parts of the page: 0 on a flat background, above 0 on a dot grid or paper texture."""
+def _tile_density(edges: np.ndarray) -> np.ndarray:
+    """Edge density of the page cut into square tiles (rows, columns)."""
     t = TEXTURE_TILE
     H, W = edges.shape
-    if H < t or W < t:
+    return edges[: H // t * t, : W // t * t].reshape(H // t, t, W // t, t).mean(axis=(1, 3))
+
+
+def _tiles_clear_of(shape: tuple[int, int], bounds: tuple[int, int, int, int], blocks: list[Block]) -> np.ndarray:
+    """Which tiles lie wholly inside bounds (x0, y0, x1, y1) and touch none of the blocks."""
+    t = TEXTURE_TILE
+    free = np.zeros(shape, bool)
+    free[-(-bounds[1] // t) : bounds[3] // t, -(-bounds[0] // t) : bounds[2] // t] = True
+    for b in blocks:
+        free[b.y // t : -(-b.y1 // t), b.x // t : -(-b.x1 // t)] = False
+    return free
+
+
+def _texture_floor(tiles: np.ndarray, free: np.ndarray, slot: tuple[float, float, float, float]) -> float:
+    """Edge density of the emptiest background near a slot: 0 on a flat page, above 0 on a dot grid or paper texture.
+
+    Only tiles clear of the blocks and of the slot itself are looked at. On a
+    page packed with blocks the emptiest tiles would otherwise be content, and
+    the slot's own content would count as the texture it is compared with.
+    """
+    t = TEXTURE_TILE
+    x, y, w, h = slot
+    free = free.copy()
+    free[max(0, int(y // t)) : int(-(-(y + h) // t)), max(0, int(x // t)) : int(-(-(x + w) // t))] = False
+    if free.sum() < MIN_TEXTURE_TILES:
         return 0.0
-    tiles = edges[: H // t * t, : W // t * t].reshape(H // t, t, W // t, t).mean(axis=(1, 3))
-    return float(np.percentile(tiles, TEXTURE_FLOOR_PERCENTILE))
+    return min(MAX_TEXTURE_FLOOR, float(np.percentile(tiles[free], TEXTURE_FLOOR_PERCENTILE)))
 
 
-def _pattern_gaps(group: list[Block], bounds: tuple[int, int, int, int], edges: np.ndarray, floor: float = 0.0) -> list[Gap]:
-    """Empty slots in the grid one set of same-sized blocks sits on. floor is the page's own texture (_texture_floor)."""
-    # A slot is empty when it holds no more than the page's own texture.
-    empty_limit = EMPTY_EDGE_DENSITY + TEXTURE_HEADROOM * floor
+def _pattern_gaps(
+    group: list[Block],
+    bounds: tuple[int, int, int, int],
+    edges: np.ndarray,
+    texture: tuple[np.ndarray, np.ndarray] | None = None,
+) -> list[Gap]:
+    """Empty slots in the grid one set of same-sized blocks sits on.
+
+    texture is (_tile_density of the page, tiles clear of this group's
+    siblings), from which the background's own texture is read; without it the
+    background is taken as flat.
+    """
     w, h = float(np.median([b.w for b in group])), float(np.median([b.h for b in group]))
     xs, pitch_x, guessed_x = _fill_axis(_positions([b.x for b in group], 0.15 * w), w)
     ys, _, guessed_y = _fill_axis(_positions([b.y for b in group], 0.15 * h), h)
     present_xs = set(xs)
     ends = _extend_row(xs, pitch_x, w, bounds[0], bounds[2])
+    end_xs = {round(x) for x in ends}
     xs = sorted(xs + ends)
 
     def occupied(x: float, y: float) -> bool:
         return any(abs(b.x - x) <= 0.3 * w and abs(b.y - y) <= 0.3 * h for b in group)
 
     gaps = []
-    trailing = []  # empty slots after the last block of a short last row
+    trailing = []  # empty slots after the last block of the last row, where a list runs out
     for y in ys:
         for x in xs:
             if occupied(x, y):
                 continue
             if x < bounds[0] - 1 or y < bounds[1] - 1 or x + w > bounds[2] + 1 or y + h > bounds[3] + 1:
                 continue
-            density = _edge_density(edges, x, y, w, h)
-            if density > empty_limit:
+            # A slot is empty when it holds no more than the background's own texture.
+            floor = _texture_floor(*texture, (x, y, w, h)) if texture else 0.0
+            if _edge_density(edges, x, y, w, h) > EMPTY_EDGE_DENSITY + TEXTURE_HEADROOM * floor:
                 continue  # something else already sits here
             row = [b for b in group if abs(b.y - y) <= 0.3 * h]
             col = [b for b in group if abs(b.x - x) <= 0.3 * w]
@@ -371,9 +443,10 @@ def _pattern_gaps(group: list[Block], bounds: tuple[int, int, int, int], edges: 
             elif between_in_row or between_in_col:
                 confidence, where = 0.9, "inside"
             else:
-                # A short last row: could be missing, could be the natural end of the list.
+                # A corner of the grid: could be missing, could be the natural end of the list.
                 confidence, where = 0.55, "at the end of"
-                trailing.append((round(x), round(y)))
+                if y == ys[-1] and not any(b.x > x for b in row):
+                    trailing.append((round(x), round(y)))
             confidence = min(0.95, confidence + (0.05 if len(group) >= 4 else 0.0))
             gaps.append(
                 Gap(
@@ -384,7 +457,10 @@ def _pattern_gaps(group: list[Block], bounds: tuple[int, int, int, int], edges: 
             )
     # Rows times columns is only a grid if most of its cells are taken. Columns
     # of unequal length (a board, a masonry page) leave many cells empty by design.
-    if len(xs) >= 2 and len(ys) >= 2 and len(gaps) > MAX_EMPTY_GRID_FRAC * (len(gaps) + len(group)):
+    # The column guessed at one end is left out of the count: it is a guess about
+    # the row, and says nothing about how full the columns that exist are.
+    holes = sum(g.x not in end_xs for g in gaps)
+    if len(present_xs) >= 2 and len(ys) >= 2 and holes > MAX_EMPTY_GRID_FRAC * (holes + len(group)):
         return []
     # A last row short by one block may be missing its last card. Short by more,
     # it is simply where the list ends (six items in four columns).
@@ -406,7 +482,10 @@ def _stands_out(rgb: np.ndarray, b: Block) -> bool:
     ])
     if len(inner) == 0 or len(ring) == 0:
         return False
-    return float(np.abs(np.median(inner, axis=0) - np.median(ring, axis=0)).max()) > MAX_PLACEHOLDER_CONTRAST
+    inside, around = np.median(inner, axis=0), np.median(ring, axis=0)
+    if (inside > around).all() and inside.max() - inside.min() <= MAX_PLACEHOLDER_TINT:
+        return False  # a pale box on a darker page
+    return float(np.abs(inside - around).max()) > MAX_PLACEHOLDER_CONTRAST
 
 
 def _sealed_boxes(edges: np.ndarray) -> list[Block]:
@@ -450,7 +529,7 @@ def find_gaps(img: Image.Image, blocks: list[Block], edges: np.ndarray | None = 
         families.setdefault(_parent_of(b, blocks), []).append(b)
 
     gaps: list[Gap] = []
-    floor = _texture_floor(edges)
+    tiles = _tile_density(edges)
     for parent, children in families.items():
         if parent is not None:
             # Only look inside containers (panels, sections). The inside of a
@@ -468,8 +547,12 @@ def find_gaps(img: Image.Image, blocks: list[Block], edges: np.ndarray | None = 
         bounds = (0, 0, W, H) if parent is None else (parent.x, parent.y, parent.x1, parent.y1)
         for group in _size_groups(children):
             if len(group) >= 2:
-                gaps += _pattern_gaps(group, bounds, edges, floor)
-    gaps += _placeholder_gaps(dedupe(blocks + _sealed_boxes(edges)), edges, np.asarray(to_rgb(img)))
+                free = _tiles_clear_of(tiles.shape, bounds, children)
+                gaps += _pattern_gaps(group, bounds, edges, (tiles, free))
+    # A sealed box that repeats a block found the ordinary way is dropped: the
+    # ordinary block follows the frame more closely.
+    sealed = [s for s in _sealed_boxes(edges) if all(iou(s, b) < SAME_BLOCK_IOU for b in blocks)]
+    gaps += _placeholder_gaps(blocks + dedupe(sealed), edges, np.asarray(to_rgb(img)))
 
     # A gap inside another gap is the same finding seen twice; keep the stronger.
     kept: list[Gap] = []
