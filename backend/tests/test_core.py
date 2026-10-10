@@ -70,6 +70,15 @@ def test_opaque_rgba_mask_uses_brightness_not_alpha():
     assert arr[3, 3] == 255 and arr[0, 0] == 0 and (arr == 255).sum() == 16
 
 
+@pytest.mark.parametrize("stray_alpha", [254, 0])
+def test_opaque_mask_with_a_stray_see_through_pixel_still_uses_brightness(stray_alpha):
+    canvas = Image.new("RGBA", (40, 40), (0, 0, 0, 255))
+    canvas.paste((255, 255, 255, 255), (10, 10, 20, 20))
+    canvas.putpixel((30, 30), (0, 0, 0, stray_alpha))
+    arr = images.decode_mask(_png_b64(canvas), size=(40, 40))
+    assert (arr == 255).sum() == 100 and arr[15, 15] == 255 and arr[30, 30] == 0
+
+
 def test_empty_mask_is_rejected():
     with pytest.raises(images.ImageError):
         images.decode_mask(_png_b64(Image.new("L", (10, 10), 0)), size=(10, 10))

@@ -61,12 +61,19 @@ def decode_mask(data: str, size: tuple[int, int]) -> np.ndarray:
     if mask.mode == "P" and "transparency" in mask.info:
         mask = mask.convert("RGBA")
     if mask.mode in ("RGBA", "LA"):
-        alpha = mask.getchannel("A")
-        if alpha.getextrema()[0] < 255:
-            # Drawn on a transparent canvas: the painted pixels are the mask.
-            mask = alpha
-        # Otherwise the image is fully opaque (a browser canvas exported as
-        # white on black) and brightness carries the mask, as for a plain PNG.
+        opaque = np.asarray(mask.getchannel("A")) > 127
+        bright = np.asarray(mask.convert("L")) > 127
+        if opaque.all():
+            # Nothing is see-through (a browser canvas exported as white on
+            # black), so brightness carries the mask, as for a plain PNG.
+            pass
+        elif bright[opaque].any() and not bright[opaque].all():
+            # White on black with a few see-through pixels: still a brightness
+            # mask. Reading it by alpha would select nearly the whole image.
+            mask = Image.fromarray(np.where(bright & opaque, 255, 0).astype(np.uint8))
+        else:
+            # Drawn in one tone on a transparent canvas: the painted pixels are the mask.
+            mask = mask.getchannel("A")
     mask = mask.convert("L")
     if mask.size != size:
         mask = mask.resize(size, Image.NEAREST)
