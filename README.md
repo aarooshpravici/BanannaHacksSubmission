@@ -4,7 +4,7 @@ Drag a light around a photo and watch the highlights and shadows follow, live, i
 
 ![The light travelling once around the Portrait sample, with the shading and the cast shadows following it](docs/relight-sweep.gif)
 
-*The Portrait sample with the light on the path the app's Sweep button takes (the yellow dot is the light). These frames were rendered by our Python reference of the shading; the browser runs the same maths in a shader.*
+*The Portrait sample with the light on the path the app's Sweep button takes (the small orange dot is the light). These frames were rendered by our Python reference of the shading; the browser runs the same maths in a shader.*
 
 **Live demo: not published yet**
 
@@ -37,6 +37,7 @@ flowchart LR
   photo --> depth
   photo --> normals
   normals --> diffuse
+  depth --> diffuse
   depth --> shadows
   light --> diffuse
   light --> shadows
@@ -51,10 +52,12 @@ flowchart LR
 2. **Surface normals, once per photo (pretrained: Marigold).** Which way each surface faces. Normals worked out from the depth map alone left faces almost unshaded, so a second model does this.
 3. **Diffuse shading, every frame (ours).** Each pixel is lit by how squarely its surface faces the light, easing to dark as it turns away. Distance falloff is measured against the centre of the scene, so moving the light changes where it falls and not the overall exposure.
 4. **Cast shadows, every frame (ours).** Each pixel walks toward the light across the height field. Whatever blocks it is sorted into a near, mid or far layer by how far in front of the receiving surface it stands, and each layer is blurred by a different amount: a contact shadow stays crisp, a shadow on a far background spreads and fades.
-5. **Into the photo, every frame (ours).** The shading is multiplied into the photo in linear light, with a soft roll-off above white.
+5. **Into the photo, every frame (ours).** The shading is multiplied into the photo in linear light. From 80% of white upward the result eases toward white, so highlights roll off softly instead of clipping.
 6. **Enhance, only on request (hosted: the Gemini image model, or IC-Light v2 on fal.ai).** Sends the shaded preview for a more photographic finish. The app is complete without it.
 
 Steps 3 to 5 exist three times and are kept in agreement: `backend/app/ideas/relight.py` (the Python reference), `frontend/lib/relightMath.ts` (a CPU port) and `frontend/lib/relightGL.ts` (the shader you watch).
+
+If a device cannot run the shader, the page falls back by itself: first to the same shader with 8-bit shadow buffers, then to the CPU port in a background thread (a quick preview while the light moves, the full picture when it stops). With the backend running, a processor that needs more than 1.2 seconds a picture hands the drawing to the backend. The last line of the GEOMETRY panel says which path is in use. Only the full-quality shader has run on real hardware; the fallbacks were tried by switching features off in the same browser.
 
 ## What is ours and what is not
 
@@ -100,10 +103,12 @@ frontend/   Next.js app. One page, served at / and /relight
   out/                        the static demo, written by `npm run build:demo` (see "Static demo")
   public/samples/             the four sample scenes: photo, depth, normals, thumbnail (written by make_samples.py)
   public/how-it-works/        the stills in the "How it works" panel (written by docs/make_explainer_images.py)
+  lib/                        relightGL.ts (the shader), relightMath.ts (the CPU port), and the CPU fallback that runs it:
+                              relightCPU.ts, relightCpuCore.ts, relightCpu.worker.js
 docs/       relight-sweep.gif and the script that renders it; submission/ holds the write-up drafts
 proofs/     output images from the scripts
 testing/    what to test and how, written for the testers
-tools/      check_secrets.py, which keeps keys out of the repository
+tools/      check_secrets.py (keeps keys out of the repository), screenshots.mjs (retakes the tester kit's screenshots)
 ```
 
 ## Backend

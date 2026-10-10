@@ -1,4 +1,4 @@
-> This report describes the earlier three-idea foundation, which lives on the `overnight-foundation` branch. This branch keeps only Relight.
+> Historical. This report describes the earlier three-idea foundation, which lives on the `overnight-foundation` branch. This branch keeps only Relight, and the numbers below do not describe the current Relight app.
 
 # Overnight report (night of Oct 9–10)
 
