@@ -1,0 +1,1106 @@
+{
+  "01-landing.jpg": {
+    "file": "01-landing.jpg",
+    "name": "landing",
+    "status": "ok",
+    "about": "The first page at \"/\" before any photo is chosen.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": null,
+    "console": []
+  },
+  "02-upload-empty.jpg": {
+    "file": "02-upload-empty.jpg",
+    "name": "upload-empty",
+    "status": "ok",
+    "about": "The same empty upload page at \"/relight\", with the mouse resting on the dashed drop box.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": null,
+    "console": []
+  },
+  "03-scene-loading.jpg": {
+    "file": "03-scene-loading.jpg",
+    "name": "scene-loading",
+    "status": "ok",
+    "about": "Just after choosing a photo, while the backend is still working out depth and normals.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": {
+      "x": 0.2,
+      "y": 0.2,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shading": "webgl",
+    "console": []
+  },
+  "04-scene-default-light.jpg": {
+    "file": "04-scene-default-light.jpg",
+    "name": "scene-default-light",
+    "status": "ok",
+    "about": "Portrait photo loaded, nothing touched: the light is at its starting place.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": 0.2,
+      "y": 0.2,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "05-scene-all-panels.jpg": {
+    "file": "05-scene-all-panels.jpg",
+    "name": "scene-all-panels",
+    "status": "ok",
+    "about": "The same loaded scene in a taller window (1440 x 1300), so all three sidebar panels show at once without scrolling.",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": 0.2,
+      "y": 0.2,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "06-preset-left.jpg": {
+    "file": "06-preset-left.jpg",
+    "name": "preset-left",
+    "status": "ok",
+    "about": "Portrait photo after clicking the \"Left\" preset button.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "07-preset-right.jpg": {
+    "file": "07-preset-right.jpg",
+    "name": "preset-right",
+    "status": "ok",
+    "about": "Portrait photo after clicking the \"Right\" preset button.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": 1.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "08-preset-top.jpg": {
+    "file": "08-preset-top.jpg",
+    "name": "preset-top",
+    "status": "ok",
+    "about": "Portrait photo after clicking the \"Top\" preset button.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": 0.5,
+      "y": -0.07,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "09-preset-low-and-warm.jpg": {
+    "file": "09-preset-low-and-warm.jpg",
+    "name": "preset-low-and-warm",
+    "status": "ok",
+    "about": "Portrait photo after clicking the \"Low and warm\" preset button.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": 0,
+      "y": 0.9,
+      "height": "0.12",
+      "intensity": "1.60",
+      "ambient": "0.20",
+      "colour": "warm 100",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "10-drag-far-left.jpg": {
+    "file": "10-drag-far-left.jpg",
+    "name": "drag-far-left",
+    "status": "ok",
+    "about": "Portrait photo with the sun handle dragged with the mouse to the left edge of the photo, half way down.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2.3,
+    "light": {
+      "x": 0.03,
+      "y": 0.5,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "11-drag-far-right.jpg": {
+    "file": "11-drag-far-right.jpg",
+    "name": "drag-far-right",
+    "status": "ok",
+    "about": "Portrait photo with the sun handle dragged with the mouse to the right edge of the photo, half way down.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.9,
+    "light": {
+      "x": 0.97,
+      "y": 0.5,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "12-drag-top.jpg": {
+    "file": "12-drag-top.jpg",
+    "name": "drag-top",
+    "status": "ok",
+    "about": "Portrait photo with the sun handle dragged with the mouse to the top edge of the photo, in the middle.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.9,
+    "light": {
+      "x": 0.5,
+      "y": 0.03,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "13-drag-outside-photo.jpg": {
+    "file": "13-drag-outside-photo.jpg",
+    "name": "drag-outside-photo",
+    "status": "ok",
+    "about": "Portrait photo with the sun handle dragged with the mouse to the dark area to the right of the photo (outside the picture).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.9,
+    "light": {
+      "x": 1.21,
+      "y": 0.3,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "14-drag-centre.jpg": {
+    "file": "14-drag-centre.jpg",
+    "name": "drag-centre",
+    "status": "ok",
+    "about": "Portrait photo with the sun handle dragged with the mouse to the middle of the photo, on the face.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.9,
+    "light": {
+      "x": 0.5,
+      "y": 0.45,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "15-height-min.jpg": {
+    "file": "15-height-min.jpg",
+    "name": "height-min",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset clicked, then the Height slider moved all the way left (0.03).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.8,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.03",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "16-height-max.jpg": {
+    "file": "16-height-max.jpg",
+    "name": "height-max",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset clicked, then the Height slider moved all the way right (2.00).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "2.00",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "17-intensity-low.jpg": {
+    "file": "17-intensity-low.jpg",
+    "name": "intensity-low",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset clicked, then the Intensity slider moved all the way left (0.00).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "0.00",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "18-intensity-high.jpg": {
+    "file": "18-intensity-high.jpg",
+    "name": "intensity-high",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset clicked, then the Intensity slider moved all the way right (4.00).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.6,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "4.00",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "19-ambient-low.jpg": {
+    "file": "19-ambient-low.jpg",
+    "name": "ambient-low",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset clicked, then the Ambient slider moved all the way left (0.00).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.00",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "20-ambient-high.jpg": {
+    "file": "20-ambient-high.jpg",
+    "name": "ambient-high",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset clicked, then the Ambient slider moved all the way right (1.00).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "1.00",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "21-colour-warm.jpg": {
+    "file": "21-colour-warm.jpg",
+    "name": "colour-warm",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset clicked, then the Colour slider moved all the way right (warm 100).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "warm 100",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "22-colour-cool.jpg": {
+    "file": "22-colour-cool.jpg",
+    "name": "colour-cool",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset clicked, then the Colour slider moved all the way left (cool 100).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.6,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "cool 100",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "23-shadows-on.jpg": {
+    "file": "23-shadows-on.jpg",
+    "name": "shadows-on",
+    "status": "ok",
+    "about": "Object photo, \"Left\" preset, Height 0.10, Cast shadows ON (the default).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.1,
+    "light": {
+      "x": -0.04,
+      "y": 0.4,
+      "height": "0.10",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "24-shadows-off.jpg": {
+    "file": "24-shadows-off.jpg",
+    "name": "shadows-off",
+    "status": "ok",
+    "about": "Exactly the same light as shadows-on, with the Cast shadows switch turned OFF.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.1,
+    "light": {
+      "x": -0.04,
+      "y": 0.4,
+      "height": "0.10",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": false,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "25-detailed-normals-on.jpg": {
+    "file": "25-detailed-normals-on.jpg",
+    "name": "detailed-normals-on",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset, Detailed normals ON (the default). Look at the Normals thumbnail.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.9,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "26-detailed-normals-off.jpg": {
+    "file": "26-detailed-normals-off.jpg",
+    "name": "detailed-normals-off",
+    "status": "ok",
+    "about": "The same, after turning the Detailed normals switch OFF and waiting for the photo to be analysed again.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.8,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "console": []
+  },
+  "27-hold-original.jpg": {
+    "file": "27-hold-original.jpg",
+    "name": "hold-original",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset, while the \"Hold to see original\" button is held down.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "28-enhance-before.jpg": {
+    "file": "28-enhance-before.jpg",
+    "name": "enhance-before",
+    "status": "ok",
+    "about": "Portrait photo, \"Left\" preset, a mood typed into the Enhance box, before clicking Enhance.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.6,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "29-enhance-running.jpg": {
+    "file": "29-enhance-running.jpg",
+    "name": "enhance-running",
+    "status": "ok",
+    "about": "Straight after clicking Enhance, while the job is still running.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "30-enhance-done.jpg": {
+    "file": "30-enhance-done.jpg",
+    "name": "enhance-done",
+    "status": "ok",
+    "about": "Enhance finished: the stage has switched to the Enhanced tab with the before/after divider in the middle.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.8,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "31-enhance-divider-dragged.jpg": {
+    "file": "31-enhance-divider-dragged.jpg",
+    "name": "enhance-divider-dragged",
+    "status": "ok",
+    "about": "The Enhanced tab with the round divider handle dragged to the left, a quarter of the way across.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2.5,
+    "divider": 25,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "32-enhance-back-to-live.jpg": {
+    "file": "32-enhance-back-to-live.jpg",
+    "name": "enhance-back-to-live",
+    "status": "ok",
+    "about": "After an Enhance, back on the \"Live preview\" tab: the button now reads \"Enhance again\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "33-sample-photo.jpg": {
+    "file": "33-sample-photo.jpg",
+    "name": "sample-photo",
+    "status": "ok",
+    "about": "After clicking \"Use a sample photo\": the built-in orange ball.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "light": {
+      "x": 0.2,
+      "y": 0.2,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "34-object-side-light.jpg": {
+    "file": "34-object-side-light.jpg",
+    "name": "object-side-light",
+    "status": "ok",
+    "about": "The coffee cup photo with the \"Right\" preset.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.2,
+    "light": {
+      "x": 1.04,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "35-cat-side-light.jpg": {
+    "file": "35-cat-side-light.jpg",
+    "name": "cat-side-light",
+    "status": "ok",
+    "about": "The cat photo with the \"Left\" preset.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.2,
+    "light": {
+      "x": -0.04,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "36-dark-photo.jpg": {
+    "file": "36-dark-photo.jpg",
+    "name": "dark-photo",
+    "status": "ok",
+    "about": "The dark night-time rocket photo with the \"Left\" preset.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.3,
+    "light": {
+      "x": -0.04,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "37-tall-photo.jpg": {
+    "file": "37-tall-photo.jpg",
+    "name": "tall-photo",
+    "status": "ok",
+    "about": "A tall, narrow photo with the \"Left\" preset (layout check).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "38-wide-photo.jpg": {
+    "file": "38-wide-photo.jpg",
+    "name": "wide-photo",
+    "status": "ok",
+    "about": "A wide, short photo with the \"Top\" preset (layout check).",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.6,
+    "light": {
+      "x": 0.5,
+      "y": -0.15,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "39-tiny-photo.jpg": {
+    "file": "39-tiny-photo.jpg",
+    "name": "tiny-photo",
+    "status": "ok",
+    "about": "A very small photo (200 x 133 px) with the \"Left\" preset. It is stretched to fill the stage, so it looks soft.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.2,
+    "light": {
+      "x": -0.04,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "40-huge-photo.jpg": {
+    "file": "40-huge-photo.jpg",
+    "name": "huge-photo",
+    "status": "ok",
+    "about": "A very large photo (3000 x 3000 px) with the \"Left\" preset. The app shrinks it before use.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2.2,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "41-error-not-an-image.jpg": {
+    "file": "41-error-not-an-image.jpg",
+    "name": "error-not-an-image",
+    "status": "ok",
+    "about": "A text file was given instead of a picture: a red error appears under the drop box.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "error": "That file is not an image.",
+    "light": null,
+    "console": []
+  },
+  "42-backend-offline.jpg": {
+    "file": "42-backend-offline.jpg",
+    "name": "backend-offline",
+    "status": "ok",
+    "about": "The first page when the backend is not running: the status pill is red and reads \"offline\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": null,
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health"
+    ]
+  },
+  "43-backend-offline-upload.jpg": {
+    "file": "43-backend-offline-upload.jpg",
+    "name": "backend-offline-upload",
+    "status": "ok",
+    "about": "A photo chosen while the backend is not running: a red error with Retry above the stage.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "error": "Cannot reach the backend at http://localhost:8123. Is it running?",
+    "light": {
+      "x": 0.2,
+      "y": 0.2,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
+    ]
+  },
+  "44-enhance-error.jpg": {
+    "file": "44-enhance-error.jpg",
+    "name": "enhance-error",
+    "status": "ok",
+    "about": "The backend stopped after the photo was loaded, then Enhance was clicked: a red error inside the Enhance panel.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2,
+    "error": "Cannot reach the backend at http://localhost:8123. Is it running?",
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/enhance"
+    ]
+  },
+  "45-phone-scene.jpg": {
+    "file": "45-phone-scene.jpg",
+    "name": "phone-scene",
+    "status": "ok",
+    "about": "A phone-sized window (390 x 844) with the portrait photo loaded: what you see before scrolling.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "light": {
+      "x": 0.2,
+      "y": 0.2,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "46-phone-full-page.jpg": {
+    "file": "46-phone-full-page.jpg",
+    "name": "phone-full-page",
+    "status": "ok",
+    "about": "The same phone-sized page photographed from top to bottom, as if you scrolled all the way down.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.9,
+    "light": {
+      "x": 0.2,
+      "y": 0.2,
+      "height": "0.25",
+      "intensity": "1.50",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "47-phone-landing.jpg": {
+    "file": "47-phone-landing.jpg",
+    "name": "phone-landing",
+    "status": "ok",
+    "about": "The empty upload page in a phone-sized window.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "light": null,
+    "console": []
+  },
+  "48-status-checking.jpg": {
+    "file": "48-status-checking.jpg",
+    "name": "status-checking",
+    "status": "ok",
+    "about": "Close-up of the status pill in the top right during the first moment after the page opens: grey dot, \"checking\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": null,
+    "console": []
+  },
+  "49-status-online-mock-providers.jpg": {
+    "file": "49-status-online-mock-providers.jpg",
+    "name": "status-online-mock-providers",
+    "status": "ok",
+    "about": "Close-up of the status pill when the backend runs with MOCK_MODE=1: amber dot, \"online, mock providers\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "tooltip": "Backend at http://localhost:8123 (fal: ready, gemini: ready)",
+    "light": null,
+    "console": []
+  },
+  "50-status-online.jpg": {
+    "file": "50-status-online.jpg",
+    "name": "status-online",
+    "status": "ok",
+    "about": "Close-up of the status pill when the backend runs for real (MOCK_MODE=0): green dot, \"online\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "tooltip": "Backend at http://localhost:8123 (fal: ready, gemini: ready)",
+    "how": "The backend was not run with MOCK_MODE=0. Its /health reply was changed on the way to the page.",
+    "light": null,
+    "console": []
+  },
+  "51-status-offline.jpg": {
+    "file": "51-status-offline.jpg",
+    "name": "status-offline",
+    "status": "ok",
+    "about": "Close-up of the status pill when the backend is not running: red dot, \"offline\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "tooltip": "Cannot reach the backend at http://localhost:8123",
+    "light": null,
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health"
+    ]
+  },
+  "52-no-webgl-fallback.jpg": {
+    "file": "52-no-webgl-fallback.jpg",
+    "name": "no-webgl-fallback",
+    "status": "ok",
+    "about": "A browser without WebGL2: a red notice above the stage, and the picture comes from the server instead.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "server",
+    "sceneSeconds": 2.2,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "53-not-found-page.jpg": {
+    "file": "53-not-found-page.jpg",
+    "name": "not-found-page",
+    "status": "ok",
+    "about": "An address that no longer exists (\"/autocomplete\"): the plain 404 page.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": null,
+    "console": [
+      "log.error: Failed to load resource: the server responded with a status of 404 (Not Found) http://localhost:3123/autocomplete"
+    ]
+  },
+  "54-mock-landing.jpg": {
+    "file": "54-mock-landing.jpg",
+    "name": "mock-landing",
+    "status": "ok",
+    "about": "Frontend mock mode (no backend): the first page, status pill yellow \"mock\".",
+    "viewport": "1440x900",
+    "appMode": "mock",
+    "light": null,
+    "console": []
+  },
+  "55-mock-status.jpg": {
+    "file": "55-mock-status.jpg",
+    "name": "mock-status",
+    "status": "ok",
+    "about": "Close-up of the status pill in frontend mock mode: yellow dot, \"mock\".",
+    "viewport": "1440x900",
+    "appMode": "mock",
+    "tooltip": "Mock mode: responses are generated in the browser, no backend is called. Set NEXT_PUBLIC_MOCK=0 to use the real one.",
+    "light": null,
+    "console": []
+  },
+  "56-mock-scene.jpg": {
+    "file": "56-mock-scene.jpg",
+    "name": "mock-scene",
+    "status": "ok",
+    "about": "Frontend mock mode with the portrait photo and the \"Left\" preset: the shading is a made-up round dome, not the real face.",
+    "viewport": "1440x900",
+    "appMode": "mock",
+    "shading": "webgl",
+    "sceneSeconds": 1.3,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "57-mock-enhance-running.jpg": {
+    "file": "57-mock-enhance-running.jpg",
+    "name": "mock-enhance-running",
+    "status": "ok",
+    "about": "Frontend mock mode, straight after clicking Enhance.",
+    "viewport": "1440x900",
+    "appMode": "mock",
+    "shading": "webgl",
+    "sceneSeconds": 1.4,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "58-mock-enhance-done.jpg": {
+    "file": "58-mock-enhance-done.jpg",
+    "name": "mock-enhance-done",
+    "status": "ok",
+    "about": "Frontend mock mode after Enhance finished: the right half has more contrast and a soft glow.",
+    "viewport": "1440x900",
+    "appMode": "mock",
+    "shading": "webgl",
+    "sceneSeconds": 1.2,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.12",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  }
+}
