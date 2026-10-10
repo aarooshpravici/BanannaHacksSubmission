@@ -1,0 +1,240 @@
+"""Relight a photo from a movable point light.
+
+photo -> depth -> height field -> surface normals -> diffuse shading + cast
+shadows -> multiply into the photo.
+
+Conventions (everything is in image space, so there are no axis flips):
+  x grows to the right, y grows downward, z grows toward the viewer.
+  Lengths are in units of image width: x in [0, 1], y in [0, H/W].
+  The height field z(x, y) is the depth model's output scaled to [0, relief],
+  with the nearest surface at z = relief and the farthest at z = 0.
+The depth model (Depth Anything V2) outputs larger values for closer surfaces,
+which already matches "z toward the viewer"; no sign flip is applied.
+"""
+
+import threading
+from dataclasses import dataclass
+from functools import lru_cache
+
+import cv2
+import numpy as np
+import torch
+from PIL import Image
+from transformers import AutoImageProcessor, AutoModelForDepthEstimation
+
+from ..critic.embeddings import device
+from ..images import to_rgb
+
+DEPTH_MODEL = "depth-anything/Depth-Anything-V2-Small-hf"
+NORMALS_MODEL = "prs-eth/marigold-normals-v1-1"
+
+_lock = threading.Lock()
+
+
+@lru_cache
+def _depth_model():
+    # CPU on purpose: this small model runs in ~0.3 s on CPU, faster than the
+    # round trip to the Mac GPU, and it keeps the preview free of any GPU need.
+    processor = AutoImageProcessor.from_pretrained(DEPTH_MODEL)
+    model = AutoModelForDepthEstimation.from_pretrained(DEPTH_MODEL).eval()
+    return processor, model
+
+
+def estimate_height(img: Image.Image) -> np.ndarray:
+    """Per-pixel nearness in [0, 1] (1 = closest to the camera), image-sized."""
+    processor, model = _depth_model()
+    inputs = processor(images=to_rgb(img), return_tensors="pt")
+    with _lock, torch.no_grad():
+        raw = model(**inputs).predicted_depth[0].numpy()
+    raw = cv2.resize(raw, img.size, interpolation=cv2.INTER_CUBIC)
+    # Percentiles, not min/max, so one stray pixel cannot squash the range.
+    lo, hi = np.percentile(raw, [1, 99])
+    if hi - lo < 1e-6:
+        return np.zeros_like(raw, dtype=np.float32)
+    return np.clip((raw - lo) / (hi - lo), 0.0, 1.0).astype(np.float32)
+
+
+@lru_cache
+def _normals_model():
+    from diffusers import MarigoldNormalsPipeline
+
+    if device() == "cpu":
+        return MarigoldNormalsPipeline.from_pretrained(NORMALS_MODEL)
+    return MarigoldNormalsPipeline.from_pretrained(NORMALS_MODEL, variant="fp16", torch_dtype=torch.float16).to(device())
+
+
+def estimate_normals(img: Image.Image) -> np.ndarray:
+    """Detailed per-pixel surface normals from Marigold, (H, W, 3), unit length.
+
+    Far more detailed than normals derived from the depth map (it resolves a
+    nose, cheeks, cloth folds), but it is a diffusion model: about 2 s on an
+    Apple GPU, slow on CPU. Returned in this module's convention (y downward);
+    Marigold's own output has y pointing up.
+    """
+    pipe = _normals_model()
+    with _lock:
+        out = pipe(to_rgb(img), num_inference_steps=1, generator=torch.Generator("cpu").manual_seed(0))
+    normals = out.prediction[0].astype(np.float32) * np.array([1, -1, 1], dtype=np.float32)
+    return normals / np.maximum(np.linalg.norm(normals, axis=2, keepdims=True), 1e-6)
+
+
+@dataclass
+class Geometry:
+    """Everything about a photo that does not depend on the light."""
+
+    z: np.ndarray  # (H, W) height toward the viewer, in image widths, 0..relief
+    normals: np.ndarray  # (H, W, 3) unit surface normals (x right, y down, z to viewer)
+    relief: float
+
+
+def build_geometry(
+    height: np.ndarray, *, normals: np.ndarray | None = None, relief: float = 0.3, smooth: float = 1.5
+) -> Geometry:
+    """Turn a nearness map into a height field with normals.
+
+    relief is how deep the scene is treated as being, relative to image width:
+    larger makes cast shadows longer and, for depth-derived normals, surfaces
+    tilt more.
+    normals, if given (from estimate_normals), are used as they are; otherwise
+    normals are derived from the slope of the height field, which is fast but
+    flat-looking because the depth map has little fine detail.
+    smooth is a blur (pixels at 512 width) that removes depth-map noise, which
+    would otherwise show up as speckled shading.
+    """
+    h, w = height.shape
+    sigma = smooth * w / 512
+    if sigma > 0:
+        height = cv2.GaussianBlur(height, (0, 0), sigma)
+    z = height * relief
+    if normals is None:
+        # Slopes with x and y in image widths: a step of one pixel is 1/W.
+        dz_dy, dz_dx = np.gradient(z, 1.0 / w)
+        normals = np.dstack([-dz_dx, -dz_dy, np.ones_like(z)])
+        normals /= np.linalg.norm(normals, axis=2, keepdims=True)
+    elif normals.shape[:2] != (h, w):
+        raise ValueError(f"normals {normals.shape[:2]} do not match height {(h, w)}")
+    return Geometry(z=z.astype(np.float32), normals=normals.astype(np.float32), relief=relief)
+
+
+@dataclass
+class Light:
+    x: float  # 0 = left edge, 1 = right edge (may go outside 0..1)
+    y: float  # 0 = top edge, 1 = bottom edge
+    height: float = 0.5  # distance in front of the nearest surface, in image widths
+    intensity: float = 1.0
+    ambient: float = 0.3  # light that reaches everything, so shadows are not pure black
+    color: tuple[float, float, float] = (1.0, 1.0, 1.0)
+
+
+def _light_position(geom: Geometry, light: Light) -> np.ndarray:
+    h, w = geom.z.shape
+    return np.array([light.x, light.y * h / w, geom.relief + max(light.height, 1e-3)], dtype=np.float32)
+
+
+def _pixel_positions(geom: Geometry) -> np.ndarray:
+    h, w = geom.z.shape
+    xs = (np.arange(w, dtype=np.float32) + 0.5) / w
+    ys = (np.arange(h, dtype=np.float32) + 0.5) / w
+    gx, gy = np.meshgrid(xs, ys)
+    return np.dstack([gx, gy, geom.z])
+
+
+# Cap on how much brighter than the scene centre a surface next to the light can get.
+MAX_FALLOFF = 3.0
+
+
+def diffuse(geom: Geometry, light: Light) -> np.ndarray:
+    """Lambert shading with distance falloff, (H, W).
+
+    Brightness = cos(angle between surface normal and direction to the light),
+    times an inverse-square falloff measured relative to the centre of the
+    scene. So wherever the light is, a surface at the centre that faces it gets
+    exactly 1.0: moving the light changes direction and gradient, not the
+    overall exposure. (A plain inverse-square falloff made the whole photo go
+    dark as soon as the light moved off to one side.)
+    """
+    h, w = geom.z.shape
+    light_pos = _light_position(geom, light)
+    to_light = light_pos - _pixel_positions(geom)
+    dist = np.linalg.norm(to_light, axis=2)
+    cos = np.einsum("hwc,hwc->hw", geom.normals, to_light) / np.maximum(dist, 1e-6)
+    centre = np.array([0.5, 0.5 * h / w, geom.relief / 2], dtype=np.float32)
+    reference = np.linalg.norm(light_pos - centre)
+    falloff = np.minimum((reference / np.maximum(dist, 1e-6)) ** 2, MAX_FALLOFF)
+    return np.clip(cos, 0.0, 1.0) * falloff
+
+
+def shadows(geom: Geometry, light: Light, *, steps: int = 48, max_side: int = 256, softness: float = 0.02) -> np.ndarray:
+    """Cast-shadow map, (H, W): 1 = fully lit, 0 = fully shadowed.
+
+    For every pixel, walk in a straight line toward the light and check whether
+    the height field rises above the line anywhere on the way. Done at reduced
+    resolution and upsampled, since shadows are low-frequency.
+    """
+    full_h, full_w = geom.z.shape
+    scale = min(1.0, max_side / max(full_h, full_w))
+    w, h = max(1, round(full_w * scale)), max(1, round(full_h * scale))
+    z = cv2.resize(geom.z, (w, h), interpolation=cv2.INTER_AREA)
+
+    xs = (np.arange(w, dtype=np.float32) + 0.5) / w
+    ys = (np.arange(h, dtype=np.float32) + 0.5) / w  # widths, so the aspect ratio is kept
+    px, py = np.meshgrid(xs, ys)
+    lx, ly, lz = _light_position(geom, light)
+
+    # The ray can only be blocked while it is below the tallest surface, so stop
+    # each ray where it climbs past z = relief instead of marching all the way.
+    t_end = np.clip((geom.relief - z) / np.maximum(lz - z, 1e-6), 0.0, 1.0)
+    # Skip the first stretch so a surface does not shadow itself.
+    bias = 0.02 * geom.relief
+    occlusion = np.zeros_like(z)
+    for i in range(1, steps + 1):
+        t = t_end * (i / steps)
+        qx, qy, qz = px + (lx - px) * t, py + (ly - py) * t, z + (lz - z) * t
+        surface = cv2.remap(z, qx * w - 0.5, qy * w - 0.5, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+        occlusion = np.maximum(occlusion, np.clip((surface - qz - bias) / softness, 0.0, 1.0))
+
+    lit = cv2.GaussianBlur(1.0 - occlusion, (0, 0), 1.0)
+    return cv2.resize(lit, (full_w, full_h), interpolation=cv2.INTER_LINEAR)
+
+
+def shading_map(geom: Geometry, light: Light, *, cast_shadows: bool = True) -> np.ndarray:
+    """Total light reaching each pixel, (H, W). ambient where unlit; can exceed 1."""
+    direct = diffuse(geom, light)
+    if cast_shadows:
+        direct = direct * shadows(geom, light)
+    return light.ambient + light.intensity * direct
+
+
+def _srgb_to_linear(c: np.ndarray) -> np.ndarray:
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+def _linear_to_srgb(c: np.ndarray) -> np.ndarray:
+    return np.where(c <= 0.0031308, c * 12.92, 1.055 * np.maximum(c, 1e-8) ** (1 / 2.4) - 0.055)
+
+
+def apply_shading(img: Image.Image, shading: np.ndarray, color: tuple[float, float, float] = (1.0, 1.0, 1.0)) -> Image.Image:
+    """Multiply the photo by a shading map, in linear light.
+
+    Photos store brightness on a perceptual (sRGB) curve; multiplying there
+    gives muddy shadows. Converting to linear light first makes "half the
+    light" actually look like half the light. Values above white roll off
+    smoothly instead of clipping.
+    """
+    rgb = np.asarray(to_rgb(img), dtype=np.float32) / 255.0
+    lit = _srgb_to_linear(rgb) * shading[..., None] * np.asarray(color, dtype=np.float32)
+    knee = 0.8
+    over = np.maximum(lit - knee, 0.0)
+    lit = np.where(lit > knee, knee + (1 - knee) * (1 - np.exp(-over / (1 - knee))), lit)
+    out = np.clip(_linear_to_srgb(lit), 0.0, 1.0)
+    return Image.fromarray((out * 255.0 + 0.5).astype(np.uint8))
+
+
+def relight(img: Image.Image, geom: Geometry, light: Light, *, cast_shadows: bool = True) -> Image.Image:
+    return apply_shading(img, shading_map(geom, light, cast_shadows=cast_shadows), light.color)
+
+
+def normals_preview(geom: Geometry) -> Image.Image:
+    """Normals as the usual purple-blue debug image (x->R, up->G, z->B)."""
+    n = geom.normals * np.array([1, -1, 1], dtype=np.float32)
+    return Image.fromarray(((n * 0.5 + 0.5) * 255).astype(np.uint8))

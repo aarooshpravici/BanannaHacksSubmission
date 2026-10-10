@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from .images import ImageError
 from .providers.generation import GenerationError
 from .providers.llm import LLMError
-from .routers import common
+from .routers import common, relight
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -34,3 +34,4 @@ async def provider_failed(_: Request, exc: Exception) -> JSONResponse:
 
 
 app.include_router(common.router)
+app.include_router(relight.router)
