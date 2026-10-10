@@ -46,14 +46,14 @@ Open http://localhost:3000. Out of the box the frontend runs on canned data and 
 | Scoring: image similarity, palette match, rank-and-retry loop | Tests, plus a sanity run on real photos | 85% the code is right; 50% that scores track "looks good" on generated images |
 | Background removal | Ran on a simple test figure | 85% on simple images; unknown on real character art |
 | Relight: depth, normals, shading, shadows, endpoints | 17 tests on shapes with known answers, plus the proof sheets | 85% |
-| Autocomplete: gap detection | 26 tests, 11/12 mockups, stress test (JPEG, resize, blur, noise) | 80% on clean flat designs; 30% on busy or photo-backed designs |
+| Autocomplete: gap detection | 11/12 on my mockups, 27/31 on an independent reviewer's designs, 133/134 on re-exports | 80% on clean flat designs; 30% on busy, photo-backed or table-like designs |
 | Autocomplete: fill, ranking, Poisson blending | Tests with a stand-in generator, plus one real run of two fills | 80% |
 | Character Views: analysis, prompts, checklist, retry | Tests with stand-ins, plus one real run. The retry path has never fired on real output. | 80% |
 | Gemini calls (planner, analyst, checklist, image generation) | Called for real: 4 text paths and 3 image paths each succeeded once | 85% |
 | fal, Replicate and Anthropic calls | Signatures checked against the installed packages and the fal model pages; never run (fal account has no credit, no key for the others) | 55% |
 | Frontend: shared core and three pages | Lint and build pass. I loaded each page in a browser against the real local backend: live relighting with a draggable light, gap detection on a sample poster, character cutout and checklist. The helper that built it measured the browser shader against the server render (mean difference about 1.6 levels out of 255). | 90% for relight; 80% for the other two with real generation, which the frontend has not been run with |
 
-The backend suite is 97 tests passing and 1 expected failure (cards over a photo).
+The backend suite is 139 tests passing and 6 expected failures. Each expected failure is a design the gap detector is known to get wrong, kept in the suite so the limit stays visible.
 
 ## Where the plans were wrong
 
@@ -78,12 +78,41 @@ Because you cannot review the code yourself, I had a separate agent hunt for bug
 
 Not fixed: the spending cap is stored in the cache folder, so deleting `.cache` resets the count.
 
+## Second, wider review (run while you slept)
+
+After the first review I ran a larger one: five reviewers in parallel, each finding then attacked by a second agent trying to disprove it. All 27 findings survived. Three rounds of fixes followed, each checked by another skeptic, and I ran the full suite myself before every commit.
+
+**Gap detection on designs I did not draw.** This was the number I had flagged as untrustworthy, and it was:
+
+| Design set | Before | After |
+|---|---|---|
+| My own 12 mockups | 11 correct | 11 correct |
+| 31 designs drawn by an independent reviewer | 23 correct, 5 false positives | 27 correct, 2 false positives |
+| 10 probes aimed at weak spots | 2 correct | 7 correct |
+| 134 re-exports (JPEG, resized, inside a browser frame) | 124 correct | 133 correct |
+
+The two worst problems are fixed: an invented gap at the end of any complete left- or right-aligned row, and gaps inside framed panels never being examined. What it still gets wrong:
+
+- Elements that touch or share a border (ruled tables, galleries with very thin gutters) are read as one block. No cheap fix.
+- Three of four columns filled from the left cannot be told apart from a centred row missing its last card, so the empty fourth column is reported.
+- Pale borderless cards exported as JPEG are often missed, and so is a pale card with a saturated icon within 16 px of its edge.
+- A plain pale block on a dark page can be reported as an empty box.
+- Cards laid over a photo (from the first night's testing).
+
+**Frontend bugs fixed.** A job stayed on "pending" forever if you switched pages while it ran and came back. Regenerate on the character page could never return a new image. Enhance ignored the cast-shadows toggle. Retry after a failed fill paid for the images again. Undo could show the gaps of a different image.
+
+**Backend bugs fixed.** The fill-alignment step could shear a correctly placed fill on low-detail designs; it now applies only zoom and shift. A server crash was reported in the browser as "cannot reach the backend". An all-black upload crashed the palette code. One stray pixel could make a mask select the whole image.
+
+**Confirmed correct.** The browser's relight shading matches the server within 4 levels out of 255 across 96 cases (sizes, light positions, shadows on and off). The frontend's data shapes match the backend field for field.
+
+**Tried and dropped.** A correction for the faint colour step along hand-drawn masks moved the step to the middle of the mask instead, so it was removed. That step remains a cosmetic limit of brush-drawn masks.
+
 ## Open risks
 
 - **Deadline: Sunday Oct 11, 11:59 PM** (confirmed by Aaroosh). Three of the four plan documents assume Monday, so their timelines are a day too long. The time zone was not stated; plan for EDT. Freeze features by Sunday early afternoon and keep the evening for the video and the 500-word write-up.
 - **Thin-wrapper risk for Character Views.** Gemini did nearly all the work on the test run, and every feature passed first time, so the retry loop (the plan's "caught and fixed" demo moment) had nothing to do. The demo would need harder cases, such as back views or fiddly accessories, to show our part.
 - **One real run each.** See the note under the recommendation table.
-- **My test designs suit my detector.** I drew the autocomplete mockups myself. Real designs are the test that counts. Cards laid over a photo are a known miss.
+- **Gap detection is right on about 27 of 31 unfamiliar synthetic designs, not 11 of 12.** See the second review above for what it still misses. No real designer's file has been tried yet, and the detector's thresholds were tuned on drawings, so expect it to do worse on real files than on these.
 - **Gemini fills take no mask.** The region is pointed out with an outline and the result is pasted back through the real mask. An alignment step now corrects the small zoom and shift Gemini introduces, but it has only been checked on two real outputs. fal's FLUX Fill takes a true mask but has not been run.
 - **The frontend has not been run with real generation.** It was checked against the backend with stand-in generators. The relight page is unaffected, since its live preview uses no hosted service.
 - **The frontend was checked in one browser only**, at desktop width. Safari, Firefox and phones are untested.
