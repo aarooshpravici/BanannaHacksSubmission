@@ -36,6 +36,9 @@ FIXTURE_DIR = Path(__file__).resolve().parents[2] / "fixtures" / "llm"
 # helping layout- or feature-level questions.
 LLM_MAX_SIDE = 1568
 
+# A stalled call must fail, not hang a request or pin a job worker forever.
+LLM_TIMEOUT_SECONDS = 90
+
 
 class LLMError(RuntimeError):
     """The vision LLM call failed in a way the caller should report."""
@@ -120,7 +123,7 @@ def vision_json(
 
 def _ask_anthropic(images: list[Image.Image], prompt: str, schema: type[SchemaT], system: str | None) -> SchemaT:
     """UNTESTED: no Anthropic key was available when this was written."""
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(timeout=LLM_TIMEOUT_SECONDS)
     content = [
         {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": encode_image(img, "PNG")}}
         for img in images
@@ -146,6 +149,9 @@ def _ask_anthropic(images: list[Image.Image], prompt: str, schema: type[SchemaT]
         raise LLMError(f"vision LLM API error {e.status_code}: {e.message}") from e
     except anthropic.APIConnectionError as e:
         raise LLMError("could not reach the vision LLM API") from e
+    except ValidationError as e:
+        # parse() validates the reply itself, so JSON cut off by max_tokens surfaces here.
+        raise LLMError(f"vision LLM returned JSON that does not match {schema.__name__}") from e
 
     if response.stop_reason == "refusal":
         raise LLMError("the vision LLM declined this image")
@@ -156,10 +162,15 @@ def _ask_anthropic(images: list[Image.Image], prompt: str, schema: type[SchemaT]
 
 def _ask_gemini(images: list[Image.Image], prompt: str, schema: type[SchemaT]) -> SchemaT:
     """UNTESTED: no Gemini key was available when this was written."""
+    import httpx
     from google import genai
     from google.genai import errors as genai_errors
+    from google.genai import types as genai_types
 
-    client = genai.Client(api_key=get_settings().gemini_api_key)
+    client = genai.Client(
+        api_key=get_settings().gemini_api_key,
+        http_options=genai_types.HttpOptions(timeout=LLM_TIMEOUT_SECONDS * 1000),
+    )
     try:
         response = client.models.generate_content(
             model=get_settings().gemini_model,
@@ -168,6 +179,10 @@ def _ask_gemini(images: list[Image.Image], prompt: str, schema: type[SchemaT]) -
         )
     except genai_errors.APIError as e:
         raise LLMError(f"Gemini API error {e.code}: {e.message}") from e
+    except httpx.TimeoutException as e:
+        raise LLMError(f"Gemini did not answer within {LLM_TIMEOUT_SECONDS} s") from e
+    except httpx.TransportError as e:
+        raise LLMError("could not reach the Gemini API") from e
     try:
         return schema.model_validate_json(response.text or "")
     except ValidationError as e:

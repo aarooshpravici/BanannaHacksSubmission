@@ -33,6 +33,7 @@ FAL_EDIT_KONTEXT = "fal-ai/flux-pro/kontext"  # alternative with the same job
 REPLICATE_NOVEL_VIEW = "jd7h/zero123plusplus"
 
 FAL_MAX_IMAGES_PER_CALL = 4
+IMAGE_TIMEOUT_SECONDS = 180  # a stalled call must fail, not pin a job worker forever
 
 
 class GenerationError(RuntimeError):
@@ -70,7 +71,11 @@ _spend_lock = threading.Lock()
 
 
 def _charge(meter: str, limit: int) -> None:
-    """Count one paid call against a hard cap, refusing it once the cap is reached."""
+    """Count one paid call against a hard cap, refusing it once the cap is reached.
+
+    Calls are counted when attempted, so a failed call still counts. The count
+    lives in the cache folder: deleting .cache resets it.
+    """
     path = get_settings().cache_dir / "spend.json"
     with _spend_lock:
         spent = json.loads(path.read_text()) if path.exists() else {}
@@ -91,8 +96,10 @@ def gemini_image(prompt: str, images: list[Image.Image] = (), *, variant: int = 
     instruction-based edit. `variant` only separates cache entries, so asking
     for variants 0..n-1 gives n different results.
     """
+    import httpx
     from google import genai
     from google.genai import errors as genai_errors
+    from google.genai import types as genai_types
 
     settings = get_settings()
     _require(bool(settings.gemini_api_key), "GEMINI_API_KEY")
@@ -101,11 +108,17 @@ def gemini_image(prompt: str, images: list[Image.Image] = (), *, variant: int = 
 
     def produce() -> list[Image.Image]:
         _charge("gemini_image", settings.gemini_image_call_limit)
-        client = genai.Client(api_key=settings.gemini_api_key)
+        client = genai.Client(
+            api_key=settings.gemini_api_key, http_options=genai_types.HttpOptions(timeout=IMAGE_TIMEOUT_SECONDS * 1000)
+        )
         try:
             response = client.models.generate_content(model=model, contents=[*[to_rgb(i) for i in images], prompt])
         except genai_errors.APIError as e:
             raise GenerationError(f"Gemini {model} failed ({e.code}): {e.message}") from e
+        except httpx.TimeoutException as e:
+            raise GenerationError(f"Gemini {model} did not answer within {IMAGE_TIMEOUT_SECONDS} s") from e
+        except httpx.TransportError as e:
+            raise GenerationError(f"could not reach Gemini {model}") from e
         for candidate in response.candidates or []:
             for part in (candidate.content.parts if candidate.content else None) or []:
                 if part.inline_data and part.inline_data.data:
@@ -129,7 +142,9 @@ def fal_run(endpoint: str, arguments: dict) -> list[Image.Image]:
     """Run a fal image model and download the images it returns."""
     _require(bool(get_settings().fal_key), "FAL_KEY")
     try:
-        result = fal_client.subscribe(endpoint, arguments=arguments, client_timeout=300)
+        result = fal_client.subscribe(endpoint, arguments=arguments, client_timeout=IMAGE_TIMEOUT_SECONDS)
+    except fal_client.FalClientTimeoutError as e:
+        raise GenerationError(f"fal {endpoint} did not answer within {IMAGE_TIMEOUT_SECONDS} s") from e
     except fal_client.FalClientHTTPError as e:
         raise GenerationError(f"fal {endpoint} failed ({e.status_code}): {e.message}") from e
     except fal_client.FalClientError as e:

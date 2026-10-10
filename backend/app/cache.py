@@ -43,6 +43,8 @@ class ImageCache:
     def set(self, namespace: str, payload: Any, images: list[Image.Image]) -> None:
         folder = self._dir(namespace, payload)
         folder.mkdir(parents=True, exist_ok=True)
+        # Clear the marker first, so an interrupted overwrite is a miss, not a partial hit.
+        (folder / "done").unlink(missing_ok=True)
         for old in folder.glob("*.png"):
             old.unlink()
         for i, img in enumerate(images):

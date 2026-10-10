@@ -3,6 +3,7 @@
 import base64
 import io
 import time
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -133,6 +134,18 @@ def test_image_cache_hit_miss_and_key_order(tmp_path):
     assert c.get("other", {"a": 1, "b": 2}) is None
     c.set("ns/model", {"a": 1, "b": 2}, [blue])  # overwrite replaces, not appends
     assert len(c.get("ns/model", {"a": 1, "b": 2})) == 1
+
+
+def test_interrupted_cache_overwrite_is_a_miss_not_a_partial_hit(tmp_path, monkeypatch):
+    c = ImageCache(tmp_path)
+    red = Image.new("RGB", (4, 4), (255, 0, 0))
+    c.set("ns", {"a": 1}, [red, red, red])
+    real_touch = Path.touch
+    monkeypatch.setattr(Path, "touch", lambda self, *a, **k: (_ for _ in ()).throw(OSError("killed mid-write")))
+    with pytest.raises(OSError):
+        c.set("ns", {"a": 1}, [red])
+    monkeypatch.setattr(Path, "touch", real_touch)
+    assert c.get("ns", {"a": 1}) is None
 
 
 # --- palette --------------------------------------------------------------
