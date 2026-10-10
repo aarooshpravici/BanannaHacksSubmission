@@ -33,10 +33,38 @@ def test_prompt_lists_only_features_visible_from_the_target_view():
     assert "scar over left eye" in front and "yellow backpack" not in front
 
 
-def test_retry_prompt_spells_out_what_was_wrong():
-    retry = T.view_prompt(SPEC, FEATURES, "side", missing=["red scarf"])
-    assert "previous attempt" in retry and retry.rstrip().endswith("red scarf.")
+def test_retry_prompt_separates_left_out_from_wrongly_shown():
+    retry = T.view_prompt(SPEC, FEATURES, "back", missing=["red scarf"], unwanted=["scar over left eye"])
+    left_out, shown = retry.split("The previous attempt showed these")
+    assert "left these out" in left_out and "red scarf" in left_out.split("left these out")[1]
+    assert "leave them out" in shown and "scar over left eye" in shown and "red scarf" not in shown
     assert "previous attempt" not in T.view_prompt(SPEC, FEATURES, "side")
+
+
+def test_retry_feeds_the_critics_verdict_back_into_the_next_prompt(monkeypatch):
+    prompts = []
+    verdicts = iter([
+        [("f0", True, False), ("f1", False, True), ("f2", True, True)],  # scarf missing, scar wrongly shown
+        [("f0", True, True), ("f1", False, False), ("f2", True, True)],
+    ])
+
+    def fake_edit(reference, prompt, **kwargs):
+        prompts.append(prompt)
+        return [Image.new("RGB", (8, 8))]
+
+    def fake_check(candidate, character, features, target_view):
+        items = [T.ChecklistItem(feature_id=i, expected_visible=e, present=p) for i, e, p in next(verdicts)]
+        ok = all(c.present == c.expected_visible for c in items)
+        return {"identity": 1.0 if ok else 0.2, "palette": 1.0, "checklist": 1.0 if ok else 0.3}, items
+
+    monkeypatch.setattr(T.generation, "edit_image", fake_edit)
+    monkeypatch.setattr(T, "check", fake_check)
+    character = T.Character("c1", Image.new("RGBA", (8, 8)), Image.new("RGB", (8, 8)), "front", SPEC)
+    result = T.generate_view(character, "back", FEATURES + [FEATURES[0]], n=1)  # a duplicated feature is ignored
+    assert result.retries == 1 and result.passed and len(prompts) == 2
+    assert "previous attempt" not in prompts[0]
+    assert "left these out" in prompts[1] and "red scarf" in prompts[1].split("left these out")[1].split("showed these")[0]
+    assert "scar over left eye" in prompts[1].split("showed these")[1]
 
 
 @pytest.mark.models

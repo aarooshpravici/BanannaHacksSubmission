@@ -97,7 +97,15 @@ def analyze(img: Image.Image) -> Character:
 # --- generator ------------------------------------------------------------------
 
 
-def view_prompt(spec: CharacterSpec, features: list[Feature], target_view: str, missing: list[str] = ()) -> str:
+def view_prompt(
+    spec: CharacterSpec, features: list[Feature], target_view: str, missing: list[str] = (), unwanted: list[str] = ()
+) -> str:
+    """The instruction for the image model.
+
+    missing and unwanted come from the critic's verdict on the previous
+    attempt: features that should have been visible but were not, and features
+    that were drawn although they cannot be seen from this angle.
+    """
     visible = [f.name for f in features if target_view in f.visible_from]
     prompt = (
         f"Redraw this exact character as {VIEW_PHRASES[target_view]}. Keep the same character: same proportions, "
@@ -107,7 +115,9 @@ def view_prompt(spec: CharacterSpec, features: list[Feature], target_view: str, 
     if visible:
         prompt += " Clearly visible from this angle: " + "; ".join(visible) + "."
     if missing:
-        prompt += " The previous attempt got these wrong, so make sure they are correct this time: " + "; ".join(missing) + "."
+        prompt += " The previous attempt left these out, so make sure they are clearly shown this time: " + "; ".join(missing) + "."
+    if unwanted:
+        prompt += " The previous attempt showed these, which cannot be seen from this angle, so leave them out: " + "; ".join(unwanted) + "."
     return prompt
 
 
@@ -134,6 +144,7 @@ def _check_prompt(features: list[Feature]) -> str:
 
 def check(candidate: Image.Image, character: Character, features: list[Feature], target_view: str):
     """Score one candidate. Returns (scores, checklist) for generate_and_rank."""
+    features = list({f.id: f for f in features}.values())
     expected = {f.id: target_view in f.visible_from for f in features}
     mock = _ChecklistAnswer(checks=[_FeatureCheck(feature_id=f.id, present=expected[f.id]) for f in features])
     answer = vision_json([character.reference, candidate], _check_prompt(features), _ChecklistAnswer, mock=mock)
@@ -157,11 +168,15 @@ def generate_view(
     character: Character, target_view: str, features: list[Feature] | None = None, *, n: int = 3, max_retries: int = 2
 ) -> LoopResult[Image.Image]:
     features = features if features is not None else character.spec.features
+    # One entry per id: a duplicated id would be counted twice by the checklist.
+    features = list({f.id: f for f in features}.values())
     by_id = {f.id: f.name for f in features}
 
     def generate(attempt, best):
-        wrong = [by_id[c.feature_id] for c in best.notes if c.present != c.expected_visible] if best else []
-        prompt = view_prompt(character.spec, features, target_view, wrong)
+        verdict = best.notes if best else []
+        missing = [by_id[c.feature_id] for c in verdict if c.expected_visible and not c.present]
+        unwanted = [by_id[c.feature_id] for c in verdict if c.present and not c.expected_visible]
+        prompt = view_prompt(character.spec, features, target_view, missing, unwanted)
         return generation.edit_image(character.reference, prompt, n=n, seed=attempt)
 
     return generate_and_rank(
