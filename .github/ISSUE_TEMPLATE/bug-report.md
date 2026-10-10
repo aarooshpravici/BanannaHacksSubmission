@@ -17,7 +17,7 @@ labels: bug
 
 **Top-right pill reads** (mock / online, mock providers / online / offline):
 
-**Photo used** (file name from testing/photos, or describe your own):
+**Photo used** (sample name: Portrait / Coffee cup / Cat / Rocket; or file name from testing/photos; or describe your own):
 
 **Light readout** (x, y, Height, Intensity, Ambient, Colour, Cast shadows on or off, Detailed normals on or off):
 

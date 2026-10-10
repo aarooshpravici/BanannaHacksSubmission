@@ -11,7 +11,7 @@ Never write a key, a password or the contents of a `.env` file here.
 - Version (run `git log -1 --format=%h` in the project folder):
 - Computer (model, macOS or Windows version, Apple chip / NVIDIA card / neither):
 - Browser and version:
-- Top-right pill reads (mock / online, mock providers / online):
+- Top-right pill reads (mock / online, mock providers / online / offline):
 - What I ran (smoke test / share A / share B / share C / other):
 
 ## Setup
@@ -56,12 +56,19 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | U-15 | | |
 | U-16 | | |
 | U-17 | | |
+| U-18 | | |
+| U-19 | | |
+| U-20 | | |
+| U-21 | | |
+| U-22 | | |
 | P-01 | | |
 | P-02 | | |
 | P-03 | | |
 | P-04 | | |
 | P-05 | | |
 | P-06 | | |
+| P-07 | | |
+| P-08 | | |
 | L-01 | | |
 | L-02 | | |
 | L-03 | | |
@@ -70,6 +77,9 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | L-06 | | |
 | L-07 | | |
 | L-08 | | |
+| L-09 | | |
+| L-10 | | |
+| L-11 | | |
 | C-01 | | |
 | C-02 | | |
 | C-03 | | |
@@ -83,8 +93,9 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | S-01 | | |
 | S-02 | | |
 | S-03 | | |
-| S-04 | | |
 | S-05 | | |
+| S-06 | | |
+| S-07 | | |
 | K-01 | | |
 | K-02 | | |
 | K-03 | | |
@@ -107,6 +118,7 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | E-16 | | |
 | E-17 | | |
 | E-18 | | |
+| E-19 | | |
 | X-01 | | |
 | X-02 | | |
 | X-03 | | |
@@ -125,6 +137,10 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | W-10 | | |
 | W-11 | | |
 | W-12 | | |
+| W-13 | | |
+| W-14 | | |
+| W-15 | | |
+| W-16 | | |
 | T-01 | | |
 | T-02 | | |
 | T-03 | | |
@@ -147,15 +163,20 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | R-10 | | |
 | R-11 | | |
 | R-12 | | |
-| R-13 | | |
 | R-14 | | |
 | R-15 | | |
+| R-16 | | |
+| R-17 | | |
+| R-18 | | |
+| R-19 | | |
+| R-20 | | |
 | D-01 | | |
 | D-02 | | |
 | D-03 | | |
 | D-04 | | |
 | D-05 | | |
 | D-06 | | |
+| D-07 | | |
 | J-01 | | |
 | J-02 | | |
 | J-03 | | |

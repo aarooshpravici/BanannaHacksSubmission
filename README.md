@@ -1,6 +1,6 @@
 # Relight
 
-Upload a photo and drag a light around it: the highlights and shadows follow live in your browser. The backend works out the photo's depth and surface direction once, and an optional "Enhance" step sends the shaded preview to a hosted image model for a photoreal finish.
+Upload a photo, or click one of four built-in samples, and drag a light around it: the highlights and shadows follow live in your browser. The backend works out the photo's depth and surface direction once, and an optional "Enhance" step sends the shaded preview to a hosted image model for a photoreal finish.
 
 Built for the Banana Hacks hackathon. The earlier three-idea version is on the `overnight-foundation` branch; `docs/overnight-report.md` describes it.
 
@@ -12,9 +12,11 @@ backend/    FastAPI app (Python 3.12)
   app/routers/                the HTTP endpoints: /health, /jobs, /relight/scene, /relight/render, /relight/enhance
   app/providers/generation.py the hosted Enhance call (Gemini or fal.ai), its disk cache and its spending cap
   app/schemas.py              every request and response shape (the API contract)
-  scripts/                    proof_relight.py (sample sheets), live_checks.py (one real Enhance call)
+  scripts/                    proof_relight.py (proof sheets), make_samples.py (bakes the built-in sample scenes),
+                              live_checks.py (one real Enhance call)
   tests/                      pytest suite
 frontend/   Next.js app. One page, served at / and /relight
+  public/samples/             the four sample scenes: photo, depth, normals, thumbnail (written by make_samples.py)
 proofs/     output images from the scripts
 testing/    what to test and how, written for the testers
 tools/      check_secrets.py, which keeps keys out of the repository
@@ -43,7 +45,18 @@ cp .env.local.example .env.local   # set NEXT_PUBLIC_MOCK=0 to use the backend
 npm run dev
 ```
 
-Open http://localhost:3000. With `NEXT_PUBLIC_MOCK=1` the page runs with no backend at all, on a made-up dome shape instead of real depth. The dot in the top-right corner says which mode you are in.
+Open http://localhost:3000. With `NEXT_PUBLIC_MOCK=1` the page runs with no backend at all: an uploaded photo gets a made-up dome shape instead of real depth, while the samples keep their real shape. The dot in the top-right corner says which mode you are in.
+
+## Sample scenes
+
+The four samples on the first page (Portrait, Coffee cup, Cat, Rocket) are static files under `frontend/public/samples/<name>/`, so they open with no backend running. Enhance on a sample still needs the backend. To bake them again from `testing/photos` after changing the depth or normals code:
+
+```bash
+cd backend
+MOCK_MODE=1 .venv/bin/python -m scripts.make_samples
+```
+
+It uses only the local models and writes about 1 MB in total. Commit the changed files.
 
 ## Tests
 

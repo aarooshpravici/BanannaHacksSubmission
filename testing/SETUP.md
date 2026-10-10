@@ -6,6 +6,8 @@ You will keep **two terminal windows** open the whole time: one runs the backend
 
 You need about **12 GB of free disk space** and a good internet connection for the first run.
 
+**In a hurry, or the backend will not install?** Go to [Plan B](#plan-b-no-backend-mock-mode). It needs only git and Node, takes about five minutes, and lets you test most of the app with the four built-in sample photos.
+
 > Honest note: the developer built and ran the app on one Apple-chip Mac, using Chrome. The Windows commands below were written carefully but **have not been run on a Windows computer**. If a command fails, copy the error text into an issue ([Reporting](README.md#reporting-what-you-found)). That is a useful result.
 
 ---
@@ -217,11 +219,13 @@ Look at the top-right pill.
 | Pill | Meaning | What to do |
 | --- | --- | --- |
 | amber dot, **backend: online, mock providers** | Correct. Everything is real except Enhance, which is a stand-in. | Start testing. |
-| red dot, **backend: offline** | The page cannot find the backend. | See [Troubleshooting](#the-pill-says-backend-offline). |
-| yellow dot, **backend: mock** | The frontend was started without the two `NEXT_PUBLIC_` settings, so it is not using the backend at all. | Stop the frontend (Ctrl+C) and start it again with the full command from step 6. |
+| red dot, **backend: offline** | The page cannot find the backend. The four sample photos still work; uploading a photo, Enhance and the Detailed normals switch do not. | See [Troubleshooting](#the-pill-says-backend-offline). |
+| yellow dot, **backend: mock** | The frontend was started without the two `NEXT_PUBLIC_` settings, so it is not using the backend at all. This is [Plan B](#plan-b-no-backend-mock-mode). | If you meant to use the backend: stop the frontend (Ctrl+C) and start it again with the full command from step 6. |
 | green dot, **backend: online** | The backend is running with real Enhance switched on. | Fine only if you meant to. See [Real Enhance](#enhance-mock_mode-and-keys). |
 
 ![Correct pill](screenshots/49-status-online-mock-providers.jpg)
+
+**A ten-second check.** Click the **Portrait** picture under "Or try a sample photo:". The astronaut should open at once with the left of the face bright and the right cheek in shadow. Drag the round sun button: the lighting should follow. If a red bar appears, or the photo does not react, report it (test case W-16 in [TEST_PLAN.md](TEST_PLAN.md)).
 
 Now do the smoke test in [README.md](README.md#10-minute-smoke-test).
 
@@ -229,7 +233,7 @@ Now do the smoke test in [README.md](README.md#10-minute-smoke-test).
 
 **The models are downloaded in step 4.** They are saved in a folder named `.cache/huggingface` in your home folder (the developer measured about 6 GB in total on disk), so the download happens only once.
 
-**If you skipped step 4, the first photo is very slow, once.** The backend then downloads the models while the page waits. The page only shows "Estimating depth and surface normals…" with no progress bar, for 10 to 30 minutes or more. **This is not a freeze.** Terminal 1 shows the download progress bars. The browser may give up waiting before the download ends (Firefox does after about 5 minutes) and show a red bar "Cannot reach the backend at http://localhost:8000. Is it running?". The backend is still downloading. Wait until the progress bars in terminal 1 finish, then click **Retry** in the red bar. Better: stop, and do step 4.
+**If you skipped step 4, the first photo is very slow, once.** The backend then downloads the models while the page waits. The page only shows "Estimating depth and surface normals…" with no progress bar, for 10 to 30 minutes or more. **This is not a freeze.** Terminal 1 shows the download progress bars. The browser may give up waiting before the download ends (Firefox does after about 5 minutes) and show a card on the photo: "This photo could not be analysed", "Cannot reach the backend at http://localhost:8000. Is it running?". The backend is still downloading. Wait until the progress bars in terminal 1 finish, then click **Retry** on the card. Better: stop, and do step 4.
 
 **After that, how long a photo should take** (from choosing the file to the sun appearing):
 
@@ -242,9 +246,11 @@ Now do the smoke test in [README.md](README.md#10-minute-smoke-test).
 
 On Windows, the install above normally gives a processor-only setup even if you have a graphics card. That is fine for testing.
 
-**If photos are slow, turn the Detailed normals switch off.** The switch is in the GEOMETRY panel at the bottom of the sidebar. It only appears after you have chosen a photo, and it starts **on**, so on a slow computer the first photo always begins with the slow model. The switch works even while "Estimating depth and surface normals…" is showing (it is the one control that is not locked then). On a slow computer: choose a photo, scroll the sidebar down at once, and click **Detailed normals** off. The photo starts loading again without the slow model and should be ready in under 5 seconds, with less surface detail. The app keeps the switch off for later photos until you reload the page. **Always write down your times** (test cases D-01 and D-05). We do not know them for your kind of computer.
+**If photos are slow, turn the Detailed normals switch off.** The switch is inside the GEOMETRY panel at the bottom of the sidebar. The panel starts folded into one row: click the row to open it. It only appears after you have chosen a photo, and the switch starts **on**, so on a slow computer the first photo always begins with the slow model. The switch works even while "Estimating depth and surface normals…" is showing (it is the one control that is not locked then). On a slow computer: choose a photo, click the GEOMETRY row at once, and click **Detailed normals** off. The photo starts loading again without the slow model and should be ready in under 5 seconds, with less surface detail. The app keeps the switch off for later photos until you reload the page or click a sample. **Always write down your times** (test cases D-01 and D-05). We do not know them for your kind of computer.
 
-**Dragging the light is always fast.** That part runs in your browser, not in the backend. If dragging stutters, report it (test case D-02).
+**The sample photos never wait.** The four samples on the first page come with their shape already worked out, so they open at once on any computer, even with the backend stopped.
+
+**Dragging the light should always be fast.** That part runs in your browser, on the graphics chip, not in the backend. If dragging or **Sweep** stutters, report it (test cases D-02 and D-07).
 
 **Stopping and restarting.** Press Ctrl+C in each terminal to stop. To start again, repeat only step 5 and step 6 (without `npm ci`). The backend forgets loaded photos when it restarts: reload the page and choose the photo again.
 
@@ -304,7 +310,7 @@ The pill should turn green and read **backend: online**. Hover over it: it shoul
 
 ## Plan B: no backend (mock mode)
 
-If the backend will not install, you can still test the page itself. Start only the frontend:
+Use this if the backend will not install, or if you want the quickest way to try the app. You need only **git** and **Node** (step 1 for your computer, without Python) and the code (step 2). Skip steps 3, 4 and 5. Start only the frontend:
 
 ```bash
 # macOS
@@ -321,9 +327,23 @@ $env:NEXT_PUBLIC_MOCK = "1"
 npm run dev
 ```
 
-The pill reads **backend: mock** (yellow dot). In this mode the app does **not** study your photo. It pretends every photo is a round dome in the middle of the picture, so the lighting looks like a ball pressed into the photo. That is expected. Buttons, sliders, layout, export and the Enhance flow all work, so you can still do groups U, L, C, K, X, W and case R-08. Say "mock mode" in your report. One difference: in this mode a big photo is shrunk to 1536 pixels on its longest side, not 1024 (this matters for case X-02).
+Open http://localhost:3000. The pill reads **backend: mock** (yellow dot).
 
-![Mock mode: the made-up dome](screenshots/56-mock-scene.jpg)
+**Use the four sample photos.** Under the dashed box are four pictures: Portrait, Coffee cup, Cat, Rocket. Click one. It opens at once and is lit for real: each sample comes with its true shape, worked out in advance, so the light, the shadows, the **Sweep** button, the sliders, **Hold to see original** and **Export PNG** all behave exactly as in the full setup. They are the same photos as files `01` to `04` in `testing/photos`.
+
+![Plan B: a sample is lit correctly](screenshots/84-mock-sample.jpg)
+
+**Do not judge the lighting on a photo you upload.** In this mode the app cannot study an uploaded file. It pretends every uploaded photo is a round dome in the middle of the picture, so the lighting looks like a ball pressed into the photo. That is expected. Uploading is still useful for testing the dashed box, the error messages and the layout.
+
+![Plan B: an uploaded file gets a made-up dome](screenshots/56-mock-scene.jpg)
+
+What you can test this way: the smoke test (click **Portrait** in step 2), case W-16 (the most wanted one), the sample cases U-05 and U-18 to U-21, and groups L, C, S, K, X and W, using the samples wherever a case names one of the four main test photos. Group U also works, with the dome. What you cannot test: the loading screen, the failed-load card, and anything that says it needs the backend. Mark those NOT RUN.
+
+Three differences in this mode. **Enhance** finishes in about 4 seconds and returns a copy with a little more contrast and a soft glow; nothing is sent anywhere. The **Detailed normals** switch: on an uploaded file it changes nothing visible. **Do not click it on a sample in this mode.** The sample then loses its real shape and is lit as the round dome. To get it back, click **New photo** and click the sample again. An uploaded big photo is shrunk to 1536 pixels on its longest side, not 1024 (this matters for case X-02).
+
+Say "Plan B" or "mock mode" in your report.
+
+**A second way to use the samples.** In the full setup, the samples also work while the backend is stopped (pill **backend: offline**). Test cases R-16 to R-18 cover that.
 
 ## Troubleshooting
 
@@ -333,6 +353,7 @@ The pill reads **backend: mock** (yellow dot). In this mode the app does **not**
 
 1. Look at terminal 1. Is the backend still running, and did it print `Uvicorn running on http://127.0.0.1:8000`? If it shows an error, read the next sections.
 2. Open http://localhost:8000/health in the browser. You should see text starting `{"ok":true,"mock_mode":true`. If you do, the backend is fine: wait 10 seconds (the pill rechecks every 10 seconds) or reload the page.
+   Meanwhile the four sample photos on the first page still work.
 3. If `/health` works at http://127.0.0.1:8000/health but not at `localhost`, restart the frontend with `http://127.0.0.1:8000` as the `NEXT_PUBLIC_API_URL` value.
 4. If you started the backend on another port, the frontend's `NEXT_PUBLIC_API_URL` must use the same port. Changes to it need a frontend restart.
 
@@ -367,17 +388,17 @@ This appears if the project folder is inside Desktop or Documents. Click **Allow
 
 ### The first photo seems stuck on "Estimating depth and surface normals…"
 
-Almost always the one-time model download, because step 4 was skipped or did not finish. Check terminal 1 for progress bars. See [What to expect](#what-to-expect). If terminal 1 shows a red error instead, copy the last 20 lines into an issue. If the download fails with a message about rate limits, wait a few minutes and click **Retry** on the page.
+Almost always the one-time model download, because step 4 was skipped or did not finish. Check terminal 1 for progress bars. See [What to expect](#what-to-expect). If terminal 1 shows a red error instead, copy the last 20 lines into an issue. If the download fails with a message about rate limits, wait a few minutes and click **Retry** on the card over the photo.
 
-### A red bar says "Cannot reach the backend" while terminal 1 still shows download bars
+### A card says "This photo could not be analysed" while terminal 1 still shows download bars
 
-The browser stopped waiting, but the backend is still downloading the models. Do not close anything. Wait for the bars in terminal 1 to finish, then click **Retry** in the red bar. To avoid this, do step 4 (Download the models) before loading a photo.
+The card's second line reads "Cannot reach the backend…". The browser stopped waiting, but the backend is still downloading the models. Do not close anything. Wait for the bars in terminal 1 to finish, then click **Retry** on the card. To avoid this, do step 4 (Download the models) before loading a photo.
 
 ### A red bar says "Live shading is unavailable (…). Showing server renders instead…"
 
 ![No WebGL](screenshots/52-no-webgl-fallback.jpg)
 
-Your browser cannot use the graphics chip (a feature called WebGL2). The app still works, but each move of the light is drawn by the backend and arrives a moment late. Try, in this order: use Google Chrome; in Chrome open `chrome://settings/system` and make sure "Use graphics acceleration when available" is on, then restart Chrome; update Chrome. Whether or not that fixes it, report it with your computer model and browser version (test case R-06).
+Your browser cannot use the graphics chip the way the app needs (the usual words in the brackets are "WebGL2 is not available in this browser"). With the backend running the app still works, but each move of the light is drawn by the backend and arrives a moment late. Without the backend (Plan B, or pill "offline") the photo cannot be relit at all. Try, in this order: use Google Chrome; in Chrome open `chrome://settings/system` and make sure "Use graphics acceleration when available" is on, then restart Chrome; update Chrome. Whether or not that fixes it, report it with your computer model, browser version and the exact words in the brackets (test cases W-16 and R-06).
 
 ### `pip install` fails
 
