@@ -8,12 +8,15 @@ Run from backend/:
     .venv/bin/python -m scripts.live_checks inpaint plan    # only the named checks
     .venv/bin/python -m scripts.live_checks views --character path/to/drawing.png
 
-Checks, the key each needs, and roughly what it costs:
-    inpaint  FAL_KEY         3 FLUX Fill images of the missing pricing card  (~$0.15)
-    enhance  FAL_KEY         1 IC-Light relight of the portrait preview       (~$0.10)
-    views    FAL_KEY         2 edits of a character drawing (needs --character)
-    plan     GEMINI_API_KEY  1 vision call: the planner on the pricing mockup (free tier)
+Checks (image checks use whichever image service is active: Gemini if it has a
+key, otherwise fal; see IMAGE_PROVIDER in .env):
+    inpaint  2 fills of the missing pricing card, ranked           (2 image calls)
+    enhance  1 realistic re-render of the relit portrait preview   (1 image call)
+    views    1 side view of a character drawing. Pass --character path.png to
+             use your own drawing; otherwise one is generated first (1 or 2 image calls)
+    plan     the planner on the pricing mockup                      (1 text call)
 Results are cached, so re-running a check that already worked costs nothing.
+Gemini image calls are capped by GEMINI_IMAGE_CALL_LIMIT (see .cache/spend.json).
 Output images go to proofs/live/.
 """
 
@@ -62,7 +65,7 @@ def check_inpaint() -> None:
         'the plan name "Scale", the price "$99" in large dark text, four thin grey lines of body text, and a wide '
         "pink button at the bottom. Flat UI design, same size and spacing as its neighbours."
     )
-    fills = A.fill(img, A.gap_mask(gap, img.size), prompt, n=3, references=list(gap.siblings))
+    fills = A.fill(img, A.gap_mask(gap, img.size), prompt, n=2, references=list(gap.siblings))
     tiles = [("original", img)]
     for i, f in enumerate(fills):
         s = f.scores
@@ -85,20 +88,39 @@ def check_enhance() -> None:
     print("   LOOK AT: is the light still coming from the left, and is it still the same person?")
 
 
+CHARACTER_PROMPT = (
+    "A full-body front view of an original cartoon character for a video game: a young explorer with short "
+    "teal hair, round orange goggles pushed up on the forehead, a mustard-yellow jacket, a red scarf, a brown "
+    "satchel on a strap across the chest, dark trousers and white boots. Flat colors, clean outlines, standing "
+    "in a neutral pose, centered on a plain white background, no text."
+)
+
+
 def check_views(character_path: str | None) -> None:
     from app.ideas import turnaround as T
     from app.providers import generation
 
-    if not character_path:
+    if character_path:
+        drawing = Image.open(character_path)
+    elif generation.provider() == "gemini":
+        drawing = generation.gemini_image(CHARACTER_PROMPT)
+    else:
         print("   SKIPPED: pass --character path/to/drawing.png (any single character on a plain background)")
         return
-    character = T.analyze(Image.open(character_path))
+    character = T.analyze(drawing)
+    print(f"   analyst: source view {character.source_view}; {character.spec.summary}")
+    for f in character.spec.features:
+        print(f"     - {f.name}  (visible from {', '.join(f.visible_from)}{'; critical' if f.critical else ''})")
     prompt = T.view_prompt(character.spec, character.spec.features, "side")
-    tiles = [("input", character.reference)]
-    for name, model in (("nano-banana", generation.FAL_EDIT), ("kontext", generation.FAL_EDIT_KONTEXT)):
-        out = generation.edit_image(character.reference, prompt, n=1, model=model)[0]
-        tiles.append((f"{name}, identity {T.embeddings.image_similarity(character.reference, out):.2f}", out))
-    _sheet(tiles, OUT / "character_side_view.jpg")
+    side = generation.edit_image(character.reference, prompt, n=1)[0]
+    scores, checklist = T.check(side, character, character.spec.features, "side")
+    names = {f.id: f.name for f in character.spec.features}
+    for c in checklist:
+        mark = "ok  " if c.present == c.expected_visible else "WRONG"
+        print(f"     [{mark}] {names[c.feature_id]}: expected {'visible' if c.expected_visible else 'hidden'}, "
+              f"{'present' if c.present else 'absent'}")
+    label = f"side view: identity {scores['identity']:.2f} palette {scores['palette']:.2f} checklist {scores['checklist']:.2f}"
+    _sheet([("input (front)", character.reference), (label, side)], OUT / "character_side_view.jpg")
     print("   LOOK AT: is it a true side view, and is it still the same character?")
 
 
@@ -122,11 +144,14 @@ if __name__ == "__main__":
     character = args[args.index("--character") + 1] if "--character" in args else None
     wanted = [a for a in args if a in ("inpaint", "enhance", "views", "plan")]
     have = get_settings().configured()
+    from app.providers.generation import provider
+
+    image_key = provider()
     checks = [
-        ("inpaint", "fal", check_inpaint),
-        ("enhance", "fal", check_enhance),
-        ("views", "fal", lambda: check_views(character)),
-        ("plan", "gemini" if not have["anthropic"] else "anthropic", check_plan),
+        ("inpaint", image_key, check_inpaint),
+        ("enhance", image_key, check_enhance),
+        ("views", image_key, lambda: check_views(character)),
+        ("plan", "anthropic" if have["anthropic"] else "gemini", check_plan),
     ]
     failed = 0
     for name, provider, fn in checks:
