@@ -8,9 +8,13 @@ with no key.
 Endpoint input fields were checked against the fal model pages on 2026-10-10.
 """
 
+import io
+import json
 import logging
+import threading
 from typing import Callable
 
+import cv2
 import fal_client
 import numpy as np
 import replicate
@@ -54,6 +58,73 @@ def _cached(namespace: str, payload: dict, produce: Callable[[], list[Image.Imag
     return images
 
 
+def provider() -> str:
+    """Which service makes images for this run: "gemini" or "fal"."""
+    settings = get_settings()
+    if settings.image_provider != "auto":
+        return settings.image_provider
+    return "gemini" if settings.gemini_api_key else "fal"
+
+
+_spend_lock = threading.Lock()
+
+
+def _charge(meter: str, limit: int) -> None:
+    """Count one paid call against a hard cap, refusing it once the cap is reached."""
+    path = get_settings().cache_dir / "spend.json"
+    with _spend_lock:
+        spent = json.loads(path.read_text()) if path.exists() else {}
+        if spent.get(meter, 0) >= limit:
+            raise GenerationError(
+                f"spending cap reached: {limit} {meter} calls already made. "
+                f"Raise {meter.upper()}_CALL_LIMIT in .env to allow more."
+            )
+        spent[meter] = spent.get(meter, 0) + 1
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(spent))
+
+
+def gemini_image(prompt: str, images: list[Image.Image] = (), *, variant: int = 0, fresh: bool = False) -> Image.Image:
+    """Generate or edit an image with Gemini's image model ("Nano Banana").
+
+    With no input images this is text-to-image; with images it is an
+    instruction-based edit. `variant` only separates cache entries, so asking
+    for variants 0..n-1 gives n different results.
+    """
+    from google import genai
+    from google.genai import errors as genai_errors
+
+    settings = get_settings()
+    _require(bool(settings.gemini_api_key), "GEMINI_API_KEY")
+    model = settings.gemini_image_model
+    payload = {"prompt": prompt, "images": [to_data_url(to_rgb(i), "PNG") for i in images], "variant": variant}
+
+    def produce() -> list[Image.Image]:
+        _charge("gemini_image", settings.gemini_image_call_limit)
+        client = genai.Client(api_key=settings.gemini_api_key)
+        try:
+            response = client.models.generate_content(model=model, contents=[*[to_rgb(i) for i in images], prompt])
+        except genai_errors.APIError as e:
+            raise GenerationError(f"Gemini {model} failed ({e.code}): {e.message}") from e
+        for candidate in response.candidates or []:
+            for part in (candidate.content.parts if candidate.content else None) or []:
+                if part.inline_data and part.inline_data.data:
+                    img = Image.open(io.BytesIO(part.inline_data.data))
+                    img.load()
+                    return [img.convert("RGB")]
+        raise GenerationError(f"Gemini {model} returned no image")
+
+    return _cached(f"gemini/{model}", payload, produce, fresh)[0]
+
+
+def _outlined(image: Image.Image, mask: np.ndarray) -> Image.Image:
+    """The image with the masked region outlined in magenta, to point an edit model at it."""
+    out = np.asarray(image).copy()
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cv2.drawContours(out, contours, -1, (255, 0, 255), max(3, round(0.005 * max(out.shape[:2]))))
+    return Image.fromarray(out)
+
+
 def fal_run(endpoint: str, arguments: dict) -> list[Image.Image]:
     """Run a fal image model and download the images it returns."""
     _require(bool(get_settings().fal_key), "FAL_KEY")
@@ -81,6 +152,21 @@ def inpaint(
     image = to_rgb(image)
     if get_settings().mock_mode:
         return _mock_inpaint(image, mask, n)
+    if provider() == "gemini":
+        # Gemini takes no mask, so the region is pointed out with an outline.
+        # The caller composites the result back through the real mask, so
+        # whatever the model does outside the region is discarded.
+        instruction = (
+            "Image 1 is a design with something missing. Image 2 is the same design with the missing region "
+            f"outlined in magenta. Return image 1 with only that region filled in with: {prompt} "
+            "Keep the same size and framing, keep everything outside the region exactly as it is, and do not "
+            "draw the magenta outline."
+        )
+        marked = _outlined(image, mask)
+        return [
+            gemini_image(instruction, [image, marked], variant=i, fresh=fresh).resize(image.size, Image.LANCZOS)
+            for i in range(n)
+        ]
     base = {
         "prompt": prompt,
         "image_url": to_data_url(image, "PNG"),
@@ -111,6 +197,14 @@ def relight_enhance(
     image = to_rgb(image)
     if get_settings().mock_mode:
         return image
+    if provider() == "gemini":
+        instruction = (
+            "This photo was relit by a rough shading algorithm. Re-render it as a natural, realistic photograph "
+            "with physically plausible light and shadow. Keep the light coming from exactly the same direction "
+            "and with the same brightness pattern as shown, and keep the subject, pose, framing and colors "
+            f"unchanged. {prompt}"
+        )
+        return gemini_image(instruction, [image], fresh=fresh).resize(image.size, Image.LANCZOS)
     arguments = {
         "prompt": prompt,
         "image_url": to_data_url(image, "PNG"),
@@ -128,11 +222,13 @@ def edit_image(
     """Edit an image by instruction while keeping its subject, e.g. "show this
     character from the side". Returns n results.
 
-    UNTESTED: no FAL_KEY was available when this was written.
+    The fal path is UNTESTED: the fal account had no credit when this was written.
     """
     image = to_rgb(image)
     if get_settings().mock_mode:
         return [image.transpose(Image.FLIP_LEFT_RIGHT) for _ in range(n)]
+    if provider() == "gemini":
+        return [gemini_image(prompt, [image], variant=(seed or 0) * 100 + i, fresh=fresh) for i in range(n)]
     arguments: dict = {"prompt": prompt, "num_images": n, "output_format": "png"}
     if model == FAL_EDIT_KONTEXT:
         arguments["image_url"] = to_data_url(image, "PNG")

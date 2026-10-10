@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     # from ai.google.dev/gemini-api/docs/models as of 2026-10-10.
     gemini_model: str = "gemini-3.8-flash"
     gemini_image_model: str = "gemini-3.1-flash-image"
+
+    # Which service makes images: "gemini", "fal", or "auto" (Gemini if it has
+    # a key, otherwise fal).
+    image_provider: str = "auto"
+    # Hard cap on paid Gemini image generations, counted across runs in
+    # .cache/spend.json. Raise it deliberately; cached results do not count.
+    gemini_image_call_limit: int = 10
     cache_dir: Path = REPO_ROOT / ".cache"
 
     def configured(self) -> dict[str, bool]:
