@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { HowItWorks } from "./HowItWorks";
 import { BananaMark } from "./icons";
 import { BACKEND_UNREACHABLE_EVENT, getHealth, isAbort } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -44,11 +45,14 @@ function BackendStatus() {
   let dot = "bg-zinc-500";
   let prefix = "backend:";
   let label = "checking";
+  // On a phone the bar also has to hold the "How it works" button, so a long label gives way to one word there. The full text stays in the tooltip.
+  let shortLabel: string | null = null;
   let title = `Checking ${API_URL}`;
   if (status.kind === "demo") {
     dot = "bg-emerald-400";
     prefix = "demo:";
     label = "runs in your browser";
+    shortLabel = "demo";
     title = "Static demo: the sample photos are shaded entirely in your browser and no server is contacted. Uploading your own photo and Enhance need the Relight server.";
   } else if (status.kind === "mock") {
     dot = "bg-accent";
@@ -59,6 +63,7 @@ function BackendStatus() {
     const listed = providers.map(([name, ready]) => `${name}: ${ready ? "ready" : "no key"}`).join(", ");
     dot = status.health.mock_mode ? "bg-amber-400" : "bg-emerald-400";
     label = status.health.mock_mode ? "online, mock providers" : "online";
+    if (status.health.mock_mode) shortLabel = "online";
     title = `Backend at ${API_URL}${listed ? ` (${listed})` : ""}`;
   } else if (status.kind === "offline") {
     dot = "bg-rose-500";
@@ -67,15 +72,16 @@ function BackendStatus() {
   }
 
   return (
-    <div title={title} className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-zinc-300">
-      <span className="relative flex h-2 w-2">
+    <div title={title} className="flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-zinc-300">
+      <span className="relative flex h-2 w-2 shrink-0">
         {status.kind !== "offline" && status.kind !== "checking" && (
           <span className={cn("absolute inline-flex h-full w-full animate-ping rounded-full opacity-50", dot)} />
         )}
         <span className={cn("relative inline-flex h-2 w-2 rounded-full", dot)} />
       </span>
       <span className="hidden sm:inline">{prefix}</span>
-      <span className="font-medium text-zinc-100">{label}</span>
+      <span className={cn("truncate font-medium text-zinc-100", shortLabel && "hidden sm:inline")}>{label}</span>
+      {shortLabel && <span className="font-medium text-zinc-100 sm:hidden">{shortLabel}</span>}
     </div>
   );
 }
@@ -83,13 +89,14 @@ function BackendStatus() {
 export function TopNav() {
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-white/[0.08] bg-ink/80 px-4 backdrop-blur-xl">
-      <Link href="/" className="mr-auto flex items-center gap-2 rounded-lg py-1 pr-2 text-sm font-semibold tracking-tight text-white">
+      <Link href="/" className="mr-auto flex shrink-0 items-center gap-2 rounded-lg py-1 pr-2 text-sm font-semibold tracking-tight text-white">
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-black">
           <BananaMark className="h-4 w-4" />
         </span>
         <span>Relight</span>
         <span className="hidden font-normal text-zinc-500 sm:inline">Banana Hacks 2026</span>
       </Link>
+      <HowItWorks />
       <BackendStatus />
     </header>
   );
