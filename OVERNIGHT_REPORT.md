@@ -80,7 +80,7 @@ Not fixed: the spending cap is stored in the cache folder, so deleting `.cache` 
 
 ## Open risks
 
-- **Deadline.** The relight doc says Sunday Oct 11, 11:59 PM EDT; the other plans say Monday. Unconfirmed.
+- **Deadline: Sunday Oct 11, 11:59 PM** (confirmed by Aaroosh). Three of the four plan documents assume Monday, so their timelines are a day too long. The time zone was not stated; plan for EDT. Freeze features by Sunday early afternoon and keep the evening for the video and the 500-word write-up.
 - **Thin-wrapper risk for Character Views.** Gemini did nearly all the work on the test run, and every feature passed first time, so the retry loop (the plan's "caught and fixed" demo moment) had nothing to do. The demo would need harder cases, such as back views or fiddly accessories, to show our part.
 - **One real run each.** See the note under the recommendation table.
 - **My test designs suit my detector.** I drew the autocomplete mockups myself. Real designs are the test that counts. Cards laid over a photo are a known miss.
@@ -102,7 +102,7 @@ Not fixed: the spending cap is stored in the cache folder, so deleting `.cache` 
 ## Needs you
 
 1. **Pick the idea** with your team, using the proof images above.
-2. **Confirm the deadline and GPU credits** in the hackathon Discord.
+2. **Ask in the hackathon Discord** whether the deadline is EDT or AoE, and whether GPU credits exist.
 3. **Decide the Gemini image budget.** One call is left under the cap. To allow more, set `GEMINI_IMAGE_CALL_LIMIT` in `.env` to the new total.
 4. **Collect real test images** for the chosen idea and try them: real designs for Autocomplete, real character drawings (including back views) for Character Views, portraits and objects for Relight.
 5. **Have each teammate install the secret check** after cloning (one line, at the top of `tools/check_secrets.py`). The repo is public.
