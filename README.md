@@ -16,6 +16,7 @@ backend/    FastAPI app (Python 3.12)
                               live_checks.py (one real Enhance call)
   tests/                      pytest suite
 frontend/   Next.js app. One page, served at / and /relight
+  out/                        the static demo, written by `npm run build:demo` (see "Static demo")
   public/samples/             the four sample scenes: photo, depth, normals, thumbnail (written by make_samples.py)
 proofs/     output images from the scripts
 testing/    what to test and how, written for the testers
@@ -46,6 +47,15 @@ npm run dev
 ```
 
 Open http://localhost:3000. With `NEXT_PUBLIC_MOCK=1` the page runs with no backend at all: an uploaded photo gets a made-up dome shape instead of real depth, while the samples keep their real shape. The dot in the top-right corner says which mode you are in.
+
+## Static demo
+
+```bash
+cd frontend
+NEXT_PUBLIC_BASE_PATH=/BanannaHacksSubmission npm run build:demo   # leave the variable out for a site at the root of its address
+```
+
+This writes a plain static site to `frontend/out/`, for a host with no server of ours (GitHub Pages, say), so a judge can open the app from a link. Only the four samples work in it: uploading and Enhance are switched off and the page says why. Upload everything inside `out/`, including the hidden `.nojekyll`. A build only works at the path it was built for; `frontend/README.md` has the details.
 
 ## Sample scenes
 

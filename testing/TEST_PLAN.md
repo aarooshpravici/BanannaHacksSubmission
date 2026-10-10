@@ -4,25 +4,27 @@ Every test case has an ID (for example `L-03`), numbered steps, the expected res
 
 ## How to use this plan
 
-- **Standard start.** Unless a case says otherwise: the app runs as in [SETUP.md](SETUP.md), the top-right pill reads **backend: online, mock providers**, the photo file `testing/photos/01-portrait-astronaut.jpg` is loaded through the dashed box, and you have clicked **Reset** in the LIGHT panel. The light is then at x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, with **Cast shadows** on.
+- **Standard start.** Unless a case says otherwise: the app runs as in [SETUP.md](SETUP.md), the top-right pill reads **backend: online, mock providers**, the photo file `testing/photos/01-portrait-astronaut.jpg` is loaded through the dashed box, and you have clicked **Reset light** in the LIGHT panel. The light is then at x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, with **Cast shadows** on.
 - **No backend?** If the pill reads "backend: mock" (Plan B in SETUP) or "backend: offline", click a sample thumbnail wherever a case says to load a test photo: **Portrait** for `01-portrait-astronaut.jpg`, **Coffee cup** for `02-object-coffee.jpg`, **Cat** for `03-animal-cat.jpg`, **Rocket** for `04-dark-rocket.jpg`. They are the same four photos with the same shape data, and they need no backend. Cases that need another photo file, the loading screen or the backend cannot be run that way: mark them NOT RUN.
+- **Hosted demo?** If you were given a web address for the static demo (the pill reads "demo: runs in your browser"), do group H. The demo has only the four samples. It cannot take a photo of your own, and Enhance is switched off there.
 - **Recording results.** On GitHub, use the "Report a finished test run" link in [README.md](README.md#reporting-what-you-found) and write one line per case. Only if you cannot use GitHub, fill in a copy of [results/TEMPLATE.md](results/TEMPLATE.md). Mark each case **PASS** (matches "Expected"), **FAIL** (does not; open a bug issue) or **NOT RUN**.
-- **Screenshots** were all retaken on Saturday Oct 10 (afternoon), on a Mac in Chrome, with a 1440 x 900 window unless the case says otherwise. Where a screenshot shows an address with port 8123, yours says 8000. Small differences in size and position on your screen are normal. Different words, missing parts, or lighting on the wrong side are not.
+- **Screenshots** (103 of them) were all retaken on Saturday Oct 10 (evening), on a Mac in Chrome, with a 1440 x 900 window unless the case says otherwise. Where a screenshot shows an address with port 8123, yours says 8000. Small differences in size and position on your screen are normal. Different words, missing parts, or lighting on the wrong side are not.
 - **Sizes mean the page area**, not the whole window: the part below the browser's tabs and address bar. An ordinary 1440 x 900 window has a page area about 800 pixels high. Below 832 the grey helper lines under Height, Ambient and Cast shadows are not shown (they become hover text). That is expected, and the screenshots show them only because they were taken with a page area of exactly 1440 x 900. To get an exact page size use Chrome's F12 device toolbar, as in W-13.
-- **The x and y numbers.** x 0.00 is the photo's left edge and 1.00 its right edge; y 0.00 is the top and 1.00 the bottom. Numbers below 0 or above 1 mean the sun is outside the photo. The sun cannot leave the stage, so the numbers a preset gives depend on the window size and the photo's shape: **Left** reads x -0.10 on the square astronaut in a 1440 x 900 window but x -0.04 on the wider coffee, cat and rocket photos. That is expected.
+- **The x and y numbers.** x 0.00 is the photo's left edge and 1.00 its right edge; y 0.00 is the top and 1.00 the bottom. Numbers below 0 or above 1 mean the light is outside the photo. **A preset always gives the same numbers**, on every window and every photo: **Left** x -0.10, y 0.40; **Right** x 1.10, y 0.40; **Top** x 0.50, y -0.15. If that point lies beyond the edge of the stage, the sun is drawn at the stage's edge and the readout still shows the preset's numbers. A drag or an arrow key is different: it stops at the stage's edge, and the readout shows where it stopped.
+- **Where an Enhance error shows.** On a window 1024 pixels wide or more, a failed Enhance shows a red bar **above the photo**. On a narrower window (a phone) the same message is a red box inside the ENHANCE panel, under the button. The cases say "above the photo"; on a phone look in the ENHANCE panel (R-21).
 - **GEOMETRY is folded.** The GEOMETRY panel at the bottom of the sidebar starts as a single row. Where a case says "open GEOMETRY", click that row.
 - **Known issues** are listed near the top of [PENDING.md](PENDING.md#already-known-no-need-to-report), under "Already known: no need to report". Read that list once before you start. Do not report those again unless they are worse than described.
 - **Test photos** are in the `testing/photos` folder of the project. Where that is on your disk: see the top of the smoke test in [README.md](README.md#10-minute-smoke-test).
 - **"Developer note: possible bug"** under a case means: the Expected text says what the code does today, but the developer suspects that behaviour is wrong. If you see what Expected describes, mark PASS **and** open a bug issue saying you saw it and how much it bothered you.
 - **Cases written from the code.** Cases without a screenshot were not run by the developer. Their Expected text was read from the program code. If the app does something else, that is a FAIL worth reporting.
 
-Groups: [U Upload](#u-upload) · [P Scene preparation](#p-scene-preparation) · [L Moving the light](#l-moving-the-light) · [C Controls](#c-controls) · [S Shadows](#s-shadows) · [K Compare](#k-compare-with-the-original) · [E Enhance](#e-enhance) · [X Export](#x-export) · [W Layout](#w-layout-and-window-sizes) · [T Kinds of photos](#t-kinds-of-photos) · [R Errors](#r-error-handling) · [D Speed](#d-speed) · [Q Picture quality](#q-picture-quality-human-judgement) · [J Judge](#j-what-a-judge-would-try)
+Groups: [U Upload](#u-upload) · [P Scene preparation](#p-scene-preparation) · [L Moving the light](#l-moving-the-light) · [C Controls](#c-controls) · [S Shadows](#s-shadows) · [K Compare](#k-compare-with-the-original) · [E Enhance](#e-enhance) · [X Export](#x-export) · [W Layout](#w-layout-and-window-sizes) · [T Kinds of photos](#t-kinds-of-photos) · [R Errors](#r-error-handling) · [D Speed](#d-speed) · [Q Picture quality](#q-picture-quality-human-judgement) · [J Judge](#j-what-a-judge-would-try) · [H Hosted demo](#h-hosted-demo-static-build)
 
 ---
 
 ## U. Upload
 
-Start each case on the first page with no photo (click **New photo** if a photo is loaded).
+Start each case on the first page with no photo (click **New photo** if a photo is loaded). On the static demo there is no dashed box; its first page is covered by H-01 and H-02.
 
 ### U-01 First page
 
@@ -80,11 +82,13 @@ Start each case on the first page with no photo (click **New photo** if a photo 
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
-### U-07 New photo starts over
+### U-07 New photo starts clean
 
-1. Load the astronaut. Click **Low and warm**. Turn **Cast shadows** off. Type `test` in the ENHANCE text box. 2. Click **New photo** (top right of the stage). 3. Choose `02-object-coffee.jpg`.
+1. Load the astronaut **file**. Click **Low and warm**. Turn **Cast shadows** off. Type `test` in the ENHANCE text box. Open GEOMETRY and click **Detailed normals** off; wait for loading to finish. 2. Click **New photo** (top right of the stage). 3. Choose `02-object-coffee.jpg`. Open GEOMETRY (it is folded again).
 
-**Expected:** step 2 returns to the first page. After step 3 the coffee photo shows with the light back at x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral. **Cast shadows stays off** and the text box still says `test` (the app keeps those two; this is a known issue, say in the note if it surprised you).
+**Expected:** step 2 returns to the first page. After step 3 the coffee photo shows and **every** control is back where a fresh page starts: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral with a white dot, **Cast shadows on** (yellow). The ENHANCE text box is **empty** and shows its grey words "Optional: a mood, such as golden hour". **Detailed normals is on** (yellow) and the Normals picture is the detailed kind. Nothing from the first photo is carried over. (Before this round Cast shadows, the text and Detailed normals were kept. If any of them is kept now, that is a FAIL.) Without a backend: use the **Portrait** and **Coffee cup** samples and leave out the Detailed normals part. (The screenshot was taken in a tall 1440 x 1300 window so that the whole sidebar shows.)
+
+![U-07 after the second photo](screenshots/91-new-photo-starts-clean.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -221,7 +225,7 @@ Use whatever of these you have or can make. Skip the rest and say which you skip
 
 1. Open the first page and wait until the four thumbnails show. 2. Stop the **frontend**: click terminal 2 and press Ctrl+C. Do not reload the page. 3. Click the **Coffee cup** thumbnail. 4. Click the X on the red bar. 5. Start the frontend again (SETUP step 6, without `npm ci`) and reload the page.
 
-**Expected:** step 3: the page stays on the first page. A red bar appears under the thumbnails. In Chrome it reads "Failed to fetch" (a known issue: this is the browser's own wording, not ours). Other browsers use other words, for example "Load failed" in Safari. Write down the browser and the exact words. The thumbnails can be clicked again. Step 4: the X removes the bar. Step 5: the page works again.
+**Expected:** step 3: the page stays on the first page. A red bar appears under the thumbnails and reads "Could not load the sample photo. Check your connection and try again." in every browser. (Before this round it showed the browser's own words, "Failed to fetch". If you still see those, that is a FAIL.) The thumbnails can be clicked again. Step 4: the X removes the bar. Step 5: the page works again. One more wording exists and was never seen: "Could not load the sample photo (404)." (or another number), for a host that answers but does not have the file. If you ever see it, report the number and the address.
 
 ![U-22](screenshots/65-sample-load-error.jpg)
 
@@ -281,11 +285,11 @@ Use whatever of these you have or can make. Skip the rest and say which you skip
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
-### P-06 Detailed normals switch while a photo is loading, and after New photo
+### P-06 Detailed normals switch while a photo is loading, after Reset light, and after New photo
 
-1. Reload the page. Choose `08-huge-astronaut-3000px.jpg`. 2. At once click the GEOMETRY row to open it and click **Detailed normals** off, while "Estimating depth and surface normals…" still shows. Wait. 3. Click **New photo** and choose the coffee photo file. Open GEOMETRY if it is folded. 4. Click **Reset** in the LIGHT panel. 5. Click **New photo** and click the **Cat** sample thumbnail. 6. Reload the page and load any photo.
+1. Reload the page. Choose `08-huge-astronaut-3000px.jpg`. 2. At once click the GEOMETRY row to open it and click **Detailed normals** off, while "Estimating depth and surface normals…" still shows. Wait. 3. Click **Reset light** in the LIGHT panel. 4. Click **New photo** and choose the coffee photo file. Open GEOMETRY. 5. Click **Detailed normals** off and wait. Click **New photo** and click the **Cat** sample thumbnail. Open GEOMETRY.
 
-**Expected:** step 2: while loading, the opened panel shows two shimmering grey boxes in place of the pictures. The switch reacts at once and turns grey, although every other control is locked. The loading label stays; loading starts again for the same photo. When it ends, the Normals picture is the smooth kind (as in screenshot 26). The photo does not flicker or load twice, and the detailed Normals picture never appears afterwards. Step 3: the switch is **still off** for the new photo, and its Normals picture is the smooth kind. Step 4: Reset does not turn it on. Step 5: picking a sample turns the switch **on** again. Step 6: after a reload the switch is on (yellow). (If loading is too fast to click during it, do steps 3 to 6 anyway and say so.)
+**Expected:** step 2: while loading, the opened panel shows two shimmering grey boxes in place of the pictures. The switch reacts at once and turns grey, although every other control is locked. The loading label stays; loading starts again for the same photo. When it ends, the Normals picture is the smooth kind (as in screenshot 26). The photo does not flicker or load twice, and the detailed Normals picture never appears afterwards. Step 3: **Reset light** does not turn the switch on; it only changes the light. Step 4: the switch is **on** (yellow) again for the new photo, and its Normals picture is the detailed kind. **New photo** puts every control back to its start (U-07). Step 5: the sample opens with the switch on. (If loading is too fast to click during it, do steps 3 to 5 anyway and say so.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -301,11 +305,23 @@ Use whatever of these you have or can make. Skip the rest and say which you skip
 
 ### P-08 Detailed normals on a sample, backend running
 
-Needs the backend (pill "online, mock providers"). The case with the backend stopped is R-18.
+Needs the backend (pill "online, mock providers"). The case with the backend stopped is R-18. In Plan B and in the demo the switch is greyed on a sample: that is P-09.
 
 1. Click the **Portrait** thumbnail. Click **Left**. Open GEOMETRY. 2. Click **Detailed normals** off. Wait. 3. Click it on. Wait.
 
 **Expected:** step 2: the sample stays on screen while the backend studies the photo; the label "Estimating depth and surface normals…" may show over it. Then the Normals picture changes to the smooth kind and the lighting gets smoother. No red bar. Step 3: the detailed Normals picture comes back. The light position and sliders do not change in either step. From now on this photo behaves like an uploaded one. (Expected text read from the code; the developer did not run this case.)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### P-09 Detailed normals on a sample with no backend at all (Plan B or the demo)
+
+Needs Plan B (pill "backend: mock") or the static demo (pill "demo: runs in your browser"). With a backend, do P-08.
+
+1. Click the **Cat** sample. Do not move the light. Open GEOMETRY. If the bottom of the sidebar is out of sight, scroll the sidebar down. 2. Look at the **Detailed normals** switch and the grey line under it. 3. Click the switch. Press Tab until you have passed the GEOMETRY row and see where the selection goes.
+
+**Expected:** step 2: the switch is **on** but dull (dark yellow, greyed). The line under it reads "Always on for a sample photo: its maps were made ahead of time with detailed normals." (On a window less than 832 pixels high that line is hover text on the switch.) Step 3: the click does nothing: no loading label, no change to the photo, to the Normals picture or to the light. The mouse pointer over the switch is a "not allowed" sign. Tab skips the switch. (Before this round the switch could be clicked in Plan B, and the sample then lost its shape and was lit as a round dome. If the cat ever turns into a dome, that is a FAIL.) In Plan B the switch still works on an **uploaded** file; it reloads the photo and changes nothing visible (R-08).
+
+![P-09 (taken in Plan B at the starting light, x 0.12, y 0.35, with the sidebar scrolled to the bottom)](screenshots/95-mock-sample-detailed-normals.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -348,7 +364,7 @@ Needs the backend (pill "online, mock providers"). The case with the backend sto
 
 1. Drag the sun to the right, past the edge of the photo, as far as it goes. 2. Keep the mouse button down and move the mouse over the sidebar and even outside the browser window. 3. Release.
 
-**Expected:** the sun stops at the edge of the stage and never goes under the sidebar or disappears. The x readout is above 1 (about 1.21 on a 1440-wide window). The right side of the face is bright, the left clearly darker. (Known: the shadow on the left half of the face has a fairly hard, straight edge.) The sun never goes further out than x 1.50 / -0.50 or y 1.50 / -0.50.
+**Expected:** the sun stops at the edge of the stage and never goes under the sidebar or disappears. The x readout is above 1 (about 1.21 on a 1440-wide window). The right side of the face is bright, the left clearly darker; the dark side fades in gradually, with no hard straight line across the forehead or cheek (see Q-11). A drag never goes further out than x 1.50 / -0.50 or y 1.50 / -0.50.
 
 ![L-04](screenshots/13-drag-outside-photo.jpg)
 
@@ -390,21 +406,22 @@ Needs the backend (pill "online, mock providers"). The case with the backend sto
 
 1. Click the **Portrait** sample (or do a standard start). Do not move the light. Move the mouse over **Sweep** (top right of the LIGHT panel) and wait two seconds. 2. Click **Sweep**. Start a stopwatch. Watch the sun, the x and y numbers and the button. Do not touch anything until it ends.
 
-**Expected:** step 1: the hover text reads "Moves the light once around the subject in about six seconds, then gives it back. Handy for recording a demo." Step 2: the button now reads **Stop sweep**. The sun glides from its place out to the edge of the photo and travels once round the photo, clockwise: up the left side, across the top, down the right side, back along the bottom. The lighting follows the whole way: when the sun is on the right, the right of the face is bright and the left half is dark. The x and y numbers change all the time. After about 6 seconds the sun is back exactly where it started (x 0.12, y 0.35), the button reads **Sweep** again and the picture looks as before. The movement is smooth, with no jumps at the start or the end. Known issue: the **Stop sweep** button is meant to turn yellow while running, and it does not.
+**Expected:** step 1: the hover text reads "Moves the light once around the subject in about six seconds, then gives it back. Handy for recording a demo." Step 2: the button now reads **Stop sweep**, in **yellow letters with a thin yellow outline**. The sun glides from its place out to the edge of the photo and travels once round, clockwise: over the top, down the right side, along the bottom, back up the left side. Its path is a rounded loop that touches the photo's edge in the middle of each side and cuts inside the corners. The lighting follows the whole way: when the sun is on the right, the right of the face is bright and the left half is dark, fading in gradually (no hard straight line; see Q-11). The x and y numbers change all the time. After about 6 seconds the sun is back exactly where it started (x 0.12, y 0.35), the button reads **Sweep** again in its normal grey, and the picture looks as before. The movement is smooth, with no jumps at the start or the end. The path is the same on every window size.
 
 ![L-09 before](screenshots/66-sweep-before.jpg)
 ![L-09 during](screenshots/67-sweep-during.jpg)
+![L-09 the button while sweeping, enlarged](screenshots/85-sweep-stop-button.jpg)
 ![L-09 after](screenshots/68-sweep-after.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Time:
 
 ### L-10 Sweep stops when you take the light
 
-Start each step by clicking **Reset**, then **Sweep**. Do the action about two seconds later, while the sun is moving.
+Start each step by clicking **Reset light**, then **Sweep**. Do the action about two seconds later, while the sun is moving.
 
-1. Click **Stop sweep**. 2. Press the mouse on the photo. 3. After clicking **Sweep**, press Shift+Tab four times so the sun has a white ring (it keeps moving meanwhile), then press the Right arrow key. (In Safari press Tab from the top of the page until the sun has the ring.) 4. Click **Right**. 5. Click **Reset**. 6. Click **New photo**, then load a photo again.
+1. Click **Stop sweep**. 2. Press the mouse on the photo. 3. After clicking **Sweep**, press Shift+Tab four times so the sun has a white ring (it keeps moving meanwhile), then press the Right arrow key. (In Safari press Tab from the top of the page until the sun has the ring.) 4. Click **Right**. 5. Click **Reset light**. 6. Click **New photo**, then load a photo again.
 
-**Expected:** in every step the sweep ends at once and the button reads **Sweep** again. The sun does **not** go back to where the sweep started. Step 1: the sun stays where it was when you clicked. Step 2: the sun jumps to the mouse and stays there. Step 3: the sun stops and moves 0.02 to the right. Step 4: the sun goes to the Right preset. Step 5: the sun goes to x 0.12, y 0.35. Step 6: the first page shows; the new photo starts still, at x 0.12, y 0.35, with the button reading **Sweep**. The sun never keeps moving after any of these.
+**Expected:** in every step the sweep ends at once and the button reads **Sweep** again. The sun does **not** go back to where the sweep started. Step 1: the sun stays where it was when you clicked. Step 2: the sun jumps to the mouse and stays there. Step 3: the sun stops and moves 0.02 to the right. Step 4: the light goes to the Right preset (x 1.10, y 0.40). Step 5: the sun goes to x 0.12, y 0.35. Step 6: the first page shows; the new photo starts still, at x 0.12, y 0.35, with the button reading **Sweep**. The sun never keeps moving after any of these.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -412,7 +429,19 @@ Start each step by clicking **Reset**, then **Sweep**. Do the action about two s
 
 1. Click **Sweep**. While it runs, drag **Height** to about 0.40, drag **Colour** to the right, and click **Cast shadows** off and on. 2. Move the sun to the far right outside the photo (about x 1.20), then click **Sweep** and let it finish. 3. Click **Enhance** and wait for the split picture. Look at **Sweep**. Click the **Live preview** tab. 4. Load `06-wide-coffee-crop.jpg`, click **Sweep** and let it finish.
 
-**Expected:** step 1: the sweep keeps going; none of these stops it. The picture takes on each change at once while the sun moves. Step 2: the sun glides in from outside the photo, goes once round, and returns to exactly the x and y it started from. Step 3: on the **Enhanced** tab the **Sweep** button is greyed and cannot be clicked. Back on **Live preview** it works again. Step 4: the sun goes once round the wide photo and stays inside the stage the whole time; it never disappears or goes under the sidebar.
+**Expected:** step 1: the sweep keeps going; none of these stops it. The picture takes on each change at once while the sun moves. Step 2: the sun glides in from outside the photo, goes once round, and returns to exactly the x and y it started from. Step 3: on the **Enhanced** tab the **Sweep** button is greyed and cannot be clicked. Back on **Live preview** it works again. Step 4: the sun goes once round the wide photo, touching the middle of each of its edges, and stays inside the stage the whole time; it never disappears or goes under the sidebar.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### L-12 Arrow keys after a preset has put the light beyond the stage
+
+A preset can put the light further out than the stage reaches. The sun is then drawn at the stage's edge while the readout shows the true numbers. An arrow key moves the light by hand, and a hand move stops at the stage's edge.
+
+1. Use a window about 1440 x 900. Standard start. Click **Top**. 2. Press Shift+Tab until the sun has a white ring (12 presses from the **Top** button; do not click the sun, a click would move the light). 3. Press the Down arrow once. 4. Press the Down arrow once more. 5. Click **Top** again, bring the white ring back to the sun as in step 2, and press the Up arrow once.
+
+**Expected:** step 1: readout x 0.50, y -0.15. The sun sits at the very top of the stage. Step 3: y **jumps** from -0.15 to the stage's edge (about -0.07 in this window), not to -0.13. The sun does not visibly move, and the lighting changes only a little. Step 4: y goes up by 0.02 and the sun moves down a little. Step 5: the Up arrow asks for a point even further out: y stays -0.15 and nothing changes. The sun never disappears.
+
+Developer note: possible bug (step 3: the first press towards the photo is a jump to the stage's edge, not one step of 0.02). It is listed as known. Say in the note whether you noticed it or it confused you.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -468,18 +497,19 @@ All in the LIGHT panel. Each case begins: standard start, then click **Left**, s
 
 ### C-05 Presets Left, Right, Top
 
-1. Click **Left**. 2. Click **Right**. 3. Click **Top**. 4. Set Colour to warm, set Ambient to 0.50, then click **Left** again.
+1. Click **Left**. 2. Click **Right**. 3. Click **Top**. 4. Set Colour to warm, set Ambient to 0.50, turn **Cast shadows** off, then click **Left** again.
 
-**Expected:** every one sets Height 0.35 and Intensity 1.30. The five buttons Left, Right, Top, Low and warm, Reset sit in one row.
-Left: sun just left of the photo, y 0.40; left of face bright.
-Right: sun just right of the photo, y 0.40; right of face bright and the left half of the face dark.
-Top: sun above the photo in the middle, x 0.50; hair and forehead brightest, under the chin darker.
-Step 4: Colour goes back to "neutral"; Ambient **stays** at 0.50.
-The x of Left and Right and the y of Top depend on your window and on the photo's shape, because the sun cannot leave the stage. With the astronaut in a 1440 x 900 window: Left x -0.10, Right x 1.10, Top y -0.07. On other windows or photos Left can read up to -0.04, Right down to 1.04, and Top anything from -0.15 to about -0.05. All of those are a PASS.
+**Expected:** every one sets Height 0.35, Intensity 1.30 and Colour "neutral". The five buttons Left, Right, Top, Low and warm, Reset light sit in one row that fills the panel from edge to edge.
+Left: readout x -0.10, y 0.40. Sun just left of the photo; left of face bright, the right half darker.
+Right: readout x 1.10, y 0.40. Sun just right of the photo; right of face bright and the left half of the face dark.
+Top: readout x 0.50, y -0.15. Sun above the photo in the middle, at the very top of the stage; hair and forehead brightest, under the chin darker.
+Step 4: Colour goes back to "neutral"; Ambient **stays** at 0.50 and **Cast shadows stays off**.
+These numbers are the same on every window and every photo (C-11). With **Top** on the astronaut the true point is a little above the stage, so the sun is drawn at the stage's top edge; the readout still says y -0.15. In all three, the dark side of the face fades in gradually: there is no hard, straight line between bright and dark (Q-11).
 
 ![C-05 Left](screenshots/06-preset-left.jpg)
 ![C-05 Right](screenshots/07-preset-right.jpg)
 ![C-05 Top](screenshots/08-preset-top.jpg)
+![C-05 the row of buttons, enlarged, with the mouse on Reset light](screenshots/87-preset-row.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -493,11 +523,11 @@ The x of Left and Right and the y of Top depend on your window and on the photo'
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
-### C-07 Reset
+### C-07 Reset light
 
-1. Click **Low and warm**. Turn **Cast shadows** off. 2. Click **Reset** (plain text, right of the presets).
+1. Click **Low and warm**. Turn **Cast shadows** off. Type `test` in the ENHANCE text box. 2. Hold the mouse still over **Reset light** (the last button in the preset row) for two seconds. 3. Click **Reset light**.
 
-**Expected:** x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, **Cast shadows on**. This is the same light a photo starts with. Reset does not change the **Detailed normals** switch or the ENHANCE text box.
+**Expected:** step 2: the button has no box until the mouse is on it; then it gets a faint grey background. The hover text reads "Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone." Step 3: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, **Cast shadows on**. This is the same light a photo starts with. The ENHANCE text box still says `test`, the photo stays, and the **Detailed normals** switch is not changed. That is as the hover text says. (The button was named "Reset" before this round. The developer could not photograph the hover text; its words were read from the page.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -521,9 +551,23 @@ The x of Left and Right and the y of Top depend on your window and on the photo'
 
 Do not use the mouse except where a step says so.
 
-1. Standard start. Press Tab again and again, right through the page, and watch where the selection ring goes. 2. Stop on the **Height** slider. Press End, then Home. Press Page Up once. 3. Tab to the **Cast shadows** switch. Press Space twice. Press Enter twice. 4. Tab to **Hold to see original**. Hold Enter for two seconds, then let go. 5. Tab to the **GEOMETRY** row. Press Enter. Press Tab once more. Press Space. In Plan B (pill "backend: mock") skip the **Detailed normals** switch: do not press that last Space. 6. With the mouse click **Enhance**, then quickly press Tab until you reach the tabs at the top left of the stage.
+1. Standard start. Press Tab again and again, right through the page, and watch where the selection ring goes. 2. Stop on the **Height** slider. Press End, then Home. Press Page Up once. 3. Tab to the **Cast shadows** switch. Press Space twice. Press Enter twice. 4. Tab to **Hold to see original**. Hold Enter for two seconds, then let go. 5. Tab to the **GEOMETRY** row. Press Enter. Press Tab once more. Press Space. 6. With the mouse click **Enhance**, then quickly press Tab until you reach the tabs at the top left of the stage.
 
-**Expected:** step 1: the order is: "Relight" logo, the sun, **New photo**, **Hold to see original**, **Export PNG**, then down the sidebar: **Sweep**, Height, Intensity, Ambient, Colour, **Cast shadows**, Left, Right, Top, Low and warm, Reset, the ENHANCE text box, **Enhance**, the **GEOMETRY** row. Every one shows a ring or outline when selected: white on the sun, yellow on the others (the logo gets the browser's own ring). Nothing is skipped and the selection never disappears. Step 2: End sets Height to 2.00, Home sets it to 0.03. Page Up raises it by a bigger step than an arrow key (how big depends on the browser). Step 3: each press of Space or Enter flips the switch, and the shadows on the photo follow. The page does not scroll. Step 4: the original photo shows while Enter is held, and the relit photo returns on release. Step 5: Enter opens GEOMETRY. The next Tab lands on **Detailed normals**, and Space flips it (the photo loads again). Step 6: Tab stops on **Live preview** but skips the greyed "Enhancing…" tab.
+**Expected:** step 1: the order is: "Relight" logo, the sun, **New photo**, **Hold to see original**, **Export PNG**, then down the sidebar: **Sweep**, Height, Intensity, Ambient, Colour, **Cast shadows**, Left, Right, Top, Low and warm, Reset light, the ENHANCE text box, **Enhance**, the **GEOMETRY** row. Every one shows a ring or outline when selected: white on the sun, yellow on the others (the logo gets the browser's own ring). Nothing is skipped and the selection never disappears. Step 2: End sets Height to 2.00, Home sets it to 0.03. Page Up raises it by a bigger step than an arrow key (how big depends on the browser). Step 3: each press of Space or Enter flips the switch, and the shadows on the photo follow. The page does not scroll. Step 4: the original photo shows while Enter is held, and the relit photo returns on release. Step 5: Enter opens GEOMETRY. The next Tab lands on **Detailed normals**, and Space flips it (the photo loads again). (On a sample in Plan B or in the demo the switch is greyed and Tab skips it; see P-09.) Step 6: Tab stops on **Live preview** but skips the greyed "Enhancing…" tab.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### C-11 A preset gives the same numbers on every window and photo
+
+Before this round **Left** could read x -0.10 on one photo and -0.04 on another. Now a preset always gives the same light.
+
+1. Window about 1440 x 900. Astronaut. Click **Left**, **Right**, **Top**, **Low and warm** in turn and write down x and y each time. 2. Make the window smaller (for example 1280 x 720, as in W-13) and click the four again. 3. Click **New photo**, load `02-object-coffee.jpg` or click the **Coffee cup** sample, and click the four again. 4. Load `06-wide-coffee-crop.jpg` (needs the backend) and click **Top**. 5. Imitate a phone (group W) with any photo and click the four again.
+
+**Expected:** always exactly: Left x -0.10, y 0.40. Right x 1.10, y 0.40. Top x 0.50, y -0.15. Low and warm x 0.00, y 0.90. Where that point lies beyond the edge of the stage, the sun is drawn at the stage's edge, fully visible, and the readout still shows the numbers above. You see that with **Top** on the astronaut (sun at the very top edge of the stage, just under the top bar) and with **Left** and **Right** on the coffee photo (sun at the left or right edge of the stage). On the wide photo the sun sits in the black band above the photo. The lighting for a preset looks the same whatever the window size. Any other number is a FAIL: write down the window size, the photo and the readout.
+
+![C-11 Top in a 1280 x 720 window: readout y -0.15, sun at the very top edge of the stage, just under the top bar](screenshots/90-laptop-1280x720-preset-top.jpg)
+![C-11 Left on the coffee photo (here with Height 0.10): readout x -0.10, sun at the left edge of the stage](screenshots/23-shadows-on.jpg)
+![C-11 Right on the coffee photo: readout x 1.10, sun at the right edge of the stage](screenshots/34-object-side-light.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -537,9 +581,9 @@ A "cast shadow" is the dark patch one thing throws onto another, like a cup's sh
 
 1. Load `02-object-coffee.jpg` (or click the **Coffee cup** sample). Click **Left**. Set **Height** to 0.10. 2. Click **Cast shadows** off. 3. Click it on.
 
-**Expected:** on (yellow): a soft dark shadow from the cup, across the saucer and the table to the right. Its edges are blurred, not sharp. Off (grey): that shadow is gone and the right side of the saucer and table is lighter; surfaces facing away from the light are still a little darker. Helper line under the switch: "Objects block the light." Known: the cup's shadow on the saucer is fainter than in earlier versions of the app. Report it only if you cannot see any difference between on and off.
+**Expected:** on (yellow): a soft dark shadow from the cup, across the saucer and the table to the right. Its edges are blurred, not sharp. Off (grey): that shadow is gone and the right side of the saucer and table is lighter; surfaces facing away from the light are still a little darker. Helper line under the switch: "Objects block the light." Known: the cup's shadow on the saucer is fainter than it should be. Report it only if you cannot see any difference between on and off.
 
-![S-01 on](screenshots/23-shadows-on.jpg)
+![S-01 on (readout x -0.10; the sun is drawn at the left edge of the stage)](screenshots/23-shadows-on.jpg)
 ![S-01 off](screenshots/24-shadows-off.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
@@ -572,7 +616,7 @@ Removed: the drawn sample ball no longer exists. The four sample photos are cove
 
 1. Astronaut, **Left**, Height 0.10. 2. Switch **Cast shadows** off and on a few times.
 
-**Expected:** with shadows on there is extra darkness on the side away from the sun: a darker patch on the cheek beside the nose, and a soft, faint darkening on the wall right of the head. With shadows off both go but the right side of the face stays somewhat darker. Write down which looks more natural to you.
+**Expected:** with shadows on there is extra darkness on the side away from the sun: a darker patch on the cheek beside the nose, and a soft, faint darkening on the wall right of the head. With shadows off both go but the right side of the face stays somewhat darker, fading in gradually. Write down which looks more natural to you.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -582,7 +626,7 @@ A shadow that falls on something close behind the object (a nose on a cheek) sho
 
 1. Astronaut (file or **Portrait** sample). Click **Left**. Set **Height** to 0.10. Look at the cheek beside the nose, then at the wall to the right of the head. 2. Switch **Cast shadows** off and on while looking at each of the two places. 3. Coffee cup (file or sample). Click **Left**, Height 0.10. Look at the shadow inside the cup, on the saucer, and on the table. Switch **Cast shadows** off and on.
 
-**Expected:** step 1 and 2: beside the nose there is a fairly dark, well-defined shadow. On the wall to the right of the head and shoulder there is only a soft, wide darkening with no edge you could trace with a finger. Both go away with the switch off. Step 3: the shadow of the cup on the saucer and table is soft and clearly visible but not black. It gets fainter and more blurred the further it is from the cup. Nowhere is there a shadow with a jagged, stair-step or perfectly straight hard edge. Known: the cup's shadow on the saucer is fainter than before. Known: with the light on the **right** of the astronaut, the shadow on the left half of the face has a fairly hard, straight edge down the middle of the face. Say in the note how bad that looks to you.
+**Expected:** step 1 and 2: beside the nose there is a fairly dark, well-defined shadow. On the wall to the right of the head and shoulder there is only a soft, wide darkening with no edge you could trace with a finger. Both go away with the switch off. Step 3: the shadow of the cup on the saucer and table is soft and clearly visible but not black. It gets fainter and more blurred the further it is from the cup. Nowhere is there a shadow with a jagged, stair-step or perfectly straight hard edge. Known: the cup's shadow on the saucer is fainter than it should be. Known: a faint dark fringe can show beside a far shadow. The hard, straight line down the face with the light on the **right** was fixed this round; check it in Q-11 and report it if you still see it.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -604,9 +648,10 @@ A shadow that falls on something close behind the object (a nose on a cheek) sho
 
 1. Click **Left**. 2. Press and hold **Hold to see original** under the photo. 3. Release.
 
-**Expected:** while held, the plain photo shows (evenly lit face, no added shadow) with a small dark tag "Original" at its top-left corner. The sun stays where it was. On release the relit picture returns at once. Also write down: does the button itself change colour (to yellow) while held? It is meant to. The developer believes it does not (known issue). Say what you see.
+**Expected:** while held, the plain photo shows (evenly lit face, no added shadow) with a small dark tag "Original" at its top-left corner. The button itself turns **yellow** while held: yellow letters, a yellow eye icon and a thin yellow outline. **Export PNG** beside it stays white. The sun stays where it was. On release the relit picture returns at once and the button goes back to white. (Before this round the button did not change colour. If it stays white while held, that is a FAIL.)
 
 ![K-01](screenshots/27-hold-original.jpg)
+![K-01 the two buttons while held, enlarged](screenshots/86-hold-original-button.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -648,7 +693,7 @@ Cases E-01 to E-09 use the normal setup (pill "online, mock providers"). There, 
 
 1. Standard start, click **Left**. Look at the ENHANCE panel. 2. Type `golden hour` in the text box.
 
-**Expected:** under the title, the line "A photoreal pass over this lighting. Takes a few seconds." Before step 2 the two-line text box is empty and shows the grey words "Optional: describe the mood, e.g. golden hour, soft window light". After step 2 it shows your words in white, as in the screenshot. A bright yellow **Enhance** button with a sparkle icon. No tabs at the top left of the stage. Delete the words again before the next case. (On a window less than 771 pixels high the line under the title is not shown and the box is one line tall. See W-13.)
+**Expected:** under the title, the line "A photoreal pass over this lighting. Takes a few seconds." Before step 2 the two-line text box is empty and shows the grey words "Optional: a mood, such as golden hour", in full, on one line. After step 2 it shows your words in white, as in the screenshot. A bright yellow **Enhance** button with a sparkle icon. No tabs at the top left of the stage. Delete the words again before the next case. (On a window less than 771 pixels high the line under the title is not shown and the box is one line tall. See W-13.)
 
 ![E-01](screenshots/28-enhance-before.jpg)
 
@@ -740,9 +785,9 @@ Needs the real-Enhance setup in [SETUP.md](SETUP.md#enhance-mock_mode-and-keys).
 
 Only if you have **no** `.env` file in the project folder. Costs nothing.
 
-1. Stop the backend. Start it with `MOCK_MODE=0` in place of `MOCK_MODE=1` in the step 5 command of SETUP ("Start the backend") (Windows: `$env:MOCK_MODE = "0"`). 2. Reload the page. 3. Load a photo and click **Enhance**. 4. Click the X on the red box. 5. Stop the backend and start it normally again.
+1. Stop the backend. Start it with `MOCK_MODE=0` in place of `MOCK_MODE=1` in the step 5 command of SETUP ("Start the backend") (Windows: `$env:MOCK_MODE = "0"`). 2. Reload the page. 3. Load a photo and click **Enhance**. 4. Click the X on the red bar. 5. Stop the backend and start it normally again.
 
-**Expected:** pill turns green, "backend: online"; hovering over it shows "fal: no key, gemini: no key". Enhance fails within a couple of seconds with a red box inside the ENHANCE panel that ends "FAL_KEY is not set in .env" (it may begin "GenerationError:"). The button goes back to **Enhance**. The photo still relights normally. The X removes the red box.
+**Expected:** pill turns green, "backend: online"; hovering over it shows "fal: no key, gemini: no key". Enhance fails within a couple of seconds with a red bar above the photo that ends "FAL_KEY is not set in .env" (it may begin "GenerationError:"). The button goes back to **Enhance**. The photo still relights normally. The X removes the red bar.
 
 ![E-11 pill](screenshots/50-status-online.jpg)
 
@@ -760,7 +805,7 @@ Only if you have **no** `.env` file in the project folder. Costs nothing.
 
 Gemini key only. A fal.ai key has no limit, so this message never appears with it. Do not use up calls on purpose. Only if it happens to you:
 
-**Expected:** after 10 Gemini calls on one computer, Enhance fails with a red box containing "spending cap reached: 10 gemini_image calls already made." A call that failed also counts as one of the 10. Report that you reached it. Do not raise the limit without asking Aaroosh.
+**Expected:** after 10 Gemini calls on one computer, Enhance fails with a red bar containing "spending cap reached: 10 gemini_image calls already made." A call that failed also counts as one of the 10. Report that you reached it. Do not raise the limit without asking Aaroosh.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -768,7 +813,7 @@ Gemini key only. A fal.ai key has no limit, so this message never appears with i
 
 You cannot cause this on purpose. Only if it happens to you:
 
-**Expected, if it happens:** after about 3 minutes the red box in the ENHANCE panel reads "GenerationError: Gemini gemini-3.1-flash-image did not answer within 180 s" (with a fal.ai key: "GenerationError: fal fal-ai/iclight-v2 did not answer within 180 s"). That is the correct behaviour for a stalled service. Only if nothing at all has appeared after 5 minutes should you see "The job is taking too long. Try again." Report either one, with the time. Anything over 1 minute is worth reporting with the time.
+**Expected, if it happens:** after about 3 minutes the red bar above the photo reads "GenerationError: Gemini gemini-3.1-flash-image did not answer within 180 s" (with a fal.ai key: "GenerationError: fal fal-ai/iclight-v2 did not answer within 180 s"). That is the correct behaviour for a stalled service. Only if nothing at all has appeared after 5 minutes should you see "The job is taking too long. Try again." Report either one, with the time. Anything over 1 minute is worth reporting with the time.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -776,7 +821,7 @@ You cannot cause this on purpose. Only if it happens to you:
 
 1. Get an Enhance result (E-03). 2. Stop the backend (click terminal 1, press Ctrl+C). 3. Click **Enhance again** in the sidebar. 4. Start the backend again and wait for "Uvicorn running".
 
-**Expected:** step 3: the stage goes back to the Live preview tab. Within a second or two a red box in the ENHANCE panel reads "Cannot reach the backend at http://localhost:8000. Is it running?". The button reads **Enhance**, not "Enhance again". The two tabs at the top left of the stage are gone. The small square download button and **Download enhanced** are gone. **The earlier enhanced picture is lost** and cannot be brought back or downloaded. The light still moves. Write down whether losing the picture surprised you. After step 4, reload the page before the next case (the restarted backend has forgotten the photo).
+**Expected:** step 3: the stage goes back to the Live preview tab. Within a second or two a red bar above the photo reads "Cannot reach the backend at http://localhost:8000. Is it running?". The button reads **Enhance**, not "Enhance again". The two tabs at the top left of the stage are gone. The small square download button and **Download enhanced** are gone. **The earlier enhanced picture is lost** and cannot be brought back or downloaded. The light still moves. Write down whether losing the picture surprised you. After step 4, reload the page before the next case (the restarted backend has forgotten the photo).
 
 Developer note: possible bug (a failed second try destroys a good first result).
 
@@ -788,7 +833,7 @@ Standard start, once. After each step, drag the divider across the photo and com
 
 1. Click **Left**, set Height to 0.10, turn **Cast shadows** off, click **Enhance**. 2. Click **Low and warm**, click **Enhance again**. 3. Set Colour to "cool 100", click **Enhance again**. 4. Drag the sun as far right as it goes (outside the photo), click **Enhance again**. 5. Click **Left**, set Height to 0.03, click **Enhance again**. 6. In the text box type each of these in turn, clicking **Enhance again** after each: only five spaces; a smiley or other emoji; two lines of words (press Enter between them); one sentence pasted 50 times.
 
-**Expected:** every run finishes in 1 to 3 seconds with no red box. In every result the "Enhanced" half matches the "Live preview" half: step 1: **no** cast shadow in either half; step 2: both halves orange; step 3: both halves blue; step 4: both lit from the right; step 5: both mostly dark with only the left edges bright. Step 6: the text box accepts all of them and stays two lines tall (long text scrolls inside it). The results look the same as without words, because the normal setup ignores the words.
+**Expected:** every run finishes in 1 to 3 seconds with no red bar. In every result the "Enhanced" half matches the "Live preview" half: step 1: **no** cast shadow in either half; step 2: both halves orange; step 3: both halves blue; step 4: both lit from the right; step 5: both mostly dark with only the left edges bright. Step 6: the text box accepts all of them and stays two lines tall (long text scrolls inside it). The results look the same as without words, because the normal setup ignores the words.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -806,7 +851,7 @@ Only if Aaroosh asked you to test real Enhance. **With a Gemini key each failed 
 
 1. Wrong key: open `.env` and type the word `wrong` directly in front of the key, so the line reads `GEMINI_API_KEY=wrong` followed by the key. Save. Restart the backend as in the real-Enhance steps of SETUP. Load a photo and click **Enhance**. 2. Delete the word `wrong` again, save, and restart the backend. Reload the page and load the photo again (a restarted backend has forgotten it). Click **Top**, a light you have not enhanced before; a repeated request is answered from a saved copy and shows no error. Now turn off the computer's Wi-Fi (the app itself still works, because it runs on your computer). Click **Enhance**. Turn Wi-Fi on again.
 
-**Expected:** step 1: after a few seconds a red box in the ENHANCE panel begins "GenerationError: Gemini gemini-3.1-flash-image failed (" followed by a number and the service's own explanation that the key is not valid. With a fal.ai key it begins "GenerationError: fal fal-ai/iclight-v2 failed". Step 2: the red box reads "GenerationError: could not reach Gemini gemini-3.1-flash-image". (With a fal.ai key the words for step 2 are not known. Copy them into your report.) In both steps the button returns to **Enhance**, the light still moves, and the X removes the box. Two more messages cannot be caused on purpose: "… returned no image" and "… did not answer within 180 s" (see E-14). If you ever see them, or a red box that shows part of a key, report it at once. Copy the exact words, but never the key.
+**Expected:** step 1: after a few seconds a red bar above the photo begins "GenerationError: Gemini gemini-3.1-flash-image failed (" followed by a number and the service's own explanation that the key is not valid. With a fal.ai key it begins "GenerationError: fal fal-ai/iclight-v2 failed". Step 2: the red bar reads "GenerationError: could not reach Gemini gemini-3.1-flash-image". (With a fal.ai key the words for step 2 are not known. Copy them into your report.) In both steps the button returns to **Enhance**, the light still moves, and the X removes the bar. Two more messages cannot be caused on purpose: "… returned no image" and "… did not answer within 180 s" (see E-14). If you ever see them, or a red bar that shows part of a key, report it at once. Copy the exact words, but never the key.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -912,7 +957,7 @@ To imitate a phone on a computer: in Chrome press F12, then click the small phon
 
 1. Imitate a phone (see above), reload, and look at the first page. 2. Load the astronaut. 3. Scroll down the whole page.
 
-**Expected:** first page: the title wraps to two lines, the dashed box is as wide as the screen, the four sample thumbnails sit in one row with their labels readable, nothing is cut off at the sides. Workspace: the top bar shows the logo, "Relight" and the pill without "backend:". The stage is on top and is only as tall as it needs to be: **New photo** top right, the photo, then **Hold to see original** and **Export PNG**. There are no big black bands above and below the photo. The LIGHT panel starts straight under the stage, so its title, the x and y readout and the first sliders are on the first screen. Below: ENHANCE, then the folded GEOMETRY row. The helper lines under Height, Ambient and Cast shadows are shown. The preset buttons wrap, with **Reset** on a second line (known).
+**Expected:** first page: the title wraps to two lines, the dashed box is as wide as the screen, the four sample thumbnails sit in one row with their labels readable, nothing is cut off at the sides. Workspace: the top bar shows the logo, "Relight" and the pill without "backend:". The stage is on top and is only as tall as it needs to be: **New photo** top right, the photo, then **Hold to see original** and **Export PNG**. There are no big black bands above and below the photo. The LIGHT panel starts straight under the stage, so its title, the x and y readout and the first sliders are on the first screen. Below: ENHANCE, then the folded GEOMETRY row. The helper lines under Height, Ambient and Cast shadows are shown. The five buttons Left, Right, Top, Low and warm, Reset light are on **one line** (on a phone 360 pixels wide or more; see W-17). The ENHANCE box shows the grey words "Optional: a mood, such as golden hour" in full.
 
 ![W-04 first page](screenshots/47-phone-landing.jpg)
 ![W-04 workspace](screenshots/45-phone-scene.jpg)
@@ -966,11 +1011,9 @@ The developer used only Chrome. Do W-16 first: it is shorter and matters most. T
 
 ### W-10 Sun outside the photo, then a smaller window
 
-1. Use a wide window (about 1440 pixels). Standard start. Drag the sun as far right as it goes and write down x (about 1.21). 2. Slowly make the window narrower, but keep the sidebar on the right (stay above about 1024 pixels wide). Watch the sun and the x number. 3. With the sun out of view, press Tab until the sun is selected (twice from a fresh page) and press the Left arrow once. 4. Widen the window, drag the sun far right again, then press Cmd/Ctrl and `+` once, and once more. Press Cmd/Ctrl and `0` when done.
+1. Use a wide window (about 1440 pixels). Standard start. Drag the sun as far right as it goes and write down x (about 1.21). 2. Slowly make the window narrower, but keep the sidebar on the right (stay above about 1024 pixels wide). Watch the sun and the x number. 3. Press Tab until the sun is selected (twice from a fresh page) and press the Left arrow once. 4. Widen the window, drag the sun far right again, then press Cmd/Ctrl and `+` once, and once more. Press Cmd/Ctrl and `0` when done.
 
-**Expected:** the x and y numbers do **not** change while the window changes or zooms, and neither does the lighting. Step 2: the stage gets narrower but the sun keeps its place relative to the photo. So the sun slides toward the right edge of the stage, is **cut off** there, and then is **hidden completely**. It never appears on top of the sidebar. Step 3: one arrow press brings the sun back inside the stage (x drops to the largest value that fits). Clicking a preset or clicking on the stage also brings it back. Step 4: the same can happen when zooming in. Write down at which zoom step, if any, the sun was cut off or lost.
-
-Developer note: possible bug (the sun can be lost from view after a resize or zoom).
+**Expected:** the x and y numbers do **not** change while the window changes or zooms, and neither does the lighting. Step 2: the stage gets narrower, and the sun stays **fully visible at the right edge of the stage** the whole time. It is never cut off, never hidden, and never drawn on top of the sidebar. (Before this round it could slide out of view. If it is cut off or lost, that is a FAIL: write down the window width.) Step 3: one arrow press drops x to the largest value that fits the stage now; the sun hardly moves (the same jump as in L-12). Step 4: the same when zooming in: the sun stays at the stage's edge.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -998,7 +1041,7 @@ To get an exact size: in Chrome press F12, click the phone/tablet icon, choose *
 
 1. Set 1280 x 720. Reload and look at the first page. 2. Click the **Portrait** sample. 3. Set 1366 x 768 and look again.
 
-**Expected:** step 1: the whole first page fits with no scrolling: title, dashed box and all four thumbnails with their labels. Step 2: stage left, sidebar right. LIGHT, ENHANCE and the folded GEOMETRY row all fit; nothing scrolls. To make room, three things are left out: there are no helper lines under Height, Ambient and Cast shadows; there is no line under the ENHANCE title; and the ENHANCE text box is one line tall. The five preset buttons are in one row. Known: the grey words in the one-line text box are cut off at the right edge ("Optional: describe the mood, e.g. golden hour, so"). Step 3: the same, and it still fits. (The 1366 x 768 screenshot shows the coffee photo with **Right**, not the Portrait sample. Compare the sidebar only.)
+**Expected:** step 1: the whole first page fits with no scrolling: title, dashed box and all four thumbnails with their labels. Step 2: stage left, sidebar right. LIGHT, ENHANCE and the folded GEOMETRY row all fit; nothing scrolls. To make room, three things are left out: there are no helper lines under Height, Ambient and Cast shadows; there is no line under the ENHANCE title; and the ENHANCE text box is one line tall. The five preset buttons are in one row. The grey words in the one-line text box read "Optional: a mood, such as golden hour" **in full**; nothing is cut off at the right edge. Step 3: the same, and it still fits. (The 1366 x 768 screenshot shows the coffee photo with **Right**, not the Portrait sample. Compare the sidebar only.)
 
 ![W-13 first page, 1280 x 720](screenshots/76-laptop-1280x720-landing.jpg)
 ![W-13 workspace, 1280 x 720](screenshots/75-laptop-1280x720-scene.jpg)
@@ -1032,7 +1075,7 @@ Use a real browser window for this, not the phone imitation (hover text does not
 
 ### W-16 Live shading on other browsers, computers and phones
 
-**This is the most wanted result in the whole plan.** The app draws the lighting with the graphics chip. Since today's update it uses a kind of picture storage ("floating-point textures") that some browsers, older graphics chips and phones do not support. It has only ever been run in Chrome on one Apple-chip Mac. Do this case in **every** browser and on **every** computer you can reach. It needs no backend: the samples are enough (Plan B in [SETUP.md](SETUP.md#plan-b-no-backend-mock-mode) will do).
+**This is the most wanted result in the whole plan.** The app draws the lighting with the graphics chip. Since the Oct 10 updates it uses a kind of picture storage ("floating-point textures") that some browsers, older graphics chips and phones do not support. It has only ever been run in Chrome on one Apple-chip Mac. Do this case in **every** browser and on **every** computer you can reach. It needs no backend: the samples are enough. Plan B in [SETUP.md](SETUP.md#plan-b-no-backend-mock-mode) will do, and so will the hosted demo if you were given its address (there the button **New photo** is named **Other samples**). The hosted demo is the easy way to try a real phone.
 
 1. Open the page. Click the **Portrait** sample. 2. Click **Left**, then **Right**. Drag the sun in a circle. 3. Click **Sweep** and watch it to the end. 4. Switch **Cast shadows** off and on. 5. Click **New photo**, click the **Rocket** sample, click **Left**. Compare with the screenshot below. 6. Click **Export PNG** and open the file.
 7. Optional, only if you have a phone or tablet on the same Wi-Fi as the computer. Find the computer's address: macOS, in a new Terminal window type `ipconfig getifaddr en0`; Windows, type `ipconfig` and read the "IPv4 Address" line. On the phone open `http://` + that address + `:3000` (for example `http://192.168.1.23:3000`). Then do steps 1 to 5 with a finger. The developer has not tried this. If the page does not open or stays empty, write that down and stop; it is not a bug in the app.
@@ -1041,12 +1084,25 @@ Use a real browser window for this, not the phone imitation (hover text does not
 
 **Write down for each browser and device**, even when everything works: the device (model, and the graphics chip if you know it; in Chrome, the address `chrome://gpu` shows it near the top), the browser and its version, and one of these three results:
 - (a) **Works**: the photo responds to the light as described.
-- (b) **Red bar**: a red bar above the photo reads "Live shading is unavailable (…). Showing server renders instead, which lag slightly behind the light." Copy the exact words inside the brackets (for example "WebGL2 is not available in this browser" or "Shader failed to compile: …"). The app then needs the backend to draw each picture; see R-06 and R-20.
+- (b) **Red bar**: a red bar above the photo begins "Live shading is unavailable (…)". Copy the exact words inside the brackets (for example "WebGL2 is not available in this browser" or "Shader failed to compile: …"). The app then needs the backend to draw each picture; see R-06, R-20 and, on the demo, H-07.
 - (c) **Wrong picture, no red bar**: the photo is black, blank, or does not change when the sun moves; or the shadows are missing, blocky or striped; or the picture flickers. Attach a screenshot. This is the worst case, because the app does not know it is broken.
 
 ![W-16: the rocket should look like this](screenshots/73-sample-rocket-left.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Devices, browsers and results:
+
+### W-17 The preset row on narrow phones
+
+To get an exact width: in Chrome press F12, click the phone/tablet icon, choose **Responsive** in the list at the top, and type the width into the first box.
+
+1. Set the width to 390. Click the **Coffee cup** sample and scroll to the LIGHT panel. 2. Set the width to 360. 3. Set the width to 320. 4. At each width click each of the five buttons once.
+
+**Expected:** step 1 and 2: Left, Right, Top, Low and warm and Reset light are on **one line** that reaches from edge to edge of the panel. At 360 the buttons have less space inside them, but no word is cut off. Step 3: at 320 the first four fill one line and **Reset light** drops to a second line of its own, as wide as the panel, with its words centred. That is known. At every width: nothing is cut off, the page does not scroll sideways, and every button works. (Before this round the last button wrapped on every phone.)
+
+![W-17 at 360 pixels: one line](screenshots/88-phone-360-preset-row.jpg)
+![W-17 at 320 pixels: Reset light on its own line](screenshots/89-phone-320-preset-row.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
 
 ---
 
@@ -1062,7 +1118,7 @@ For each: load the file, wait, click the preset named, and compare with the scre
 
 ### T-02 Object
 
-`02-object-coffee.jpg`, **Right**. **Expected:** sun on the right edge of the stage (x between 1.04 and 1.10). The right side of the cup rim and the right of the table are bright; a shadow falls to the left of the cup; the left of the picture is darker.
+`02-object-coffee.jpg`, **Right**. **Expected:** readout x 1.10, y 0.40. The sun is drawn at the right edge of the stage, because the photo nearly fills the stage width. The right side of the cup rim and the right of the table are bright; a shadow falls to the left of the cup; the left of the picture is darker.
 
 ![T-02](screenshots/34-object-side-light.jpg)
 
@@ -1070,7 +1126,7 @@ For each: load the file, wait, click the preset named, and compare with the scre
 
 ### T-03 Animal
 
-`03-animal-cat.jpg`, **Left**. **Expected:** sun at the left edge of the stage (x between -0.10 and -0.04). The fur on the left and the left side of the face are brighter; the right side and the blurred background on the right are darker. It should not look blotchy on the fur.
+`03-animal-cat.jpg`, **Left**. **Expected:** readout x -0.10, y 0.40. The sun is drawn at the left edge of the stage. The fur on the left and the left side of the face are brighter; the right side and the blurred background on the right are darker, fading in gradually. There is no hard dark wedge across the face, and the fur does not look blotchy.
 
 ![T-03](screenshots/35-cat-side-light.jpg)
 
@@ -1094,7 +1150,7 @@ For each: load the file, wait, click the preset named, and compare with the scre
 
 ### T-06 Wide photo
 
-`06-wide-coffee-crop.jpg`, **Top**. **Expected:** the photo fills the stage width with black bands above and below. The sun sits above the photo in the black band (x 0.50, y about -0.15). The top of the cup and saucer is bright. The opened GEOMETRY panel reads "600 x 200 px".
+`06-wide-coffee-crop.jpg`, **Top**. **Expected:** the photo fills the stage width with black bands above and below. The sun sits above the photo in the black band (readout x 0.50, y -0.15). The top of the cup and saucer is bright. The opened GEOMETRY panel reads "600 x 200 px".
 
 ![T-06](screenshots/38-wide-photo.jpg)
 
@@ -1153,7 +1209,7 @@ Developer note: possible bug (only if you get result (b)).
 
 1. With the backend still stopped, choose the astronaut **file** (click the dashed box; a sample would work without the backend). 2. Look at the whole page. Click **Retry** once while the backend is still stopped. 3. Start the backend again (SETUP step 5) and wait for "Uvicorn running". 4. Click **Retry**.
 
-**Expected:** step 1: after a moment the photo turns grey and dim. On top of it sits a card with a red border: a warning sign, "This photo could not be analysed", the line "Cannot reach the backend at http://localhost:8000. Is it running?", a yellow **Retry** button and a **Choose another photo** button. There is **no** red bar above the stage. No sun. The LIGHT panel is faded; **Sweep**, **Enhance**, **Hold to see original** and **Export PNG** are faded and do not react; the GEOMETRY row has no small pictures. Nobody could mistake this for a loaded photo. Step 2: the loading label shows for an instant, then the same card comes back. Step 4: the card goes, loading runs, the photo gets its colour back and the sun appears. (The screenshot shows port 8123; yours says 8000.)
+**Expected:** step 1: after a moment the photo turns grey and dim. On top of it sits a card with a red border: a warning sign, "This photo could not be analysed", the line "Cannot reach the backend at http://localhost:8000. Is it running?", a yellow **Retry** button and a **Choose another photo** button. (On a window narrower than 1024 pixels the card is under the stage, not on the photo: R-19.) There is **no** red bar above the stage. No sun. The LIGHT panel is faded; **Sweep**, **Enhance**, **Hold to see original** and **Export PNG** are faded and do not react; the GEOMETRY row has no small pictures. Nobody could mistake this for a loaded photo. Step 2: the loading label shows for an instant, then the same card comes back. Step 4: the card goes, loading runs, the photo gets its colour back and the sun appears. (The screenshot shows port 8123; yours says 8000.)
 
 ![R-02](screenshots/43-backend-offline-upload.jpg)
 
@@ -1161,9 +1217,9 @@ Developer note: possible bug (only if you get result (b)).
 
 ### R-03 Backend stops after the photo loaded
 
-1. Load the astronaut file, click **Left**. 2. Stop the backend. 3. Drag the sun. 4. Click **Enhance**. Look at the pill at once. 5. Click the X on the red box.
+1. Use a window at least 1024 pixels wide. Load the astronaut file, click **Left**. 2. Stop the backend. 3. Drag the sun. 4. Click **Enhance**. Look at the pill at once. 5. Click the X on the red bar.
 
-**Expected:** step 3: the light still moves normally (it does not need the backend). Step 4: a red box inside the ENHANCE panel reads "Cannot reach the backend at http://localhost:8000. Is it running?" with an X; the button returns to **Enhance**. The pill turns to red "offline" at the same moment, not up to 10 seconds later. Known: with the red box showing, the sidebar no longer fits a 1440 x 900 window and scrolls a little. Step 5: the box goes. (The screenshot shows port 8123; yours says 8000.)
+**Expected:** step 3: the light still moves normally (it does not need the backend). Step 4: a red bar appears **above the photo**: "Cannot reach the backend at http://localhost:8000. Is it running?" with an X. There is **nothing red in the sidebar**, and the sidebar does not get longer or start to scroll. The button returns to **Enhance**. The pill turns to red "offline" at the same moment, not up to 10 seconds later. Known: the photo gets a little smaller while the bar shows, to make room for it. Step 5: the bar goes and the photo grows back. On a window narrower than 1024 pixels the message is inside the ENHANCE panel; see R-21. (The screenshot shows port 8123; yours says 8000.)
 
 ![R-03](screenshots/44-enhance-error.jpg)
 
@@ -1173,7 +1229,7 @@ Developer note: possible bug (only if you get result (b)).
 
 1. Load the astronaut. 2. Stop the backend and start it again. Wait until the pill says "online, mock providers". 3. Click **Enhance**. 4. Open GEOMETRY, click the **Detailed normals** switch off and on, then click **Enhance** again.
 
-**Expected:** step 3: red box in the ENHANCE panel: "unknown scene id; upload the photo again". Dragging the light still works. Step 4: toggling the switch sends the photo again, and Enhance then works. Write down whether the message told you clearly enough what to do.
+**Expected:** step 3: a red bar above the photo: "unknown scene id; upload the photo again". Dragging the light still works. Step 4: toggling the switch sends the photo again, and Enhance then works. Write down whether the message told you clearly enough what to do.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1192,7 +1248,7 @@ Developer note: possible bug (only if you get result (b)).
 
 If you ever see this red bar without causing it yourself, it is an important result (see also W-16):
 
-**Expected, if it happens:** a red bar above the stage: "Live shading is unavailable (…). Showing server renders instead, which lag slightly behind the light." The usual words in the brackets are "WebGL2 is not available in this browser". It has no X. With the backend running the app still works: the backend draws each picture, which arrives about a quarter of a second after the light stops moving. **Hold to see original** and **Export PNG** are greyed for the first instant, until the first picture arrives; after that **Export PNG** saves a picture. Report your computer model, browser and version, and the exact words in the brackets. To try it on purpose in Chrome: open `chrome://settings/system`, turn off "Use graphics acceleration when available", restart Chrome, test, then turn it back on. (On some computers Chrome keeps live shading working even with that setting off. Then mark NOT RUN.)
+**Expected, if it happens:** a red bar above the stage: "Live shading is unavailable (…). Showing server renders instead, which lag slightly behind the light." The usual words in the brackets are "WebGL2 is not available in this browser". It has no X. It is the only bar; there is never a second one under it. With the backend running the app still works: the backend draws each picture, which arrives about a quarter of a second after the light stops moving. If the backend cannot be reached, the same bar changes its words and gets a **Retry** link, and the light controls switch off (R-11 step 5, R-20). On the static demo the bar has other words again (H-07). **Hold to see original** and **Export PNG** are greyed for the first instant, until the first picture arrives; after that **Export PNG** saves a picture. Report your computer model, browser and version, and the exact words in the brackets. To try it on purpose in Chrome: open `chrome://settings/system`, turn off "Use graphics acceleration when available", restart Chrome, test, then turn it back on. (On some computers Chrome keeps live shading working even with that setting off. Then mark NOT RUN.)
 
 ![R-06](screenshots/52-no-webgl-fallback.jpg)
 
@@ -1212,7 +1268,7 @@ Needs the frontend started as in [SETUP.md Plan B](SETUP.md#plan-b-no-backend-mo
 
 1. Open the page. 2. Click the **Cat** sample. Click **Left**. 3. Click **New photo**. Choose the astronaut **file**. Click **Left**. 4. Open GEOMETRY. Toggle **Detailed normals**. 5. Click **Enhance** and wait.
 
-**Expected:** pill: yellow pulsing dot, "backend: mock". The first page shows the same four sample thumbnails. Step 2: the sample opens at once and is lit **correctly**: the shading follows the cat's face, because a sample carries its own real shape. Step 3: an uploaded file loads in about 1 second, but its lighting is a made-up round dome in the middle of the picture, not the real face: a large circle outline with soft shading inside it. That is expected in this mode. In GEOMETRY, Depth is a white round blob and Normals a rainbow circle, relief 0.3. Step 4: toggling Detailed normals reloads but changes nothing visible. Step 5: Enhance takes about 4 seconds; the "Enhanced" half has a little more contrast and a faint soft glow. The difference is small. Report only if the two halves show different pictures.
+**Expected:** pill: yellow pulsing dot, "backend: mock". The first page shows the same four sample thumbnails. Step 2: the sample opens at once and is lit **correctly**: the shading follows the cat's face, because a sample carries its own real shape. Step 3: an uploaded file loads in about 1 second, but its lighting is a made-up round dome in the middle of the picture, not the real face: a large circle outline with soft shading inside it. That is expected in this mode. In GEOMETRY, Depth is a white round blob and Normals a rainbow circle, relief 0.3. Step 4: toggling Detailed normals on the uploaded file reloads but changes nothing visible. (On a sample the switch is greyed in this mode: P-09.) Step 5: Enhance takes about 4 seconds; the "Enhanced" half has a little more contrast and a faint soft glow. The difference is small. Report only if the two halves show different pictures.
 
 ![R-08 first page](screenshots/54-mock-landing.jpg)
 ![R-08 pill](screenshots/55-mock-status.jpg)
@@ -1229,7 +1285,7 @@ You must be quick: in the normal setup Enhance lasts only 1 to 3 seconds. Put th
 
 1. Click **Enhance**, then at once click terminal 1 and press Ctrl+C. 2. Start the backend again. Reload the page, load the photo. Click **Enhance**, at once press Ctrl+C in terminal 1, and at once start the backend again (press the Up arrow, then Enter).
 
-**Expected:** step 1: a red box in the ENHANCE panel reads "Cannot reach the backend at http://localhost:8000. Is it running?". Step 2: either the same message, or "unknown job id (jobs are lost when the server restarts)". In both: the button returns to **Enhance**, "Enhancing…" does not stay stuck on the button or on a tab, the "Enhancing in the background" label goes, and the light still moves. If Enhance finished before you could stop the backend, mark NOT RUN.
+**Expected:** step 1: a red bar above the photo reads "Cannot reach the backend at http://localhost:8000. Is it running?". Step 2: either the same message, or "unknown job id (jobs are lost when the server restarts)". In both: the button returns to **Enhance**, "Enhancing…" does not stay stuck on the button or on a tab, the "Enhancing in the background" label goes, and the light still moves. If Enhance finished before you could stop the backend, mark NOT RUN.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1237,7 +1293,7 @@ You must be quick: in the normal setup Enhance lasts only 1 to 3 seconds. Put th
 
 1. Open the app in two browser tabs, A and B. In tab A load the astronaut. 2. In tab B load the coffee photo. Open GEOMETRY and click **Detailed normals** 16 times, waiting each time for loading to finish. (Each click makes the backend study the photo again and remember it as a new one.) 3. Go back to tab A. Drag the sun. Click **Enhance**. 4. In tab A click **Detailed normals** off and on, wait, and click **Enhance** again.
 
-**Expected:** step 3: the light in tab A still moves normally. Enhance fails: a red box in the ENHANCE panel reads "unknown scene id; upload the photo again", although the backend was never stopped. Step 4: the switch sends the photo again, and Enhance then works. Tab B works normally throughout. Write down whether the message made sense to you in this situation. (A single tab never meets this: its current photo is always among the newest 16.)
+**Expected:** step 3: the light in tab A still moves normally. Enhance fails: a red bar above the photo reads "unknown scene id; upload the photo again", although the backend was never stopped. Step 4: the switch sends the photo again, and Enhance then works. Tab B works normally throughout. Write down whether the message made sense to you in this situation. (A single tab never meets this: its current photo is always among the newest 16.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1245,11 +1301,11 @@ You must be quick: in the normal setup Enhance lasts only 1 to 3 seconds. Put th
 
 Only if you are in the state of R-06 (the red bar "Live shading is unavailable (…)" shows).
 
-1. Load the astronaut file and look at **Hold to see original** and **Export PNG** in the first instant after the loading label goes. 2. Click **Left**. Drag the sun. 3. Hold **Hold to see original**. 4. Click **Enhance**. Look at both halves. Click **Live preview**. 5. Stop the backend (Ctrl+C in terminal 1). Drag the sun. 6. Start the backend again, wait for the pill to read "online, mock providers", and drag the sun. 7. Open GEOMETRY and click **Detailed normals** off and on.
+1. Load the astronaut file and look at **Hold to see original** and **Export PNG** in the first instant after the loading label goes. 2. Click **Left**. Drag the sun. 3. Hold **Hold to see original**. 4. Click **Enhance**. Look at both halves. Click **Live preview**. 5. Stop the backend (Ctrl+C in terminal 1). Click **Right**. Look at the red bar, the photo, the readout, the LIGHT panel and the buttons under the photo. Click on the photo. 6. Click **Retry** in the red bar while the backend is still stopped. 7. Start the backend again and wait for the pill to read "online, mock providers". Click **Retry**. 8. Open GEOMETRY and click **Detailed normals** off and on.
 
-**Expected:** step 1: for the first instant the photo shows plain, with no lighting, and both buttons are greyed and cannot be clicked. A moment later the lit picture arrives, the buttons light up, and Export works (`relit.png`). Step 2: the sun moves at once; the picture follows about a quarter of a second or more after you stop. Step 3: the plain photo with the "Original" tag, as normal. Step 4: Enhance works; the two halves are exactly the same picture in this state. Step 5: a **second** red bar appears under the first: "Cannot reach the backend at http://localhost:8000. Is it running?". It has no X and no Retry. The picture stays at the last lighting it showed while the sun keeps moving. Step 6: the second bar now reads "unknown scene id; upload the photo again" (the restarted backend has forgotten the photo). Step 7: the photo loads again, the second red bar goes, and the lighting follows the sun again.
+**Expected:** step 1: for the first instant the photo shows plain, with no lighting, and both buttons are greyed and cannot be clicked. A moment later the lit picture arrives, the buttons light up, and Export works (`relit.png`). Step 2: the sun moves at once; the picture follows about a quarter of a second or more after you stop. Step 3: the plain photo with the "Original" tag, as normal. Step 4: Enhance works; the two halves are exactly the same picture in this state. Step 5: there is still only **one** red bar, and its words change to: "Live shading is unavailable (…), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8000. Is it running? The light controls are off until a render arrives." At its right end is the word **Retry**; it has no X. The sun is gone from the photo. The LIGHT panel is faded and does not react; **Sweep** and **Enhance** are greyed. Clicking on the photo does not move the light. The photo still shows the **last** picture the backend sent (lit from the left), while the readout already says x 1.10, y 0.40. **Hold to see original** and **Export PNG** stay usable, and Export saves that last picture. That mismatch is known. Step 6: nothing changes (the bar may blink). Step 7: the restarted backend has forgotten the photo, so the bar now ends "… failed: unknown scene id; upload the photo again The light controls are off until a render arrives." Step 8: the photo loads again, the bar goes back to "… Showing server renders instead, which lag slightly behind the light.", the sun returns and the lighting follows it again. (Steps 6 to 8 were read from the code and not run. The screenshot shows port 8123; yours says 8000.)
 
-Developer note: possible bug (step 5: the second red bar cannot be closed).
+![R-11 step 5: one bar with Retry, the last picture stays, the readout already shows Right](screenshots/94-no-webgl-render-lost.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1297,9 +1353,9 @@ The samples need no backend. This is also how a tester without a working backend
 
 ### R-17 Enhance on a sample with the backend stopped
 
-1. Backend stopped, pill "offline". Click the **Coffee cup** sample. Click **Right**. 2. Click **Enhance**. 3. Drag the sun. Click **Export PNG**. 4. Click the X on the red box. 5. Start the backend, wait for the pill to read "online, mock providers", click **Enhance**.
+1. Use a window at least 1024 pixels wide. Backend stopped, pill "offline". Click the **Coffee cup** sample. Click **Right**. 2. Click **Enhance**. 3. Drag the sun. Click **Export PNG**. 4. Click the X on the red bar. 5. Start the backend, wait for the pill to read "online, mock providers", click **Enhance**.
 
-**Expected:** step 2: within a second a red box in the ENHANCE panel reads "Enhance needs the backend, which cannot be reached at http://localhost:8000. The live preview and Export PNG still work without it." The button returns to **Enhance**. The two tabs may flash at the top left of the stage for an instant; they are gone once the red box shows. Step 3: the light still moves and the export still downloads, as the message says. Step 4: the box goes. Step 5: Enhance now works and ends on the **Enhanced** tab. Known: while the red box shows, the sidebar is too long for a 1440 x 900 window and scrolls. (The screenshot shows port 8123; yours says 8000.)
+**Expected:** step 2: within a second a red bar **above the photo** reads "Enhance needs the backend, which cannot be reached at http://localhost:8000. The live preview and Export PNG still work without it." The button returns to **Enhance**. There is nothing red in the sidebar and the sidebar does not scroll. The two tabs may flash at the top left of the stage for an instant; they are gone once the red bar shows. Known: the photo is a little smaller while the bar shows. Step 3: the light still moves and the export still downloads, as the message says. Step 4: the bar goes. Step 5: Enhance now works and ends on the **Enhanced** tab. (The screenshot shows port 8123; yours says 8000.)
 
 ![R-17](screenshots/72-sample-enhance-backend-stopped.jpg)
 
@@ -1319,7 +1375,7 @@ The samples need no backend. This is also how a tester without a working backend
 
 1. Backend stopped. Choose the astronaut **file**. Wait for the card "This photo could not be analysed" (as in R-02). 2. Try to drag on the grey photo. Click **Left**. 3. Click **Choose another photo**. 4. Choose the file again, wait for the card, then click **New photo**. 5. Imitate a phone (see group W). Choose `06-wide-coffee-crop.jpg`.
 
-**Expected:** step 2: nothing reacts and no sun appears. Step 3: the app returns to the first page. Step 4: **New photo** does the same. Step 5: on the phone the stage is taller than the wide photo needs, so the whole card fits between **New photo** above it and the two greyed buttons below it, touching neither. **Retry** and **Choose another photo** can both be tapped. Known: on a phone with a wide photo the card covers the dimmed photo completely, so the photo cannot be seen. (The screenshot shows port 8123; yours says 8000.)
+**Expected:** step 2: nothing reacts and no sun appears. Step 3: the app returns to the first page, with every control back at its start. Step 4: **New photo** does the same. Step 5: on the phone (and on any window narrower than 1024 pixels) the card is **under** the stage, not on the photo. The stage is short, only as tall as the wide photo needs: **New photo**, the grey dimmed photo, and the two greyed buttons. The whole photo can be seen. Under the stage sits the red-bordered card with the same words, **Retry** and **Choose another photo**; both can be tapped. Under the card the LIGHT panel is faded. (Before this round the card covered the photo on a phone. The screenshot shows port 8123; yours says 8000.)
 
 ![R-19 on a phone](screenshots/81-phone-load-failed-wide.jpg)
 
@@ -1329,11 +1385,24 @@ The samples need no backend. This is also how a tester without a working backend
 
 Only if you are in the state of R-06 (the red bar "Live shading is unavailable (…)" shows).
 
-1. Stop the backend. Reload. Click the **Portrait** sample. 2. Drag the sun. Look at the two buttons under the photo. 3. Start the backend and wait for the pill to read "online, mock providers". Drag the sun.
+1. Stop the backend. Reload. Click the **Portrait** sample. 2. Look at the red bar, the photo, the LIGHT panel and the buttons. Click on the photo. 3. Start the backend and wait for the pill to read "online, mock providers". Click **Retry** in the red bar. Drag the sun.
 
-**Expected:** step 1: two red bars above the stage. The first is the "Live shading is unavailable (…)" bar. The second reads "This browser cannot shade the photo itself, so it needs the backend, which cannot be reached at http://localhost:8000." Neither has an X. The photo shows plain, with no lighting. Step 2: the sun moves but the picture does not change. **Hold to see original** and **Export PNG** are greyed. Known: the first bar still says "Showing server renders instead" although none can arrive, and the sliders, **Sweep** and **Enhance** still look usable although nothing they do can be seen. Step 3: the second bar goes and the lit picture appears, following the sun a moment late. (The screenshot shows port 8123; yours says 8000.)
+**Expected:** step 1: for an instant after the sample opens, the bar may read "… Showing server renders instead, which lag slightly behind the light." and a sun may flash on the photo. Within a second that changes to the words below. The flash is expected; do not report it. Then there is **one** red bar above the stage: "Live shading is unavailable (…), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8000. Is it running? The light controls are off until a render arrives." At its right end is the word **Retry**. It has no X. Step 2: the photo shows plain, with no lighting and **no sun**. The LIGHT panel is faded and does not react. **Sweep**, **Enhance**, **Hold to see original** and **Export PNG** are greyed. Clicking on the photo does nothing. **New photo** and the GEOMETRY row still work. Nothing on the page claims that it can relight the photo. Step 3: after **Retry** the bar changes to "Live shading is unavailable (…). Showing server renders instead, which lag slightly behind the light.", the lit picture and the sun appear, every control works again, and the picture follows the sun a moment late. (Before this round there were two red bars that contradicted each other, and the controls looked usable. The screenshot shows port 8123; yours says 8000.)
 
 ![R-20](screenshots/83-no-webgl-backend-stopped-sample.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### R-21 Where the Enhance error shows: small laptop and phone
+
+Needs the full setup with the backend **stopped** (pill "offline"). R-03 and R-17 cover a 1440-wide window.
+
+1. Set the page size to 1280 x 720 (as in W-13). Click the **Portrait** sample. Click **Enhance**. 2. Look at the sidebar. Try to scroll it. Click the X. 3. Imitate a phone (390 x 844). Click the **Coffee cup** sample. Scroll down to the ENHANCE panel and click **Enhance**. 4. Scroll back to the top, then down again. Click the X.
+
+**Expected:** step 1: a red bar above the photo, two lines long: "Enhance needs the backend, which cannot be reached at http://localhost:8000. The live preview and Export PNG still work without it." The photo is a little smaller to make room (known). Step 2: the sidebar looks exactly as before the click: LIGHT, ENHANCE and the GEOMETRY row all fit, with nothing red in it, and it does not scroll. The X removes the bar. Step 3: on the phone the message is a red box **inside the ENHANCE panel**, under the yellow button, with the same words and an X. Step 4: there is **no** red bar above the photo on a phone. The X removes the box. The rule: 1024 pixels wide or more, above the photo; narrower, inside the ENHANCE panel. There is never a message in both places at once. (The screenshots show port 8123; yours says 8000.)
+
+![R-21 at 1280 x 720](screenshots/92-laptop-1280x720-enhance-error.jpg)
+![R-21 on a phone](screenshots/93-phone-enhance-error.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1393,7 +1462,7 @@ Use a phone stopwatch. Always write the number, your computer model and whether 
 
 ### D-07 Smoothness during a Sweep
 
-The new soft shadows cost the graphics chip more work than before. The developer measured this only on one fast Mac.
+The soft shadows cost the graphics chip more work than the old hard ones. The developer measured this only on one fast Mac.
 
 1. Click the **Portrait** sample. Click **Sweep** and watch the sun and the lighting. 2. Load `08-huge-astronaut-3000px.jpg` (needs the backend; skip without it) and click **Sweep**. 3. If either was not smooth: switch **Cast shadows** off and click **Sweep** again.
 
@@ -1427,7 +1496,7 @@ Nobody but a person can judge these. There is no exact right answer. For each, g
 
 1. Astronaut, **Left**. Look at the nose, the eye sockets, the cheek away from the light, the neck and the hair. 2. Repeat with a selfie or portrait of your own.
 
-**Write down:** does the nose throw a believable shadow? Do the eyes look right? Does the skin keep a healthy colour, or turn grey, muddy or plastic? Would you believe this was shot with a lamp on the left? Score 1 to 5 for each photo.
+**Write down:** does the nose throw a believable shadow? Does the dark side of the face fade in softly (it should; see Q-11)? Do the eyes look right? Does the skin keep a healthy colour, or turn grey, muddy or plastic? Would you believe this was shot with a lamp on the left? Score 1 to 5 for each photo.
 
 `Result: PASS / FAIL / NOT RUN` Score and note:
 
@@ -1435,7 +1504,7 @@ Nobody but a person can judge these. There is no exact right answer. For each, g
 
 1. Astronaut, then the coffee photo. Move the sun around slowly and look for trouble at: the outline where a person or object meets the background; hair; glass and shiny things (the helmet, the spoon); the flat wall or table.
 
-**Write down:** every place you see a bright or dark outline ("halo") round the subject, a shadow with a jagged or stair-step edge, blotches or bands on smooth surfaces, or a shiny highlight that stays put when the light moves. Give the photo, the x and y readout, and a screenshot. Two are already known, so report them only if they look bad to you: a fairly hard, straight shadow edge down the middle of the astronaut's face when the light is on the right; and a thin light outline round the head and shoulders when **Detailed normals** is off.
+**Write down:** every place you see a bright or dark outline ("halo") round the subject, a shadow with a jagged or stair-step edge, blotches or bands on smooth surfaces, or a shiny highlight that stays put when the light moves. Give the photo, the x and y readout, and a screenshot. Three are already known, so report them only if they look bad to you: a thin light outline round the head and shoulders when **Detailed normals** is off; a faint dark fringe beside a far shadow; and a soft darker column on the rocket's night sky. The hard, straight line down the astronaut's face with the light on the right was fixed this round: if you still see it, report it (Q-11).
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1461,7 +1530,7 @@ The hard dark blocks that used to appear on the sky should be gone (S-07). What 
 
 ### Q-07 Is the effect strong enough to notice?
 
-The starting light was changed today to make the effect obvious at first sight.
+The starting light was chosen to make the effect obvious at first sight.
 
 1. Click the **Portrait** sample and touch nothing. Compare with **Hold to see original**. 2. Do the same with the **Coffee cup**, **Cat** and **Rocket** samples.
 
@@ -1493,6 +1562,20 @@ The starting light was changed today to make the effect obvious at first sight.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
+### Q-11 The face under side light (changed this round: look at this first)
+
+Before this round, light from the side drew a **hard, straight, diagonal line** on a face where the lit part met the dark part: across the astronaut's forehead and cheek, and as a dark wedge across the cat's face. The shading was changed so that a surface now goes dark **gradually** as it turns away from the light. The cast-shadow code was not touched.
+
+1. Click the **Portrait** sample. Click **Right**. Look at the half of the face away from the sun: forehead, cheek, the side of the nose, the chin. 2. Click **Left** and look at the other half. 3. Click **Top**, then **Reset light**. 4. Click **Sweep** and watch the face the whole way round. 5. Click **New photo**, click the **Cat** sample, click **Left**, then **Right**. 6. If you have the backend: do steps 1 and 2 on a selfie or portrait of your own.
+
+**Write down, for each step:** (a) Is there any place where bright meets dark in a hard, straight line, as if cut with a ruler? There should be none: the dark side should fade in softly, as in the screenshots. If you see one, mark FAIL and attach a screenshot that shows the x, y and Height numbers. (b) Is the far side of the face still clearly darker than the near side? The effect should not have become flat or washed out. (c) Does the face look like a face lit by a lamp from that side? Score 1 to 5 for the astronaut, the cat and your own photo. The nose still throws its own shadow on the cheek when **Cast shadows** is on; that one is meant to have an edge.
+
+![Q-11 Portrait, Left](screenshots/06-preset-left.jpg)
+![Q-11 Portrait, Right](screenshots/07-preset-right.jpg)
+![Q-11 Cat, Left](screenshots/35-cat-side-light.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Score and note:
+
 ---
 
 ## J. What a judge would try
@@ -1509,9 +1592,9 @@ A judge has two minutes, has not read anything, and clicks fast.
 
 ### J-02 Click everything fast
 
-1. Click the **Portrait** sample. For 30 seconds click presets, switches, **Sweep**, **Enhance**, tabs, **Reset**, the GEOMETRY row, **New photo** and the sample thumbnails, as fast as you can in any order. In Plan B (pill "backend: mock") skip the **Detailed normals** switch.
+1. Click the **Portrait** sample. For 30 seconds click presets, switches, **Sweep**, **Enhance**, tabs, **Reset light**, the GEOMETRY row, **New photo** and the sample thumbnails, as fast as you can in any order.
 
-**Expected:** no red bars, no blank or black stage, no stuck "Enhancing…", no sun that keeps moving after a sweep should have ended, no frozen page. It ends in a normal state.
+**Expected:** no red bars, no blank or black stage, no stuck "Enhancing…", no sun that keeps moving after a sweep should have ended, no frozen page. It ends in a normal state. (In Plan B and in the demo the **Detailed normals** switch is greyed on a sample and does nothing; in the demo **Enhance** is greyed too. That is expected.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1583,3 +1666,95 @@ Developer note: possible bug (step 3: the app ignores the reduced-motion setting
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
+---
+
+## H. Hosted demo (static build)
+
+The **static demo** is a copy of the app made of plain files, with no backend anywhere. It can sit on any web host, so a judge can open it from a link. It has only the four sample photos. Uploading and **Enhance** are switched off, and the page says why.
+
+**Which address?** Use the demo address Aaroosh gives you (it ends in `/BanannaHacksSubmission/`). If you were given none, you can build the demo on a Mac with [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) and use `http://localhost:3142/BanannaHacksSubmission/`. If you have neither, mark this group NOT RUN.
+
+**Reporting.** The bug form asks what the top-right pill reads. For this group write "demo". For the version, write "hosted demo" and the address you opened.
+
+The screenshots were taken from a copy served on the developer's Mac, not from a real web host. A real phone can open a hosted address, so this group is also the easiest way to test on a real phone.
+
+### H-01 The demo's first page
+
+1. Open the demo address. 2. Hold the mouse still over the pill for two seconds. 3. Reload the page and watch the pill in the first instant. 4. Click the yellow link in the card.
+
+**Expected:** browser tab title "Relight: drag the light around any photo". Top bar: the yellow square logo, "Relight", grey "Banana Hacks 2026", and the pill: a **green** pulsing dot and "demo: runs in your browser". Page: yellow "MOVE THE LIGHT"; the title "Relight a photo by dragging the light."; a paragraph that starts "Pick a sample photo. Its depth and surface normals were estimated ahead of time". There is **no dashed box**. In its place is a card: "This is the in-browser demo." in white, then in grey "Uploading your own photo needs the Relight server, which this demo runs without. To try your own photos, run it on your computer:" and a yellow link "github.com/aarooshpravici/BanannaHacksSubmission". Under the card the line "Pick a sample photo:" and four small pictures in one row: Portrait, Coffee cup, Cat, Rocket. None is missing or broken. Step 2: the hover text reads "Static demo: the sample photos are shaded entirely in your browser and no server is contacted. Uploading your own photo and Enhance need the Relight server." Step 3: the pill is green from the first instant. It never reads "checking", "offline" or "backend:". Step 4: the link opens `https://github.com/aarooshpravici/BanannaHacksSubmission` in a **new** tab; the demo stays open in the old one.
+
+![H-01](screenshots/96-demo-landing.jpg)
+![H-01 the card, enlarged](screenshots/97-demo-upload-note.jpg)
+![H-01 the pill, enlarged](screenshots/98-demo-status.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### H-02 The demo takes no photo of your own
+
+1. On the demo's first page: copy a picture (as in U-04), click an empty part of the page and press Cmd+V or Ctrl+V. 2. Drag a photo file from a folder over the card, then over the thumbnails. Hold it there. Do not let go yet. 3. Let go over the card. 4. If the demo disappeared, press the browser's Back button. Press Tab again and again through the page.
+
+**Expected:** step 1: nothing happens. No photo loads and no message appears. Step 2: nothing on the page turns yellow or changes. Step 3: the demo does nothing with the file. The browser itself will probably open the picture in place of the demo, as it does on any web page that takes no files. Write down what happened. Step 4: Back returns to the demo's first page. Tab goes to: the "Relight" logo, the yellow link, then Portrait, Coffee cup, Cat, Rocket. Nothing on the page opens a file chooser. (No screenshot: there is nothing to see. This case was written from the code.)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### H-03 A sample in the demo: the light, Sweep, compare and export
+
+1. Click the **Portrait** thumbnail. 2. Drag the sun. Click **Left**, **Right**, **Top**, **Low and warm**, **Reset light**. 3. Move each of the four sliders. Switch **Cast shadows** off and on. 4. Click **Sweep** and let it finish. 5. Hold **Hold to see original**. 6. Click **Export PNG** and open the file. 7. Click **Other samples** (top right of the stage). Do steps 1 and 2 quickly with **Coffee cup**, **Cat** and **Rocket**.
+
+**Expected:** step 1: the astronaut opens at once, already lit, with no "Estimating…" wait: sun on the flag, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The button at the top right of the stage reads **Other samples** and has no icon (the normal app says "New photo" there). Steps 2 to 6: everything behaves exactly as in the normal app. The presets give Left x -0.10, y 0.40; Right x 1.10, y 0.40; Top x 0.50, y -0.15; Low and warm x 0.00, y 0.90, orange. The lighting follows the sun with no delay. **Sweep** reads "Stop sweep" in yellow, takes about 6 seconds and gives the light back. While **Hold to see original** is held, the plain photo and the "Original" tag show and the button is yellow. `relit.png` downloads, is 512 x 512 pixels and matches the screen, without the sun. Step 7: **Other samples** returns to the first page; each sample opens at once and starts at x 0.12, y 0.35. There is no red bar at any time, and the pill stays green.
+
+![H-03](screenshots/99-demo-sample.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### H-04 The demo's ENHANCE and GEOMETRY panels
+
+1. Click the **Coffee cup** sample. Click **Right**. Look at the ENHANCE panel. Hold the mouse still over the **Enhance** button for two seconds, then click it. 2. Click the **GEOMETRY** row. Click the **Detailed normals** switch.
+
+**Expected:** step 1: the ENHANCE panel holds only two things: the grey line "Enhance needs the Relight server, which this demo runs without." and a dull, greyed **Enhance** button. There is **no text box**. The hover text on the button is the same sentence (some browsers show no hover text on a greyed button; say if yours does not). Clicking does nothing: no "Enhancing…", no tabs, no red bar. Step 2: GEOMETRY opens with the Depth and Normals pictures of the cup, the **Detailed normals** switch **on but dull**, the line "Always on for a sample photo: its maps were made ahead of time with detailed normals." and "600 x 400 px, relief 0.3". Clicking the switch does nothing. (On a window less than 832 pixels high the line under the switch is hover text. The screenshot was taken in a tall 1440 x 1300 window so the whole sidebar shows.)
+
+![H-04](screenshots/100-demo-all-panels.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### H-05 The demo on a phone
+
+Use a real phone if you have a hosted address: type the address into the phone's browser. Otherwise imitate a phone (group W). Say which you used, and the phone model and browser.
+
+1. Open the demo address. 2. Tap the **Cat** sample. 3. Drag the sun with a finger. Tap **Left**, **Right**, **Sweep**. 4. Scroll down the whole page. Tap the **GEOMETRY** row.
+
+**Expected:** step 1: one column. The pill reads only "runs in your browser", with a green dot. Title, the "Pick a sample photo. Its depth…" paragraph, the card, "Pick a sample photo:" and the four thumbnails in one row with readable labels. Known: the yellow link is too long for the card, so it breaks in the middle of a word ("…BanannaHacksSubm" / "ission"). Step 2: a short stage with **Other samples** at its top right, the cat, and the two buttons under it; the LIGHT panel starts right below. Step 3: the sun follows the finger and the lighting follows the sun; the page does not scroll while you drag on the stage. Step 4: LIGHT with the five preset buttons on one line; a short ENHANCE panel (the reason line and a greyed button, no text box); GEOMETRY open with the two pictures, the dull **Detailed normals** switch with its "Always on…" line, and "451 x 300 px, relief 0.3". Nothing is cut off at the sides and the page does not scroll sideways. If the picture is black, blocky or does not react on your phone, that is the most important thing to report: see W-16 for what to write down.
+
+![H-05 first page](screenshots/101-demo-phone-landing.jpg)
+![H-05 whole page with the Cat sample](screenshots/102-demo-phone-sample-full-page.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Phone, browser and note:
+
+### H-06 The demo's addresses, reload and Back
+
+1. Add `relight/` to the end of the demo address and open it. 2. Click a sample, change the light, then reload the page. 3. Click a sample, then click the "Relight" logo in the top bar. Look at the address bar. 4. Click a sample, then press the browser's Back button. 5. Replace `relight/` in the address with `nothing-here/` and open it.
+
+**Expected:** step 1: the same first page. Step 2: after the reload the first page shows; nothing is remembered. Step 3: the logo leads to the demo's own first page. The address still contains the demo's folder (for example `/BanannaHacksSubmission/`); it does not jump to the top of the web host. Step 4: Back leaves the demo for whatever page was open before it, because choosing a sample adds no step to the browser's history (the same as J-09). Step 5: on GitHub Pages, a black page with "404 | This page could not be found." under the Relight top bar, as in screenshot 53. On another host you may get that host's own "not found" page. Write down which you got. (This case was written from the code and not run on a real host.)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### H-07 The demo in a browser without live shading
+
+If you ever see this red bar on the demo without causing it yourself, it is an important result: report the device, the browser and the words in the brackets (see W-16). To try it on purpose in Chrome, see R-06.
+
+**Expected, if it happens:** after you click a sample, **one** red bar above the stage: "Live shading is unavailable (…), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari." The usual words in the brackets are "WebGL2 is not available in this browser". The bar has no **Retry** and no X. The photo is the plain original with **no sun**. The LIGHT panel is faded and does not react. **Sweep**, **Enhance**, **Hold to see original** and **Export PNG** are greyed. Clicking on the photo does nothing. **Other samples** still works, and the GEOMETRY row still opens. Nothing on the page pretends the photo can be relit.
+
+![H-07](screenshots/103-demo-no-webgl.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### H-08 Build the demo yourself (optional, macOS only)
+
+Only if you have a Mac with Node and the code. Follow [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) word for word. It tests those instructions as much as the app.
+
+1. Run the build command of Plan C. Time it. 2. Run the two commands that copy the folder and start the little web server. 3. Open `http://localhost:3142/BanannaHacksSubmission/` and do H-01 step 1 and H-03 steps 1 and 2. 4. Open `http://localhost:3142/` (without the folder).
+
+**Expected:** step 1: the build ends without a line containing "Error" or "Failed", and a folder named `out` now exists inside `frontend`. Step 3: the demo's first page with the green pill "demo: runs in your browser"; the four thumbnails show their pictures; a sample opens and relights. Step 4: a plain white list with one entry, `BanannaHacksSubmission/`. That list comes from the little web server, not from the app; clicking the entry opens the demo. Write down how long the build took and every step that confused you. (The developer built the demo once, for this folder name, on one Mac. On Windows the build command does not work as written; do not try it there.)
+
+`Result: PASS / FAIL / NOT RUN` Time and note:

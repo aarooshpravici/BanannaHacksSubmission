@@ -8,6 +8,8 @@ You need about **12 GB of free disk space** and a good internet connection for t
 
 **In a hurry, or the backend will not install?** Go to [Plan B](#plan-b-no-backend-mock-mode). It needs only git and Node, takes about five minutes, and lets you test most of the app with the four built-in sample photos.
 
+**Were you given a demo address?** The static demo needs no setup: open the address in any browser and go to group H in [TEST_PLAN.md](TEST_PLAN.md#h-hosted-demo-static-build). It is not a replacement for this page: only the setup below can upload a photo or run Enhance.
+
 > Honest note: the developer built and ran the app on one Apple-chip Mac, using Chrome. The Windows commands below were written carefully but **have not been run on a Windows computer**. If a command fails, copy the error text into an issue ([Reporting](README.md#reporting-what-you-found)). That is a useful result.
 
 ---
@@ -222,10 +224,11 @@ Look at the top-right pill.
 | red dot, **backend: offline** | The page cannot find the backend. The four sample photos still work; uploading a photo, Enhance and the Detailed normals switch do not. | See [Troubleshooting](#the-pill-says-backend-offline). |
 | yellow dot, **backend: mock** | The frontend was started without the two `NEXT_PUBLIC_` settings, so it is not using the backend at all. This is [Plan B](#plan-b-no-backend-mock-mode). | If you meant to use the backend: stop the frontend (Ctrl+C) and start it again with the full command from step 6. |
 | green dot, **backend: online** | The backend is running with real Enhance switched on. | Fine only if you meant to. See [Real Enhance](#enhance-mock_mode-and-keys). |
+| green dot, **demo: runs in your browser** | This is the static demo, not the app you set up here. It has the four samples only. | Fine if you opened a demo address or did [Plan C](#plan-c-the-static-demo-on-your-own-computer). If you see it at http://localhost:3000, report it. |
 
 ![Correct pill](screenshots/49-status-online-mock-providers.jpg)
 
-**A ten-second check.** Click the **Portrait** picture under "Or try a sample photo:". The astronaut should open at once with the left of the face bright and the right cheek in shadow. Drag the round sun button: the lighting should follow. If a red bar appears, or the photo does not react, report it (test case W-16 in [TEST_PLAN.md](TEST_PLAN.md)).
+**A ten-second check.** Click the **Portrait** picture under "Or try a sample photo:". The astronaut should open at once with the left of the face bright and the right cheek in shadow. The shadow side fades in softly, with no hard, straight line across the face. Drag the round sun button: the lighting should follow. If a red bar appears, or the photo does not react, report it (test case W-16 in [TEST_PLAN.md](TEST_PLAN.md)).
 
 Now do the smoke test in [README.md](README.md#10-minute-smoke-test).
 
@@ -246,7 +249,7 @@ Now do the smoke test in [README.md](README.md#10-minute-smoke-test).
 
 On Windows, the install above normally gives a processor-only setup even if you have a graphics card. That is fine for testing.
 
-**If photos are slow, turn the Detailed normals switch off.** The switch is inside the GEOMETRY panel at the bottom of the sidebar. The panel starts folded into one row: click the row to open it. It only appears after you have chosen a photo, and the switch starts **on**, so on a slow computer the first photo always begins with the slow model. The switch works even while "Estimating depth and surface normals…" is showing (it is the one control that is not locked then). On a slow computer: choose a photo, click the GEOMETRY row at once, and click **Detailed normals** off. The photo starts loading again without the slow model and should be ready in under 5 seconds, with less surface detail. The app keeps the switch off for later photos until you reload the page or click a sample. **Always write down your times** (test cases D-01 and D-05). We do not know them for your kind of computer.
+**If photos are slow, turn the Detailed normals switch off.** The switch is inside the GEOMETRY panel at the bottom of the sidebar. The panel starts folded into one row: click the row to open it. It only appears after you have chosen a photo, and the switch starts **on**, so on a slow computer the first photo always begins with the slow model. The switch works even while "Estimating depth and surface normals…" is showing (it is the one control that is not locked then). On a slow computer: choose a photo, click the GEOMETRY row at once, and click **Detailed normals** off. The photo starts loading again without the slow model and should be ready in under 5 seconds, with less surface detail. The switch goes back **on** for every new photo (**New photo** puts every control back to its start), so on a slow computer do this again for each photo. **Always write down your times** (test cases D-01 and D-05). We do not know them for your kind of computer.
 
 **The sample photos never wait.** The four samples on the first page come with their shape already worked out, so they open at once on any computer, even with the backend stopped.
 
@@ -337,13 +340,52 @@ Open http://localhost:3000. The pill reads **backend: mock** (yellow dot).
 
 ![Plan B: an uploaded file gets a made-up dome](screenshots/56-mock-scene.jpg)
 
-What you can test this way: the smoke test (click **Portrait** in step 2), case W-16 (the most wanted one), the sample cases U-05 and U-18 to U-21, and groups L, C, S, K, X and W, using the samples wherever a case names one of the four main test photos. Group U also works, with the dome. What you cannot test: the loading screen, the failed-load card, and anything that says it needs the backend. Mark those NOT RUN.
+What you can test this way: the smoke test (click **Portrait** in step 2), case W-16 (the most wanted one), case Q-11 (the face under side light), the sample cases U-05 and U-18 to U-21, and groups L, C, S, K, X and W, using the samples wherever a case names one of the four main test photos. Group U also works, with the dome. What you cannot test: the loading screen, the failed-load card, and anything that says it needs the backend. Mark those NOT RUN.
 
-Three differences in this mode. **Enhance** finishes in about 4 seconds and returns a copy with a little more contrast and a soft glow; nothing is sent anywhere. The **Detailed normals** switch: on an uploaded file it changes nothing visible. **Do not click it on a sample in this mode.** The sample then loses its real shape and is lit as the round dome. To get it back, click **New photo** and click the sample again. An uploaded big photo is shrunk to 1536 pixels on its longest side, not 1024 (this matters for case X-02).
+Three differences in this mode. **Enhance** finishes in about 4 seconds and returns a copy with a little more contrast and a soft glow; nothing is sent anywhere. The **Detailed normals** switch: on an uploaded file it changes nothing visible; on a sample it is on, greyed, and cannot be clicked, with the line "Always on for a sample photo: its maps were made ahead of time with detailed normals." (case P-09). An uploaded big photo is shrunk to 1536 pixels on its longest side, not 1024 (this matters for case X-02).
 
 Say "Plan B" or "mock mode" in your report.
 
 **A second way to use the samples.** In the full setup, the samples also work while the backend is stopped (pill **backend: offline**). Test cases R-16 to R-18 cover that.
+
+## Plan C: the static demo on your own computer
+
+The **static demo** is a copy of the web page made of plain files. It needs no backend and no running program of ours, so it can be put on a web address for the judges. It has the four samples only: uploading and Enhance are switched off, and the page says why. If Aaroosh gave you a demo address, use that and skip this part.
+
+This part is **optional** and **macOS only**. The build command is written for macOS and Linux and is expected to fail on Windows; on Windows wait for a demo address. The developer ran these steps once, on one Mac. You need git, Node and the code (steps 1 and 2 for macOS).
+
+Stop the frontend first if it is running (click terminal 2, press Ctrl+C). Then build the demo:
+
+```bash
+cd ~/BanannaHacksSubmission/frontend
+npm ci
+NEXT_PUBLIC_BASE_PATH=/BanannaHacksSubmission npm run build:demo
+```
+
+It takes a minute or two. It must end without a line containing `Error` or `Failed`. Afterwards there is a new folder named `out` inside `frontend` (about 2.3 MB). That folder is the whole demo.
+
+A demo only works at the address it was built for. This one was built for a folder named `BanannaHacksSubmission`, so put it in a folder of that name and start a small web server one level above it:
+
+```bash
+rm -rf ~/relight-demo-site
+mkdir -p ~/relight-demo-site
+cp -R out ~/relight-demo-site/BanannaHacksSubmission
+python3 -m http.server 3142 --directory ~/relight-demo-site
+```
+
+Leave that window open. Open http://localhost:3142/BanannaHacksSubmission/ in the browser (with the `/` at the end). The pill must be green and read **demo: runs in your browser**.
+
+![The demo's first page](screenshots/96-demo-landing.jpg)
+
+Now do group H in [TEST_PLAN.md](TEST_PLAN.md#h-hosted-demo-static-build), starting with H-08. Say "Plan C" in your report.
+
+Things to know:
+
+- If the page shows words but no pictures, and nothing reacts, the address is wrong: it must contain `/BanannaHacksSubmission/`.
+- A wrong address inside the demo (case H-06 step 5) shows the little server's own plain "Error response" page here. Only GitHub Pages shows the app's black 404 page.
+- If `python3` is not found, type `python3.12` in its place.
+- Stop the little server with Ctrl+C. To go back to the normal app, start the frontend again with the step 6 command (without `npm ci`). The `out` folder and `~/relight-demo-site` can be deleted at any time.
+- For whoever puts the demo online: upload everything **inside** `out`, including the hidden file `.nojekyll`. Without that file GitHub Pages does not serve the folder `_next`, and the page stays blank. A site that sits at the top of its address needs a build without the `NEXT_PUBLIC_BASE_PATH=…` part; that build has never been made or tried.
 
 ## Troubleshooting
 
@@ -394,11 +436,11 @@ Almost always the one-time model download, because step 4 was skipped or did not
 
 The card's second line reads "Cannot reach the backend…". The browser stopped waiting, but the backend is still downloading the models. Do not close anything. Wait for the bars in terminal 1 to finish, then click **Retry** on the card. To avoid this, do step 4 (Download the models) before loading a photo.
 
-### A red bar says "Live shading is unavailable (…). Showing server renders instead…"
+### A red bar says "Live shading is unavailable (…)"
 
 ![No WebGL](screenshots/52-no-webgl-fallback.jpg)
 
-Your browser cannot use the graphics chip the way the app needs (the usual words in the brackets are "WebGL2 is not available in this browser"). With the backend running the app still works, but each move of the light is drawn by the backend and arrives a moment late. Without the backend (Plan B, or pill "offline") the photo cannot be relit at all. Try, in this order: use Google Chrome; in Chrome open `chrome://settings/system` and make sure "Use graphics acceleration when available" is on, then restart Chrome; update Chrome. Whether or not that fixes it, report it with your computer model, browser version and the exact words in the brackets (test cases W-16 and R-06).
+Your browser cannot use the graphics chip the way the app needs (the usual words in the brackets are "WebGL2 is not available in this browser"). With the backend running the app still works, but each move of the light is drawn by the backend and arrives a moment late. If the backend cannot be reached (pill "offline"), the bar says so, offers a **Retry** link, and the light controls switch off until a picture arrives. On the static demo there is no backend at all: the bar then reads "… and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari." and the photo cannot be relit. Try, in this order: use Google Chrome; in Chrome open `chrome://settings/system` and make sure "Use graphics acceleration when available" is on, then restart Chrome; update Chrome. Whether or not that fixes it, report it with your computer model, browser version and the exact words in the brackets (test cases W-16, R-06 and H-07).
 
 ### `pip install` fails
 

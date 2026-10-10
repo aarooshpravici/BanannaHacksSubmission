@@ -8,11 +8,11 @@ Never write a key, a password or the contents of a `.env` file here.
 
 - Tester:
 - Date and time:
-- Version (run `git log -1 --format=%h` in the project folder):
+- Version (run `git log -1 --format=%h` in the project folder and write what it prints; on the hosted demo write "hosted demo" and the page address):
 - Computer (model, macOS or Windows version, Apple chip / NVIDIA card / neither):
 - Browser and version:
-- Top-right pill reads (mock / online, mock providers / online / offline):
-- What I ran (smoke test / share A / share B / share C / other):
+- Top-right pill reads (mock / online, mock providers / online / offline / demo):
+- What I ran (smoke test / share A / share B / share C / group H demo / other):
 
 ## Setup
 
@@ -69,6 +69,7 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | P-06 | | |
 | P-07 | | |
 | P-08 | | |
+| P-09 | | |
 | L-01 | | |
 | L-02 | | |
 | L-03 | | |
@@ -80,6 +81,7 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | L-09 | | |
 | L-10 | | |
 | L-11 | | |
+| L-12 | | |
 | C-01 | | |
 | C-02 | | |
 | C-03 | | |
@@ -90,6 +92,7 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | C-08 | | |
 | C-09 | | |
 | C-10 | | |
+| C-11 | | |
 | S-01 | | |
 | S-02 | | |
 | S-03 | | |
@@ -141,6 +144,7 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | W-14 | | |
 | W-15 | | |
 | W-16 | | |
+| W-17 | | |
 | T-01 | | |
 | T-02 | | |
 | T-03 | | |
@@ -170,6 +174,7 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | R-18 | | |
 | R-19 | | |
 | R-20 | | |
+| R-21 | | |
 | D-01 | | |
 | D-02 | | |
 | D-03 | | |
@@ -187,6 +192,14 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | J-08 | | |
 | J-09 | | |
 | J-10 | | |
+| H-01 | | |
+| H-02 | | |
+| H-03 | | |
+| H-04 | | |
+| H-05 | | |
+| H-06 | | |
+| H-07 | | |
+| H-08 | | |
 
 ## Picture quality (group Q)
 
@@ -204,6 +217,7 @@ Score 1 (fake) to 5 (like a real photo), and one sentence why.
 | Q-08 | | |
 | Q-09 | | |
 | Q-10 | | |
+| Q-11 | | |
 
 ## Bugs
 

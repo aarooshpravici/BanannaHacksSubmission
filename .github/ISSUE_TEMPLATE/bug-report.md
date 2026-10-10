@@ -9,13 +9,13 @@ labels: bug
 
 **Test case ID** (from testing/TEST_PLAN.md, or "none"):
 
-**Version** (run `git log -1 --format=%h` in the project folder):
+**Version** (run `git log -1 --format=%h` in the project folder and write what it prints; on the hosted demo write "hosted demo" and the page address):
 
 **Computer** (model, macOS or Windows version, Apple chip / NVIDIA card / neither):
 
 **Browser and version:**
 
-**Top-right pill reads** (mock / online, mock providers / online / offline):
+**Top-right pill reads** (mock / online, mock providers / online / offline / demo):
 
 **Photo used** (sample name: Portrait / Coffee cup / Cat / Rocket; or file name from testing/photos; or describe your own):
 

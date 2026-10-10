@@ -10,15 +10,15 @@ title: "Test result: YOUR NAME, share A / B / C / smoke test, DATE"
 
 **Date and time:**
 
-**Version** (run `git log -1 --format=%h` in the project folder):
+**Version** (run `git log -1 --format=%h` in the project folder and write what it prints; on the hosted demo write "hosted demo" and the page address):
 
 **Computer** (model, macOS or Windows version, Apple chip / NVIDIA card / neither):
 
 **Browser and version:**
 
-**Top-right pill reads** (mock / online, mock providers / online):
+**Top-right pill reads** (mock / online, mock providers / online / offline / demo):
 
-**What I ran** (smoke test / share A / share B / share C / other):
+**What I ran** (smoke test / share A / share B / share C / group H demo / other):
 
 ## Setup
 
