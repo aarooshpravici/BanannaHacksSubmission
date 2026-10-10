@@ -64,7 +64,8 @@ export function RelightCanvas({ scene, light, shadows, canvasRef, onReady, onUna
   const callbacks = useRef({ onReady, onUnavailable, onFullRender });
   // Bumped when the browser hands the GPU context back after losing it.
   const [generation, setGeneration] = useState(0);
-  // Why the GPU is not in use. Once set, the CPU shades this and every later scene.
+  // Why the GPU is not in use. Once set, the CPU shades for as long as this component stays mounted,
+  // which covers a photo analysed again in place. New photo mounts a new one, which tries the GPU again.
   const [gpuProblem, setGpuProblem] = useState<string | null>(null);
 
   useEffect(() => {

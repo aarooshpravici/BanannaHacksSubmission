@@ -77,11 +77,17 @@ function Step({ number, title, who, name, pictures, children }: { number: number
  */
 export function HowItWorks() {
   const dialog = useRef<HTMLDialogElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
   // A native modal <dialog>: the browser keeps Tab inside it, closes it on
   // Escape, makes the page behind it inert and returns focus to the button.
-  const open = () => dialog.current?.showModal();
+  const open = () => {
+    dialog.current?.showModal();
+    // Start at the top every time. The browser keeps the place the text was scrolled to when the panel was
+    // closed, and a closed dialog has no box to scroll, so this has to come after showModal().
+    if (scroller.current) scroller.current.scrollTop = 0;
+  };
   const close = () => dialog.current?.close();
   // The panel's content fills the dialog edge to edge, so a click that lands on the dialog element itself is on the backdrop.
   const closeOnBackdrop = (e: MouseEvent<HTMLDialogElement>) => {
@@ -111,7 +117,7 @@ export function HowItWorks() {
             </Button>
           </header>
 
-          <div className="thin-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-5 pt-4">
+          <div ref={scroller} className="thin-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-5 pt-4">
             <p className="text-[13px] leading-5 text-zinc-300">
               Two pretrained vision models measure the photo once. Everything that moves when you drag the light is our own shading code, running in your browser. Here is each step on the Portrait sample, and who does it.
             </p>
@@ -162,7 +168,11 @@ export function HowItWorks() {
                 </Step>
               </Group>
 
-              <Group title="Every frame, in your browser" note="A WebGL2 shader we wrote runs steps 3 and 4 again each time the light moves. No server and no AI model is involved in the dragging.">
+              {/* Has to be true on every shading path: the graphics chip, the processor, and (never in the demo) the server standing in for the processor. */}
+              <Group
+                title="Every frame, in your browser"
+                note={`Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor.${DEMO ? "" : " If the processor is too slow or cannot do it, the Relight server runs our Python version instead."} No AI model is involved in the dragging.`}
+              >
                 <Step
                   number={3}
                   title="Shade each pixel from the light"

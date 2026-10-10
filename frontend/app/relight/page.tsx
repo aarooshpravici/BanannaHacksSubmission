@@ -488,10 +488,15 @@ export default function RelightPage() {
         : onProcessor
           ? `Shading on this device's processor, not its graphics chip (${path.why}). The picture is a quick preview while the light moves and sharpens when it stops.`
           : null;
+  // The picture on screen is one the server drew: for a slow processor, or because nothing here can shade.
+  const fromServer = !showCanvas && server.image !== null;
   // The Geometry panel says which path is in use; the tooltip has the detail a bug report needs.
-  const shadingLine = !ready || path === null ? null : !showCanvas ? "server renders" : path.label;
-  const shadingDetail =
-    path === null
+  const shadingLine = fromServer ? "server renders" : !ready || path === null || !showCanvas ? null : path.label;
+  const shadingDetail = fromServer
+    ? localProblem !== null
+      ? `The photo is drawn by the server, because nothing on this device can shade it: ${localProblem.replace(/\.$/, "")}.`
+      : `The photo is drawn by the server, because this device's processor takes ${((cpuSlowMs ?? 0) / 1000).toFixed(1)} s to shade one picture.${path?.why ? ` The graphics chip could not be used: ${path.why}.` : ""}`
+    : path === null
       ? undefined
       : path.kind === "gpu-full"
         ? `The photo is shaded live by the graphics chip (${path.chip}), at full quality.`
