@@ -61,6 +61,14 @@ def test_mask_drawn_on_transparent_canvas_uses_alpha():
     assert arr[3, 3] == 255 and arr[0, 0] == 0
 
 
+def test_opaque_rgba_mask_uses_brightness_not_alpha():
+    # What canvas.toDataURL() gives for white strokes on a black fill: alpha is 255 everywhere.
+    canvas = Image.new("RGBA", (10, 10), (0, 0, 0, 255))
+    canvas.paste((255, 255, 255, 255), (2, 2, 6, 6))
+    arr = images.decode_mask(_png_b64(canvas), size=(10, 10))
+    assert arr[3, 3] == 255 and arr[0, 0] == 0 and (arr == 255).sum() == 16
+
+
 def test_empty_mask_is_rejected():
     with pytest.raises(images.ImageError):
         images.decode_mask(_png_b64(Image.new("L", (10, 10), 0)), size=(10, 10))

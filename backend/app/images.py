@@ -58,9 +58,15 @@ def decode_mask(data: str, size: tuple[int, int]) -> np.ndarray:
         raise
     except Exception as e:
         raise ImageError("could not read mask") from e
+    if mask.mode == "P" and "transparency" in mask.info:
+        mask = mask.convert("RGBA")
     if mask.mode in ("RGBA", "LA"):
-        # A mask drawn on a transparent canvas: the painted pixels are the mask.
-        mask = mask.getchannel("A")
+        alpha = mask.getchannel("A")
+        if alpha.getextrema()[0] < 255:
+            # Drawn on a transparent canvas: the painted pixels are the mask.
+            mask = alpha
+        # Otherwise the image is fully opaque (a browser canvas exported as
+        # white on black) and brightness carries the mask, as for a plain PNG.
     mask = mask.convert("L")
     if mask.size != size:
         mask = mask.resize(size, Image.NEAREST)
