@@ -161,6 +161,28 @@ def test_blend_works_when_the_mask_touches_the_image_border():
     assert out.size == img.size and np.abs(np.asarray(out).astype(int) - np.asarray(img).astype(int)).max() <= 3
 
 
+def test_blend_leaves_pixels_outside_an_irregular_mask_untouched():
+    img, _ = DESIGNS["gallery_missing_cell"]()
+    mask = np.zeros((img.height, img.width), np.uint8)
+    brush = ImageDraw.Draw(Image.fromarray(mask))
+    stroke = Image.new("L", img.size, 0)
+    d = ImageDraw.Draw(stroke)
+    d.line([(150, 200), (400, 420), (700, 260)], fill=255, width=46)  # a brush stroke across two photos
+    d.ellipse((880, 500, 980, 600), fill=255)  # and a separate blob
+    mask = np.asarray(stroke).copy()
+    other = Image.new("RGB", img.size, (30, 160, 90))
+    out = np.asarray(A.blend(img, other, mask))
+    assert np.array_equal(out[mask == 0], np.asarray(img)[mask == 0])
+    assert not np.array_equal(out[mask == 255], np.asarray(img)[mask == 255])
+
+
+def test_blend_survives_a_tiny_mask():
+    img, _ = _scene()
+    mask = np.zeros((200, 300), np.uint8)
+    mask[50:52, 60:61] = 255
+    assert A.blend(img, Image.new("RGB", img.size, (0, 0, 0)), mask).size == img.size
+
+
 def test_composite_touches_only_the_masked_pixels():
     img, mask = _scene()
     other = Image.new("RGB", img.size, (10, 10, 10))

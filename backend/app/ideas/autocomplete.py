@@ -434,17 +434,27 @@ def blend(original: Image.Image, generated: Image.Image, mask: np.ndarray) -> Im
     Poisson blending keeps the generated region's detail but shifts its colors
     so they meet the surroundings exactly at the boundary. OpenCV's version
     cannot handle a mask that touches the image border, so the image is padded
-    first.
+    first. It also solves over the mask's whole bounding box and so disturbs
+    pixels outside an irregular (brush-drawn) mask; only the masked pixels of
+    its result are kept.
     """
     pad = 8
-    dst = cv2.copyMakeBorder(np.asarray(to_rgb(original)), pad, pad, pad, pad, cv2.BORDER_REFLECT)
+    base = np.asarray(to_rgb(original))
+    dst = cv2.copyMakeBorder(base, pad, pad, pad, pad, cv2.BORDER_REFLECT)
     src = cv2.copyMakeBorder(np.asarray(to_rgb(generated)), pad, pad, pad, pad, cv2.BORDER_REFLECT)
     m = cv2.copyMakeBorder(mask, pad, pad, pad, pad, cv2.BORDER_CONSTANT, value=0)
     x, y, w, h = cv2.boundingRect(m)
+    if w < 3 or h < 3:  # too small for the solver; nothing to blend anyway
+        return composite(original, generated, mask)
     # seamlessClone places the mask's bounding box centred on this point.
     center = (x + w // 2, y + h // 2)
-    out = cv2.seamlessClone(src, dst, m, center, cv2.NORMAL_CLONE)
-    return Image.fromarray(out[pad:-pad, pad:-pad])
+    try:
+        cloned = cv2.seamlessClone(src, dst, m, center, cv2.NORMAL_CLONE)[pad:-pad, pad:-pad]
+    except cv2.error:
+        return composite(original, generated, mask)
+    out = base.copy()
+    out[mask > 0] = cloned[mask > 0]
+    return Image.fromarray(out)
 
 
 def seam_score(image: Image.Image, mask: np.ndarray) -> float:
