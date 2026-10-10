@@ -1,6 +1,6 @@
 # Overnight report (night of Oct 9–10)
 
-Branch: `overnight-foundation` (commits are local; the push was refused, see "Needs you" below).
+Branch: `overnight-foundation`, pushed to GitHub. `main` is untouched.
 
 ## Recommendation
 
@@ -22,6 +22,22 @@ Each real result is a single run on a favourable input. One success shows the pa
 - `proofs/relight/object.jpg` and `portrait.jpg`: row 2 is the original plan's method, row 3 is the method now in use.
 - `proofs/autocomplete/detections/`: blue = blocks found, green = gap reported, dashed red = the true gap.
 
+## Try it yourself
+
+Two terminals. Backend first:
+
+```bash
+cd backend && .venv/bin/uvicorn app.main:app --port 8000
+```
+
+Then the frontend:
+
+```bash
+cd frontend && npm run dev
+```
+
+Open http://localhost:3000. Out of the box the frontend runs on canned data and ignores the backend. To connect them, copy `frontend/.env.local.example` to `frontend/.env.local`, set `NEXT_PUBLIC_MOCK=0`, and restart `npm run dev`. The relight page then works fully (it needs no hosted service). The other two pages use stand-in generation until `MOCK_MODE=0` is set in the root `.env`, which starts spending on the Gemini key.
+
 ## What exists
 
 | Piece | How it was checked | Confidence it is right |
@@ -35,9 +51,9 @@ Each real result is a single run on a favourable input. One success shows the pa
 | Character Views: analysis, prompts, checklist, retry | Tests with stand-ins, plus one real run. The retry path has never fired on real output. | 80% |
 | Gemini calls (planner, analyst, checklist, image generation) | Called for real: 4 text paths and 3 image paths each succeeded once | 85% |
 | fal, Replicate and Anthropic calls | Signatures checked against the installed packages and the fal model pages; never run (fal account has no credit, no key for the others) | 55% |
-| Frontend | See the "Frontend" section | See there |
+| Frontend: shared core and three pages | Lint and build pass. I loaded each page in a browser against the real local backend: live relighting with a draggable light, gap detection on a sample poster, character cutout and checklist. The helper that built it measured the browser shader against the server render (mean difference about 1.6 levels out of 255). | 90% for relight; 80% for the other two with real generation, which the frontend has not been run with |
 
-The backend suite is 88 tests passing and 1 expected failure (cards over a photo).
+The backend suite is 97 tests passing and 1 expected failure (cards over a photo).
 
 ## Where the plans were wrong
 
@@ -48,13 +64,29 @@ The backend suite is 88 tests passing and 1 expected failure (cards over a photo
 5. **Character Views, model choice.** Zero123++ (the plan's Option A) only outputs six fixed tilted angles, with no true front, side or back, and I found no hosted MV-Adapter or Era3D. The code uses instruction-based image editing instead, which worked on the first real run with Gemini's image model.
 6. **All plans, image provider.** The plans assumed fal.ai or Replicate. Gemini's image model turned out to cover all three generation jobs on one key, so `IMAGE_PROVIDER` now defaults to Gemini when it has a key.
 
+## Independent review
+
+Because you cannot review the code yourself, I had a separate agent hunt for bugs in the backend without seeing my conclusions. It checked the relight math against a brute-force reference and a rendered sphere, the depth and normal encoding sent to the browser, the provider call shapes against the live schemas, and thread safety, and found those correct. It also found real bugs my tests had missed. All of these are fixed, each in its own commit with a test:
+
+1. A mask exported from a browser canvas selected the whole image, so a fill would have regenerated the full width.
+2. Blending disturbed pixels well outside a hand-drawn mask (my tests only used rectangles).
+3. Gemini's fills came back slightly zoomed and shifted, so the new element landed off its slot. Fills are now aligned to the original first.
+4. The character retry prompt asked for a feature again when the problem was that it should not have been drawn.
+5. Gemini calls had no timeout, so a stalled request could hang the app.
+6. Character cutouts had a dark fringe at their edges.
+7. Three small input-handling crashes.
+
+Not fixed: the spending cap is stored in the cache folder, so deleting `.cache` resets the count.
+
 ## Open risks
 
 - **Deadline.** The relight doc says Sunday Oct 11, 11:59 PM EDT; the other plans say Monday. Unconfirmed.
 - **Thin-wrapper risk for Character Views.** Gemini did nearly all the work on the test run, and every feature passed first time, so the retry loop (the plan's "caught and fixed" demo moment) had nothing to do. The demo would need harder cases, such as back views or fiddly accessories, to show our part.
 - **One real run each.** See the note under the recommendation table.
 - **My test designs suit my detector.** I drew the autocomplete mockups myself. Real designs are the test that counts. Cards laid over a photo are a known miss.
-- **Gemini fills take no mask.** The region is pointed out with an outline and the result is pasted back through the real mask. If the model shifts the layout even slightly, the pasted patch will be misaligned. fal's FLUX Fill takes a true mask but has not been run.
+- **Gemini fills take no mask.** The region is pointed out with an outline and the result is pasted back through the real mask. An alignment step now corrects the small zoom and shift Gemini introduces, but it has only been checked on two real outputs. fal's FLUX Fill takes a true mask but has not been run.
+- **The frontend has not been run with real generation.** It was checked against the backend with stand-in generators. The relight page is unaffected, since its live preview uses no hosted service.
+- **The frontend was checked in one browser only**, at desktop width. Safari, Firefox and phones are untested.
 - **Known relight weak spot.** Light from below gives blotchy shadow bands on faces. Side and top light look convincing.
 - **Deployment has not been started.** The local models total about 6 GB and Marigold wants a GPU. A locally recorded demo video avoids this entirely if a live URL is not required.
 - **State is in memory.** Uploaded scenes, characters and jobs are lost when the server restarts, and the server must run as a single process.
@@ -69,11 +101,9 @@ The backend suite is 88 tests passing and 1 expected failure (cards over a photo
 
 ## Needs you
 
-1. **Fix the GitHub push.** This Mac is signed in to GitHub as `AarKur`, which has no write access to `aarooshpravici/BanannaHacksSubmission`. Add `AarKur` as a collaborator (repo Settings → Collaborators) and accept the invite, then:
-   ```bash
-   git push -u origin overnight-foundation
-   ```
-2. **Decide the Gemini image budget.** One call is left under the cap. To allow more, set `GEMINI_IMAGE_CALL_LIMIT` in `.env` to the new total.
-3. **Confirm the deadline and GPU credits** in the hackathon Discord.
-4. **Collect real test images** for whichever idea is chosen, and try them: real designs for Autocomplete, real character drawings (including back views) for Character Views, portraits and objects for Relight.
-5. **To use the real services in the app**, set `MOCK_MODE=0` in `.env`. It is `1` by default so nothing is spent by accident.
+1. **Pick the idea** with your team, using the proof images above.
+2. **Confirm the deadline and GPU credits** in the hackathon Discord.
+3. **Decide the Gemini image budget.** One call is left under the cap. To allow more, set `GEMINI_IMAGE_CALL_LIMIT` in `.env` to the new total.
+4. **Collect real test images** for the chosen idea and try them: real designs for Autocomplete, real character drawings (including back views) for Character Views, portraits and objects for Relight.
+5. **Have each teammate install the secret check** after cloning (one line, at the top of `tools/check_secrets.py`). The repo is public.
+6. **Optional: top up fal** at fal.ai/dashboard/billing if you want true mask-based inpainting. Gemini covers everything else.
