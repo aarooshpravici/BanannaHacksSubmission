@@ -8,7 +8,8 @@ import { FitBox, PageIntro, Panel, Stage, Workspace } from "@/components/Panel";
 import { BusyLabel, BusyOverlay } from "@/components/Spinner";
 import { UploadDropzone } from "@/components/UploadDropzone";
 import { AlertIcon, DownloadIcon, EyeIcon, OrbitIcon, SparklesIcon, SunIcon, UploadIcon } from "@/components/icons";
-import { RelightCanvas } from "@/components/relight/RelightCanvas";
+import { RelightCanvas, type ShadingPath } from "@/components/relight/RelightCanvas";
+import { ShadingNote } from "@/components/relight/ShadingNote";
 import { Button, Segmented, Slider, Toggle } from "@/components/ui";
 import { ApiError, errorMessage, isAbort, relightAdoptScene, relightEnhance, relightRender, relightScene } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -52,6 +53,13 @@ const SERVER_RENDER_OFFLINE = `Cannot reach the backend at ${API_URL}. Is it run
 /** The static demo: why uploading and Enhance are missing. */
 const DEMO_UPLOAD_NOTE = "Uploading your own photo needs the Relight server, which this demo runs without.";
 const DEMO_ENHANCE_NOTE = "Enhance needs the Relight server, which this demo runs without.";
+/**
+ * Shading on the processor: a full-quality picture that takes longer than this,
+ * in milliseconds, is slow enough that the server's renders are the better
+ * picture, when there is a server. Lower and ordinary laptops would be sent to
+ * the network for nothing; higher and a slow phone waits seconds for each picture.
+ */
+const CPU_SLOW_MS = 1200;
 /** Shown in the prompt box. Short enough for one line of the sidebar at every window size, so it is never cut off. */
 const PROMPT_PLACEHOLDER = "Optional: a mood, such as golden hour";
 
@@ -79,10 +87,11 @@ function warmthToColor(warmth: number): [number, number, number] {
 const cssColor = (c: [number, number, number]) => `rgb(${c.map((v) => Math.round(clamp(v, 0, 1) * 255)).join(" ")})`;
 
 /**
- * Fallback for browsers without WebGL2: ask the server to render each light
- * position (debounced), instead of shading in the browser.
+ * Fallback for browsers that cannot shade, or shade too slowly: ask the server
+ * to render each light position (debounced), instead of shading in the browser.
+ * `onFail` is called each time a render fails.
  */
-function useServerPreview(enabled: boolean, scene: RelightScene | null, light: Light, shadows: boolean, withBackendScene: WithBackendScene) {
+function useServerPreview(enabled: boolean, scene: RelightScene | null, light: Light, shadows: boolean, withBackendScene: WithBackendScene, onFail: () => void) {
   const [state, setState] = useState<{ sceneId: string | null; image: string | null; error: string | null }>({ sceneId: null, image: null, error: null });
   // Bumped by retry(). While renders fail the light is locked, so moving it cannot be what asks again.
   const [attempt, setAttempt] = useState(0);
@@ -96,7 +105,9 @@ function useServerPreview(enabled: boolean, scene: RelightScene | null, light: L
         const render = await withBackendScene(scene, SERVER_RENDER_OFFLINE, (scene_id) => relightRender({ scene_id, light, shadows }, controller.signal));
         if (!cancelled) setState({ sceneId: scene.scene_id, image: render.image, error: null });
       } catch (error) {
-        if (!cancelled && !isAbort(error)) setState((s) => ({ ...s, error: errorMessage(error) }));
+        if (cancelled || isAbort(error)) return;
+        setState((s) => ({ ...s, error: errorMessage(error) }));
+        onFail();
       }
     }, 150);
     return () => {
@@ -104,7 +115,7 @@ function useServerPreview(enabled: boolean, scene: RelightScene | null, light: L
       clearTimeout(timer);
       controller.abort();
     };
-  }, [enabled, scene, light, shadows, withBackendScene, attempt]);
+  }, [enabled, scene, light, shadows, withBackendScene, onFail, attempt]);
   // The last render outlives a change of photo: never show or export it over another scene.
   const image = enabled && scene && state.sceneId === scene.scene_id ? state.image : null;
   return { image, error: enabled ? state.error : null, retry };
@@ -126,8 +137,15 @@ export default function RelightPage() {
   const [shadows, setShadows] = useState(true);
   const light = useMemo<Light>(() => ({ ...base, color: warmthToColor(warmth) }), [base, warmth]);
 
-  const [ready, setReady] = useState(false); // first GPU frame is on screen
-  const [gpuProblem, setGpuProblem] = useState<string | null>(null);
+  const [ready, setReady] = useState(false); // the first shaded picture is on the canvas
+  // How the canvas is being shaded (graphics chip or processor), once it is.
+  const [path, setPath] = useState<ShadingPath | null>(null);
+  // Why nothing in this browser can shade the photo: neither the graphics chip nor the processor.
+  const [localProblem, setLocalProblem] = useState<string | null>(null);
+  // The processor shades, but takes this many milliseconds over a picture: too long (see CPU_SLOW_MS).
+  const [cpuSlowMs, setCpuSlowMs] = useState<number | null>(null);
+  // A server render failed, so being slow is no longer a reason to ask the server.
+  const [serverDown, setServerDown] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [sweeping, setSweeping] = useState(false);
   const [comparing, setComparing] = useState(false);
@@ -136,6 +154,8 @@ export default function RelightPage() {
   const [snapshot, setSnapshot] = useState<string | null>(null);
 
   const canvas = useRef<HTMLCanvasElement>(null);
+  // Resolves when the canvas holds the finished picture for the current light (the processor shades a quick preview first).
+  const settle = useRef<(() => Promise<void>) | null>(null);
   const surface = useRef<HTMLDivElement>(null);
   const imageBox = useRef<HTMLDivElement>(null);
   const request = useRef(0);
@@ -169,8 +189,21 @@ export default function RelightPage() {
   }, []);
 
   const enhance = useJob<RelightRender>();
-  // The static demo has no server to render on.
-  const server = useServerPreview(gpuProblem !== null && !DEMO, scene, light, shadows, withBackendScene);
+  // Server renders stand in when the browser cannot shade at all, or only slowly. The static demo has no server to render on.
+  const askServer = !DEMO && (localProblem !== null || (cpuSlowMs !== null && !serverDown));
+  const onServerFail = useCallback(() => setServerDown(true), []);
+  const server = useServerPreview(askServer, scene, light, shadows, withBackendScene, onServerFail);
+  // The canvas is the picture, unless nothing here can shade or a server render has taken its place.
+  const showCanvas = localProblem === null && !(askServer && server.image !== null);
+
+  /** A new scene starts from the best shading path again. */
+  const resetShading = useCallback(() => {
+    setReady(false);
+    setPath(null);
+    setLocalProblem(null);
+    setCpuSlowMs(null);
+    setServerDown(false);
+  }, []);
 
   const stopSweep = useCallback(() => {
     if (sweepFrame.current !== null) cancelAnimationFrame(sweepFrame.current);
@@ -203,15 +236,13 @@ export default function RelightPage() {
       setPhoto(image);
       if (!keep) {
         setScene(null);
-        setReady(false);
-        setGpuProblem(null);
+        resetShading();
       }
       setLoading(true);
       try {
         const result = await relightScene({ image: image.base64, detail: withDetail });
         if (request.current === id) {
-          setReady(false);
-          setGpuProblem(null);
+          resetShading();
           setScene(result);
         }
         return true;
@@ -224,7 +255,7 @@ export default function RelightPage() {
         if (request.current === id) setLoading(false);
       }
     },
-    [clearResults],
+    [clearResults, resetShading],
   );
 
   /** A built-in sample: its scene comes from static files, so this works with no backend. */
@@ -237,8 +268,7 @@ export default function RelightPage() {
       if (request.current !== id) return;
       clearResults();
       setPhoto({ base64: result.image, mime: "image/jpeg", width: result.width, height: result.height, name: `${sample.name}.jpg` });
-      setReady(false);
-      setGpuProblem(null);
+      resetShading();
       setDetail(true); // samples are baked with the detailed normals
       setScene(result);
       setPicking(null);
@@ -335,13 +365,21 @@ export default function RelightPage() {
 
   // --- actions --------------------------------------------------------------------
 
-  const onReady = useCallback(() => setReady(true), []);
-  const onUnavailable = useCallback((reason: string) => setGpuProblem(reason), []);
+  const onReady = useCallback((next: ShadingPath) => {
+    setReady(true);
+    setPath(next);
+  }, []);
+  const onUnavailable = useCallback((reason: string) => setLocalProblem(reason), []);
+  const onFullRender = useCallback((ms: number) => {
+    if (ms > CPU_SLOW_MS) setCpuSlowMs(ms);
+  }, []);
 
   const exportPng = async () => {
     try {
-      if (gpuProblem === null && canvas.current) await downloadCanvas(canvas.current, "relit.png");
-      else if (server.image) await downloadBase64AsPng(server.image, "relit.png");
+      if (showCanvas && canvas.current) {
+        await settle.current?.(); // not the quick preview
+        if (canvas.current) await downloadCanvas(canvas.current, "relit.png");
+      } else if (server.image) await downloadBase64AsPng(server.image, "relit.png");
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -350,7 +388,8 @@ export default function RelightPage() {
   const runEnhance = async () => {
     if (!scene) return;
     // Freeze what the live preview shows now: it is the "before" of the comparison.
-    setSnapshot(gpuProblem === null ? (canvas.current?.toDataURL("image/jpeg", 0.92) ?? null) : server.image ? toDataUrl(server.image) : null);
+    if (showCanvas) await settle.current?.(); // not the quick preview
+    setSnapshot(showCanvas ? (canvas.current?.toDataURL("image/jpeg", 0.92) ?? null) : server.image ? toDataUrl(server.image) : null);
     // A new run clears the last result, which would leave the Enhanced tab empty, and stuck there if the run fails.
     setTab("live");
     const result = await enhance.run(() => withBackendScene(scene, ENHANCE_OFFLINE, (scene_id) => relightEnhance({ scene_id, light, shadows, prompt: prompt.trim() })));
@@ -423,22 +462,42 @@ export default function RelightPage() {
   const enhancedBase64 = enhance.result?.image ?? null;
   const enhanced = enhancedBase64 ? toDataUrl(enhancedBase64) : null;
   const live = tab === "live";
-  const canShade = scene !== null && (ready || gpuProblem !== null);
-  // There is a relit picture on screen: the live canvas, or (without WebGL2) a render from the server.
-  const canShow = canShade && (gpuProblem === null || server.image !== null);
-  // Without WebGL2 the picture only changes when the server sends a render. With no server (the demo) or a failing one, nothing the light controls do can show.
-  const stuck = gpuProblem !== null && (DEMO || server.error !== null);
+  const canShade = scene !== null && (ready || localProblem !== null);
+  // There is a relit picture on screen: the live canvas, or a render from the server.
+  const canShow = canShade && (showCanvas || server.image !== null);
+  // When nothing here can shade, the picture only changes when the server sends a render. With no server (the demo) or a failing one, nothing the light controls do can show.
+  const stuck = localProblem !== null && (DEMO || server.error !== null);
   const canLight = canShade && !stuck;
   const failed = scene === null && !loading && sceneError !== null;
   // One bar for the missing live shading, saying what is true now.
   const gpuMessage =
-    gpuProblem === null
+    localProblem === null
       ? null
       : DEMO
-        ? `Live shading is unavailable (${gpuProblem}), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.`
+        ? `Live shading is unavailable (${localProblem}), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.`
         : server.error !== null
-          ? `Live shading is unavailable (${gpuProblem}), and the server render that would replace it failed: ${server.error} The light controls are off until a render arrives.`
-          : `Live shading is unavailable (${gpuProblem}). Showing server renders instead, which lag slightly behind the light.`;
+          ? `Live shading is unavailable (${localProblem}), and the server render that would replace it failed: ${server.error} The light controls are off until a render arrives.`
+          : `Live shading is unavailable (${localProblem}). Showing server renders instead, which lag slightly behind the light.`;
+  const onProcessor = path !== null && path.kind.startsWith("cpu");
+  // A quiet line for the slower ways of shading that still work. The red bar above is for when none does.
+  const shadingNote =
+    localProblem !== null || !ready || path === null
+      ? null
+      : !showCanvas
+        ? `This device's processor is slow at shading (${((cpuSlowMs ?? 0) / 1000).toFixed(1)} s a picture), so the server draws the photo instead. It lags slightly behind the light.`
+        : onProcessor
+          ? `Shading on this device's processor, not its graphics chip (${path.why}). The picture is a quick preview while the light moves and sharpens when it stops.`
+          : null;
+  // The Geometry panel says which path is in use; the tooltip has the detail a bug report needs.
+  const shadingLine = !ready || path === null ? null : !showCanvas ? "server renders" : path.label;
+  const shadingDetail =
+    path === null
+      ? undefined
+      : path.kind === "gpu-full"
+        ? `The photo is shaded live by the graphics chip (${path.chip}), at full quality.`
+        : path.kind === "gpu-packed"
+          ? `The photo is shaded live by the graphics chip (${path.chip}). Shadows are kept in 8-bit buffers because ${path.why}; the picture is the same to within a level or two of brightness.`
+          : `The photo is shaded by the processor${path.kind === "cpu-worker" ? ", in a background thread," : ""} because the graphics chip could not be used: ${path.why}.`;
   // A built-in sample comes with detailed normals. Only a real backend can work them out again without.
   const detailFixed = scene !== null && isSampleScene(scene) && (DEMO || MOCK);
   const enhanceError = enhance.status === "error" ? enhance.error : null;
@@ -644,6 +703,11 @@ export default function RelightPage() {
             {scene && (
               <p className="mt-2.5 font-mono text-[11px] text-zinc-500">
                 {scene.width} x {scene.height} px, relief {scene.relief}
+                {shadingLine && (
+                  <span className="mt-0.5 block" title={shadingDetail}>
+                    shading: {shadingLine}
+                  </span>
+                )}
               </p>
             )}
           </CollapsiblePanel>
@@ -653,6 +717,7 @@ export default function RelightPage() {
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
       <ErrorBanner message={enhanceError} onDismiss={enhance.reset} className="max-lg:hidden" />
       <ErrorBanner message={gpuMessage} onRetry={!DEMO && server.error !== null ? server.retry : undefined} />
+      <ShadingNote message={shadingNote} />
 
       <Stage hug={{ width, height }}>
         {/* The whole stage is the drag surface, so the light can be pulled past the photo's edge. */}
@@ -674,23 +739,25 @@ export default function RelightPage() {
         >
           {/* The margins round the photo. .light-handle (globals.css) reads the two variables to know where the stage ends. */}
           <div className="absolute inset-x-(--stage-inset-x) inset-y-(--stage-inset-y) [--stage-inset-x:1.5rem] [--stage-inset-y:4rem] sm:[--stage-inset-x:3.5rem]">
-            {/* Live preview. Stays mounted behind the Enhanced tab so the GPU scene survives. */}
+            {/* Live preview. Stays mounted behind the Enhanced tab so the scene it has loaded survives. */}
             <div className={cn("absolute inset-0", !live && "invisible")}>
               <FitBox width={width} height={height}>
                 <div ref={imageBox} className="absolute inset-0 overflow-hidden rounded-lg bg-black shadow-2xl ring-1 ring-white/10">
                   <img src={photoUrl} alt="Original photo" draggable={false} className={cn("absolute inset-0 h-full w-full", failed && "opacity-30 grayscale")} />
-                  {scene && gpuProblem === null && (
+                  {scene && showCanvas && (
                     <RelightCanvas
                       scene={scene}
                       light={light}
                       shadows={shadows}
                       canvasRef={canvas}
+                      settleRef={settle}
                       onReady={onReady}
                       onUnavailable={onUnavailable}
+                      onFullRender={onFullRender}
                       className={cn("absolute inset-0 h-full w-full", (!ready || comparing) && "opacity-0")}
                     />
                   )}
-                  {gpuProblem !== null && server.image && !comparing && (
+                  {!showCanvas && server.image && !comparing && (
                     <img src={toDataUrl(server.image)} alt="Relit photo" draggable={false} className="absolute inset-0 h-full w-full" />
                   )}
                   {comparing && <span className="absolute left-2 top-2 rounded-md bg-black/65 px-2 py-0.5 text-[11px] font-medium text-zinc-200 backdrop-blur">Original</span>}

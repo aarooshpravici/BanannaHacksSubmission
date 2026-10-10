@@ -351,20 +351,36 @@ export function sceneArrays(
   return { width, height, relief, rgba: image.data, depth: d, normals: nrm };
 }
 
+/** A finished shadow map (the output of shadowMap) with its size. */
+export interface ShadowLayer {
+  map: Float32Array;
+  width: number;
+  height: number;
+}
+
 /**
  * relight(): diffuse() * shadows() -> shading_map() -> apply_shading().
  * Returns RGBA bytes ready for putImageData.
  */
 export function relightPixels(scene: SceneArrays, light: Light, castShadows = true): Uint8ClampedArray<ArrayBuffer> {
-  const { width: w, height: h, relief, rgba, depth, normals } = scene;
-  const lightPos = lightPosition(w, h, relief, light);
-  const [lx, ly, lz] = lightPos;
-
-  let shadow: { map: Float32Array; width: number; height: number } | null = null;
+  const { width: w, height: h, relief, depth } = scene;
+  let shadow: ShadowLayer | null = null;
   if (castShadows) {
     const field = shadowHeightField(depth, w, h, w, h, relief);
-    shadow = { map: shadowMap(field, relief, lightPos), width: field.width, height: field.height };
+    shadow = { map: shadowMap(field, relief, lightPosition(w, h, relief, light)), width: field.width, height: field.height };
   }
+  return shadePixels(scene, light, shadow);
+}
+
+/**
+ * The per-pixel half of relight(): diffuse() -> shading_map() -> apply_shading(),
+ * with the shadow map handed in (null = no cast shadows). Split from
+ * relightPixels so the CPU renderer (lib/relightCpuCore.ts) can keep the
+ * height field between frames instead of rebuilding it for every one.
+ */
+export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLayer | null): Uint8ClampedArray<ArrayBuffer> {
+  const { width: w, height: h, relief, rgba, depth, normals } = scene;
+  const [lx, ly, lz] = lightPosition(w, h, relief, light);
 
   // diffuse(): exposure is measured relative to the centre of the scene.
   const reference = Math.hypot(lx - 0.5, ly - (0.5 * h) / w, lz - relief / 2);

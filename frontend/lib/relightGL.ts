@@ -14,6 +14,25 @@
 // Every texture is stored top row first, so texture row j is image row j and
 // v = 0 is the top of the image. Only the final pass, which draws to the
 // screen (where y points up), flips.
+//
+// What this needs from WebGL2, and what happens without it:
+//   - The height field is an RGBA32F texture read with texelFetch (NEAREST).
+//     Core WebGL2: float textures may always be sampled unfiltered, so
+//     OES_texture_float_linear is NOT needed, here or anywhere else.
+//   - The three shadow buffers are RGBA16F. Sampling and LINEAR-filtering
+//     half-float is core; DRAWING into it is not and needs EXT_color_buffer_float
+//     or EXT_color_buffer_half_float. Without either (many phones), the
+//     "packed" grade keeps them in RGBA8, which is always drawable: the layers
+//     at 8 bits, the finished shadow map as 16 bits spread over two channels,
+//     which the shade pass unpacks and interpolates by hand.
+//   - highp float in fragment shaders is required by GLSL ES 3.00 and the march
+//     relies on it (positions to 1/32 of a pixel); the format is checked anyway.
+//   - The blur's kernel is `BLUR_RADIUS + 1` vec3 uniforms (33; the minimum
+//     MAX_FRAGMENT_UNIFORM_VECTORS is 224) and every loop has constant bounds.
+//   - Textures and the canvas are at most the scene's size, checked against
+//     MAX_TEXTURE_SIZE (at least 2048) when a scene is set.
+// Whatever is missing, wrong or refused, the constructor or setScene throws
+// and the caller (components/relight/RelightCanvas.tsx) shades on the CPU instead.
 
 import {
   HIGHLIGHT_KNEE,
@@ -30,6 +49,8 @@ import {
   TERMINATOR_SOFTNESS,
   gaussianKernel,
   lightPosition,
+  relightPixels,
+  sceneArrays,
   shadowHeightField,
 } from "./relightMath";
 import type { Light } from "./types";
@@ -121,6 +142,7 @@ uniform sampler2D u_src;
 uniform ivec2 u_size;
 uniform ivec2 u_dir;
 uniform float u_final; // 1.0 on the second direction
+uniform float u_packed; // 1.0 when the targets are 8-bit: the finished map goes out as 16 bits over R and G
 uniform vec3 u_kernel[${BLUR_RADIUS + 1}];
 out vec4 o_color;
 
@@ -140,7 +162,15 @@ void main() {
     acc += u_kernel[abs(k)] * texelFetch(u_src, q, 0).rgb;
   }
   float lit = (1.0 - acc.r) * (1.0 - acc.g) * (1.0 - acc.b);
-  o_color = u_final > 0.5 ? vec4(lit, 0.0, 0.0, 1.0) : vec4(acc, 1.0);
+  if (u_final < 0.5) {
+    o_color = vec4(acc, 1.0);
+  } else if (u_packed > 0.5) {
+    float steps = floor(clamp(lit, 0.0, 1.0) * 65535.0 + 0.5);
+    float high = floor(steps / 256.0);
+    o_color = vec4(high / 255.0, (steps - high * 256.0) / 255.0, 0.0, 1.0);
+  } else {
+    o_color = vec4(lit, 0.0, 0.0, 1.0);
+  }
 }`;
 
 // diffuse() -> shading_map() -> apply_shading().
@@ -158,6 +188,7 @@ uniform float u_intensity;
 uniform float u_ambient;
 uniform vec3 u_color;
 uniform float u_shadows;     // 1.0 = cast shadows
+uniform float u_packed;      // 1.0 = u_shadow holds 16-bit values over R and G (see the blur pass)
 in vec2 v_uv;
 out vec4 o_color;
 
@@ -174,6 +205,24 @@ float softTerminator(float cosTheta) {
   const float k = ${f(TERMINATOR_SOFTNESS)};
   float eased = max(cosTheta + k, 0.0) * max(cosTheta + k, 0.0) / (4.0 * k);
   return cosTheta >= k ? cosTheta : eased;
+}
+
+float unpackShadow(ivec2 p, ivec2 size) {
+  vec2 bytes = floor(texelFetch(u_shadow, clamp(p, ivec2(0), size - 1), 0).rg * 255.0 + 0.5);
+  return (bytes.x * 256.0 + bytes.y) / 65535.0;
+}
+
+// What texture() with LINEAR and CLAMP_TO_EDGE does, for the packed map, whose
+// two bytes cannot be interpolated separately.
+float packedShadow(vec2 uv) {
+  ivec2 size = textureSize(u_shadow, 0);
+  vec2 p = uv * vec2(size) - 0.5;
+  vec2 base = floor(p);
+  vec2 a = p - base;
+  ivec2 i = ivec2(base);
+  float top = mix(unpackShadow(i, size), unpackShadow(i + ivec2(1, 0), size), a.x);
+  float bottom = mix(unpackShadow(i + ivec2(0, 1), size), unpackShadow(i + ivec2(1, 1), size), a.x);
+  return mix(top, bottom, a.y);
 }
 
 void main() {
@@ -197,7 +246,7 @@ void main() {
   float direct = min(softTerminator(cosTheta), 1.0) * falloff;
 
   // shading_map(): ambient + intensity * diffuse * shadows.
-  if (u_shadows > 0.5) direct *= texture(u_shadow, v_uv).r;
+  if (u_shadows > 0.5) direct *= u_packed > 0.5 ? packedShadow(v_uv) : texture(u_shadow, v_uv).r;
   float shading = u_ambient + u_intensity * direct;
 
   // apply_shading(): multiply in linear light; above the knee, roll off instead of clipping.
@@ -208,13 +257,76 @@ void main() {
   o_color = vec4(clamp(linearToSrgb(lit), 0.0, 1.0), 1.0);
 }`;
 
+/** A decoded picture: what createImageBitmap returns, or raw pixels. */
+type Pixels = ImageBitmap | ImageData;
+
 export interface RelightSceneData {
   width: number;
   height: number;
   relief: number;
-  image: ImageBitmap;
-  depth: ImageBitmap;
-  normals: ImageBitmap;
+  image: Pixels;
+  depth: Pixels;
+  normals: Pixels;
+}
+
+/**
+ * How the shadow buffers are kept, chosen once per context:
+ *   "full"    half-float buffers (needs a float colour-buffer extension)
+ *   "packed"  8-bit buffers, which every WebGL2 context can draw into
+ */
+export type GpuGrade = "full" | "packed";
+
+export interface GpuReport {
+  grade: GpuGrade;
+  /** Why the grade is not "full", in plain words; null when it is. */
+  why: string | null;
+  /** The graphics chip's own name, where the browser gives it out (for bug reports). */
+  chip: string;
+  /** Mean difference from the CPU reference on the built-in test scene, in 8-bit levels. */
+  selfTestMean: number;
+}
+
+/**
+ * The fewest bits of precision a fragment shader's highp float may have.
+ * GLSL ES 3.00 demands 23 (a 32-bit float); the shadow march needs about 13
+ * for its 1/32-pixel positions in a 256-pixel map, plus headroom for the
+ * differences of nearly equal heights.
+ */
+const MIN_HIGHP_FLOAT_BITS = 23;
+
+/**
+ * The self-test: how far, on average, the picture the GPU draws of a small
+ * built-in scene may be from the CPU reference, in 8-bit levels. A healthy GPU
+ * is well under 1; shadows missing altogether, or garbage in a buffer, is
+ * several times this. Set too low it would turn working GPUs away to the much
+ * slower CPU path; too high and a broken driver gets through.
+ */
+const SELF_TEST_MAX_MEAN = 3;
+const SELF_TEST_WIDTH = 64;
+const SELF_TEST_HEIGHT = 48;
+const SELF_TEST_RELIEF = 0.3;
+/** Low and to the left, so the block in the test scene throws a long shadow across it. */
+const SELF_TEST_LIGHT: Light = { x: 0.05, y: 0.45, height: 0.12, intensity: 1.8, ambient: 0.06, color: [1, 0.9, 0.8] };
+
+/** A floor sloping gently away, with a raised block in the middle: every part of the shader has something to do. */
+function selfTestScene(): { image: ImageData; depth: ImageData; normals: ImageData } {
+  const w = SELF_TEST_WIDTH;
+  const h = SELF_TEST_HEIGHT;
+  const image = new ImageData(w, h);
+  const depth = new ImageData(w, h);
+  const normals = new ImageData(w, h);
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      const p = (j * w + i) * 4;
+      const block = i >= 24 && i < 40 && j >= 16 && j < 32;
+      image.data.set([90 + i * 2, 200 - j * 2, 120 + ((i * j) % 64), 255], p);
+      const near = block ? 230 : 40 + Math.round((j / h) * 30);
+      depth.data.set([near, near, near, 255], p);
+      // Mostly facing the viewer, tilting across the picture so the diffuse term varies.
+      normals.data.set([128 + Math.round((i / w - 0.5) * 80), 128 + Math.round((j / h - 0.5) * 80), 235, 255], p);
+    }
+  }
+  return { image, depth, normals };
 }
 
 interface Program {
@@ -248,10 +360,17 @@ export class RelightRenderer {
   private shadeProgram: Program;
   private vao: WebGLVertexArrayObject;
   private quad: WebGLBuffer;
-  private floatTargets: boolean;
+  private grade: GpuGrade = "packed";
+  private why: string | null = null;
+  private chip = "unknown";
+  private selfTestMean = 0;
   private scene: SceneState | null = null;
 
-  /** Throws if WebGL2 is not available or a shader fails to compile. */
+  /**
+   * Throws, with a message fit to show the user, if WebGL2 is not available, a
+   * shader fails to compile or link, or the GPU draws the built-in test scene
+   * wrongly in every grade. Driver logs go to the console.
+   */
   constructor(private canvas: HTMLCanvasElement) {
     const gl = canvas.getContext("webgl2", {
       alpha: false,
@@ -261,21 +380,29 @@ export class RelightRenderer {
       preserveDrawingBuffer: true, // so Export and snapshots can read the canvas at any time
     });
     if (!gl) throw new Error("WebGL2 is not available in this browser");
+    if (gl.isContextLost()) throw new Error("the browser has switched its graphics context off");
     this.gl = gl;
-    // Rendering to half-float keeps the shadow map smooth; 8-bit is a fine fallback.
-    this.floatTargets = gl.getExtension("EXT_color_buffer_float") !== null;
+
+    const precision = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+    if (!precision || precision.precision < MIN_HIGHP_FLOAT_BITS) {
+      throw new Error("this graphics chip's shaders do not compute precisely enough");
+    }
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    if (info) this.chip = String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL));
+    // Either extension makes RGBA16F something a shader can draw into.
+    const floatTargets = gl.getExtension("EXT_color_buffer_float") !== null || gl.getExtension("EXT_color_buffer_half_float") !== null;
 
     this.shadowProgram = this.link(SHADOW_FRAGMENT, ["u_flip", "u_z", "u_size", "u_light", "u_relief"]);
-    this.blurProgram = this.link(BLUR_FRAGMENT, ["u_flip", "u_src", "u_size", "u_dir", "u_final", "u_kernel"]);
+    this.blurProgram = this.link(BLUR_FRAGMENT, ["u_flip", "u_src", "u_size", "u_dir", "u_final", "u_packed", "u_kernel"]);
     this.shadeProgram = this.link(SHADE_FRAGMENT, [
       "u_flip", "u_image", "u_depth", "u_normals", "u_shadow", "u_aspect", "u_relief",
-      "u_light", "u_intensity", "u_ambient", "u_color", "u_shadows",
+      "u_light", "u_intensity", "u_ambient", "u_color", "u_shadows", "u_packed",
     ]);
 
     // One oversized triangle covers the viewport.
     const vao = gl.createVertexArray();
     const quad = gl.createBuffer();
-    if (!vao || !quad) throw new Error("WebGL could not allocate buffers.");
+    if (!vao || !quad) throw new Error("the graphics chip is out of memory");
     this.vao = vao;
     this.quad = quad;
     gl.bindVertexArray(vao);
@@ -283,18 +410,61 @@ export class RelightRenderer {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+    this.chooseGrade(floatTargets);
+  }
+
+  /** Which grade is in use and why: fixed once the constructor returns, unless a scene's buffers are refused. */
+  get report(): GpuReport {
+    return { grade: this.grade, why: this.why, chip: this.chip, selfTestMean: this.selfTestMean };
+  }
+
+  /**
+   * Try each grade the context claims to support, best first, on the built-in
+   * test scene, and keep the first whose picture matches the CPU reference.
+   * An extension being listed is not proof that it works on this driver.
+   */
+  private chooseGrade(floatTargets: boolean): void {
+    const test = selfTestScene();
+    const reference = relightPixels(sceneArrays(test.image, test.depth, test.normals, SELF_TEST_RELIEF), SELF_TEST_LIGHT, true);
+    let why: string | null = floatTargets ? null : "this graphics chip cannot draw into floating-point buffers";
+    for (const grade of floatTargets ? (["full", "packed"] as const) : (["packed"] as const)) {
+      this.grade = grade;
+      try {
+        this.setScene({ width: SELF_TEST_WIDTH, height: SELF_TEST_HEIGHT, relief: SELF_TEST_RELIEF, ...test });
+        if (this.grade !== grade) throw new Error("the shadow buffers were refused"); // setScene stepped down by itself
+        this.render(SELF_TEST_LIGHT, true);
+        const drawn = this.readPixels();
+        let sum = 0;
+        for (let p = 0; p < drawn.length; p += 4) {
+          sum += Math.abs(drawn[p] - reference[p]) + Math.abs(drawn[p + 1] - reference[p + 1]) + Math.abs(drawn[p + 2] - reference[p + 2]);
+        }
+        const mean = sum / ((drawn.length / 4) * 3);
+        if (!(mean <= SELF_TEST_MAX_MEAN)) throw new Error(`the test picture is off by ${mean.toFixed(1)} levels on average`);
+        this.selfTestMean = mean;
+        this.why = why;
+        this.freeScene();
+        return;
+      } catch (error) {
+        console.warn(`Relight: the "${grade}" GPU path failed its self-test on ${this.chip}:`, error);
+        why = "floating-point shadow buffers do not work on this graphics chip";
+        this.freeScene();
+      }
+    }
+    throw new Error("this graphics chip drew a test picture wrongly");
   }
 
   private compile(type: number, source: string): WebGLShader {
     const gl = this.gl;
     const shader = gl.createShader(type);
-    if (!shader) throw new Error("WebGL could not create a shader.");
+    if (!shader) throw new Error("the graphics chip is out of memory");
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      const log = gl.getShaderInfoLog(shader);
+      // The driver's log is for whoever debugs this; the user gets one plain sentence.
+      console.warn("Relight: a shader failed to compile.", gl.getShaderInfoLog(shader));
       gl.deleteShader(shader);
-      throw new Error(`Shader failed to compile: ${log}`);
+      throw new Error("the shader did not compile on this graphics chip");
     }
     return shader;
   }
@@ -302,7 +472,7 @@ export class RelightRenderer {
   private link(fragment: string, uniformNames: string[]): Program {
     const gl = this.gl;
     const program = gl.createProgram();
-    if (!program) throw new Error("WebGL could not create a program.");
+    if (!program) throw new Error("the graphics chip is out of memory");
     const vs = this.compile(gl.VERTEX_SHADER, VERTEX);
     const fs = this.compile(gl.FRAGMENT_SHADER, fragment);
     gl.attachShader(program, vs);
@@ -312,9 +482,9 @@ export class RelightRenderer {
     gl.deleteShader(vs);
     gl.deleteShader(fs);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      const log = gl.getProgramInfoLog(program);
+      console.warn("Relight: a shader program failed to link.", gl.getProgramInfoLog(program));
       gl.deleteProgram(program);
-      throw new Error(`Shader program failed to link: ${log}`);
+      throw new Error("the shader did not link on this graphics chip");
     }
     const uniforms: Program["uniforms"] = {};
     for (const name of uniformNames) uniforms[name] = gl.getUniformLocation(program, name);
@@ -324,7 +494,7 @@ export class RelightRenderer {
   private texture(filter: number): WebGLTexture {
     const gl = this.gl;
     const texture = gl.createTexture();
-    if (!texture) throw new Error("WebGL could not create a texture.");
+    if (!texture) throw new Error("the graphics chip is out of memory");
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
@@ -333,14 +503,14 @@ export class RelightRenderer {
     return texture;
   }
 
-  private bitmapTexture(bitmap: ImageBitmap): WebGLTexture {
+  private pixelTexture(pixels: Pixels): WebGLTexture {
     const gl = this.gl;
     const texture = this.texture(gl.LINEAR);
     // The bytes of the PNG must reach the shader untouched, top row first.
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     return texture;
   }
 
@@ -348,15 +518,19 @@ export class RelightRenderer {
     const gl = this.gl;
     const texture = this.texture(filter);
     // Four channels: the march and the first blur carry one shadow layer in each of R, G and B.
-    if (this.floatTargets) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height, 0, gl.RGBA, gl.HALF_FLOAT, null);
+    if (this.grade === "full") gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height, 0, gl.RGBA, gl.HALF_FLOAT, null);
     else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     const framebuffer = gl.createFramebuffer();
-    if (!framebuffer) throw new Error("WebGL could not create a framebuffer.");
+    if (!framebuffer) throw new Error("the graphics chip is out of memory");
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    if (status !== gl.FRAMEBUFFER_COMPLETE) throw new Error("WebGL could not create the shadow buffer.");
+    if (status !== gl.FRAMEBUFFER_COMPLETE) {
+      gl.deleteTexture(texture);
+      gl.deleteFramebuffer(framebuffer);
+      throw new Error("the graphics chip refused a shadow buffer");
+    }
     return { texture, framebuffer };
   }
 
@@ -372,26 +546,36 @@ export class RelightRenderer {
     this.scene = null;
   }
 
-  /** Upload a scene. The canvas takes the scene's pixel size. */
+  /** Upload a scene. The canvas takes the scene's pixel size. Throws if the GPU cannot hold it. */
   setScene(data: RelightSceneData): void {
     const gl = this.gl;
     this.freeScene();
+    const limit = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
+    if (Math.max(data.width, data.height) > limit) throw new Error(`the photo is larger than this graphics chip can hold (${limit} pixels a side)`);
     this.canvas.width = data.width;
     this.canvas.height = data.height;
+    // A browser short of memory hands back a smaller drawing buffer than it was asked for.
+    if (gl.drawingBufferWidth !== data.width || gl.drawingBufferHeight !== data.height) throw new Error("the browser could not make a canvas the size of the photo");
+    while (gl.getError() !== gl.NO_ERROR); // start clean, so the check at the end is about this scene
 
     // The height field the shadow pass marches: the depth map, area-averaged
     // down to the shadow resolution on the CPU (cv2.resize INTER_AREA), as
     // floats, with its dilated and eroded copies in the next two channels.
-    const probe = document.createElement("canvas");
-    probe.width = data.depth.width;
-    probe.height = data.depth.height;
-    const ctx = probe.getContext("2d", { willReadFrequently: true });
-    if (!ctx) throw new Error("This browser could not create a 2D canvas.");
-    ctx.drawImage(data.depth, 0, 0);
-    const pixels = ctx.getImageData(0, 0, probe.width, probe.height).data;
-    const depth = new Float32Array(probe.width * probe.height);
+    let pixels: Uint8ClampedArray;
+    if (data.depth instanceof ImageData) {
+      pixels = data.depth.data;
+    } else {
+      const probe = document.createElement("canvas");
+      probe.width = data.depth.width;
+      probe.height = data.depth.height;
+      const ctx = probe.getContext("2d", { willReadFrequently: true });
+      if (!ctx) throw new Error("this browser could not create a 2D canvas");
+      ctx.drawImage(data.depth, 0, 0);
+      pixels = ctx.getImageData(0, 0, probe.width, probe.height).data;
+    }
+    const depth = new Float32Array(data.depth.width * data.depth.height);
     for (let i = 0; i < depth.length; i++) depth[i] = pixels[i * 4] / 255;
-    const field = shadowHeightField(depth, probe.width, probe.height, data.width, data.height, data.relief);
+    const field = shadowHeightField(depth, data.depth.width, data.depth.height, data.width, data.height, data.relief);
 
     const packed = new Float32Array(field.width * field.height * 4);
     for (let i = 0; i < field.z.length; i++) {
@@ -407,8 +591,13 @@ export class RelightRenderer {
     try {
       targets = this.makeTargets(field.width, field.height);
     } catch (error) {
-      if (!this.floatTargets) throw error;
-      this.floatTargets = false; // some drivers advertise float targets and then refuse them
+      if (this.grade !== "full") {
+        gl.deleteTexture(z);
+        throw error;
+      }
+      // Some drivers advertise float targets and then refuse them.
+      this.grade = "packed";
+      this.why = "this graphics chip refused floating-point shadow buffers";
       targets = this.makeTargets(field.width, field.height);
     }
 
@@ -416,21 +605,37 @@ export class RelightRenderer {
       width: data.width,
       height: data.height,
       relief: data.relief,
-      image: this.bitmapTexture(data.image),
-      depth: this.bitmapTexture(data.depth),
-      normals: this.bitmapTexture(data.normals),
+      image: this.pixelTexture(data.image),
+      depth: this.pixelTexture(data.depth),
+      normals: this.pixelTexture(data.normals),
       z,
       shadowWidth: field.width,
       shadowHeight: field.height,
       targets,
     };
+    const problem = gl.getError();
+    if (problem !== gl.NO_ERROR) {
+      this.freeScene();
+      throw new Error(problem === gl.OUT_OF_MEMORY ? "the graphics chip is out of memory" : `the graphics chip refused the photo (WebGL error ${problem})`);
+    }
   }
 
   private makeTargets(width: number, height: number): SceneState["targets"] {
     const gl = this.gl;
-    // The last one is sampled bilinearly by the shade pass: that is the
-    // cv2.resize(lit, full size, INTER_LINEAR) at the end of shadows().
-    return [this.target(width, height, gl.NEAREST), this.target(width, height, gl.NEAREST), this.target(width, height, gl.LINEAR)];
+    const made: Target[] = [];
+    try {
+      // The last one is sampled bilinearly by the shade pass: that is the
+      // cv2.resize(lit, full size, INTER_LINEAR) at the end of shadows(). Half-float
+      // lets the GPU do it; the packed map is interpolated in the shader instead.
+      for (const filter of [gl.NEAREST, gl.NEAREST, this.grade === "full" ? gl.LINEAR : gl.NEAREST]) made.push(this.target(width, height, filter));
+    } catch (error) {
+      for (const target of made) {
+        gl.deleteTexture(target.texture);
+        gl.deleteFramebuffer(target.framebuffer);
+      }
+      throw error;
+    }
+    return made as SceneState["targets"];
   }
 
   private bind(unit: number, texture: WebGLTexture, location: WebGLUniformLocation | null): void {
@@ -446,6 +651,7 @@ export class RelightRenderer {
     const scene = this.scene;
     if (!scene || gl.isContextLost()) return;
     const lightPos = lightPosition(scene.width, scene.height, scene.relief, light);
+    const packed = this.grade === "packed" ? 1 : 0;
     gl.bindVertexArray(this.vao);
     gl.disable(gl.BLEND);
     gl.disable(gl.DEPTH_TEST);
@@ -469,6 +675,7 @@ export class RelightRenderer {
       gl.uniform1f(u.u_flip, 0);
       gl.uniform2i(u.u_size, scene.shadowWidth, scene.shadowHeight);
       gl.uniform3fv(u.u_kernel, BLUR_WEIGHTS);
+      gl.uniform1f(u.u_packed, packed);
       gl.bindFramebuffer(gl.FRAMEBUFFER, rows.framebuffer);
       this.bind(0, march.texture, u.u_src);
       gl.uniform2i(u.u_dir, 1, 0);
@@ -497,11 +704,12 @@ export class RelightRenderer {
     gl.uniform1f(u.u_ambient, light.ambient);
     gl.uniform3f(u.u_color, light.color[0], light.color[1], light.color[2]);
     gl.uniform1f(u.u_shadows, castShadows ? 1 : 0);
+    gl.uniform1f(u.u_packed, packed);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
   /**
-   * The current frame as RGBA bytes, top row first (for tests and comparisons).
+   * The current frame as RGBA bytes, top row first (for the self-test and comparisons).
    * Call right after render().
    */
   readPixels(): Uint8Array {
