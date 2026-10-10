@@ -1,3 +1,5 @@
+> This report describes the earlier three-idea foundation, which lives on the `overnight-foundation` branch. This branch keeps only Relight.
+
 # Overnight report (night of Oct 9–10)
 
 Branch: `overnight-foundation`, pushed to GitHub. `main` is untouched.

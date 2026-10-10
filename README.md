@@ -1,20 +1,23 @@
-# BanannaHacksSubmission
-For the bannana hacks hackathon
+# Relight
 
-This branch holds a shared foundation for three candidate ideas (Relight, Design Autocomplete, Character Views) so the team can pick one and keep building. See `OVERNIGHT_REPORT.md` for what works, what is untested, and the proof images.
+Upload a photo and drag a light around it: the highlights and shadows follow live in your browser. The backend works out the photo's depth and surface direction once, and an optional "Enhance" step sends the shaded preview to a hosted image model for a photoreal finish.
+
+Built for the Banana Hacks hackathon. The earlier three-idea version is on the `overnight-foundation` branch; `docs/overnight-report.md` describes it.
 
 ## Layout
 
 ```
 backend/    FastAPI app (Python 3.12)
-  app/ideas/        one module per idea: relight.py, autocomplete.py, turnaround.py
-  app/critic/       shared scoring: image similarity, palette match, rank-and-retry loop
-  app/providers/    hosted calls: fal.ai / Replicate image generation, vision LLM
-  app/schemas.py    every request and response shape (the API contract)
-  scripts/          proof and live-check scripts
-  tests/            pytest suite
-frontend/   Next.js app with one page per idea
-proofs/     output images from the proof scripts
+  app/ideas/relight.py        depth, surface normals, shading and cast shadows
+  app/routers/                the HTTP endpoints: /health, /jobs, /relight/scene, /relight/render, /relight/enhance
+  app/providers/generation.py the hosted Enhance call (Gemini or fal.ai), its disk cache and its spending cap
+  app/schemas.py              every request and response shape (the API contract)
+  scripts/                    proof_relight.py (sample sheets), live_checks.py (one real Enhance call)
+  tests/                      pytest suite
+frontend/   Next.js app. One page, served at / and /relight
+proofs/     output images from the scripts
+testing/    what to test and how, written for the testers
+tools/      check_secrets.py, which keeps keys out of the repository
 ```
 
 ## Backend
@@ -23,28 +26,38 @@ proofs/     output images from the proof scripts
 cd backend
 conda create -y -p .venv python=3.12
 .venv/bin/python -m pip install -r requirements.txt
-cp ../.env.example ../.env        # then fill in keys; never commit .env
-.venv/bin/uvicorn app.main:app --reload --port 8000
+cp ../.env.example ../.env        # never commit .env
+.venv/bin/uvicorn app.main:app --port 8000
 ```
 
-Interactive API docs are at http://localhost:8000/docs. The first request to each model downloads its weights (about 6 GB in total).
+The first photo downloads the two local models (a few GB), so it is slow once.
 
-`MOCK_MODE=1` in `.env` (the default) makes every hosted call return a local stand-in, so the whole app runs with no keys. Set `MOCK_MODE=0` to use the real services.
-
-```bash
-.venv/bin/python -m pytest                 # fast tests
-.venv/bin/python -m pytest --models        # also the tests that load local models
-.venv/bin/python -m scripts.proof_relight        # writes proofs/relight/
-.venv/bin/python -m scripts.proof_autocomplete   # scores gap detection, writes proofs/autocomplete/
-.venv/bin/python -m scripts.live_checks          # one real call per hosted service; needs keys
-```
+`MOCK_MODE=1` in `.env` (the default) means Enhance never calls a paid service: it returns the preview unchanged. Depth, normals and shading are always real. Set `MOCK_MODE=0` and add a key to use the real Enhance.
 
 ## Frontend
 
 ```bash
 cd frontend
 npm install
+cp .env.local.example .env.local   # set NEXT_PUBLIC_MOCK=0 to use the backend
 npm run dev
 ```
 
-Open http://localhost:3000. With `NEXT_PUBLIC_MOCK=1` the pages run on canned data with no backend; set it to `0` and `NEXT_PUBLIC_API_URL=http://localhost:8000` to use the backend.
+Open http://localhost:3000. With `NEXT_PUBLIC_MOCK=1` the page runs with no backend at all, on a made-up dome shape instead of real depth. The dot in the top-right corner says which mode you are in.
+
+## Tests
+
+```bash
+cd backend
+MOCK_MODE=1 .venv/bin/python -m pytest -q            # fast tests
+MOCK_MODE=1 .venv/bin/python -m pytest -q --models   # also the tests that load the local models
+
+cd ../frontend
+npm run lint && npx tsc --noEmit && npm run build
+```
+
+The tests never call a paid service. `backend/scripts/live_checks.py` does (one image call), so run it only on purpose.
+
+## Testing by hand
+
+See the `testing/` folder: it says exactly what to click and what should appear.
