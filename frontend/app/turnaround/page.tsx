@@ -102,7 +102,8 @@ export default function TurnaroundPage() {
     setError(null);
   };
 
-  const generate = (target: View) => {
+  /** `fresh` asks for new images instead of the cached ones: only for regenerating a finished view. */
+  const generate = (target: View, fresh = false) => {
     if (!analysis) return;
     const checklist = features.map((f) => ({ ...f, name: f.name.trim() })).filter((f) => f.name);
     setView(target);
@@ -110,7 +111,7 @@ export default function TurnaroundPage() {
     setSent((s) => ({ ...s, [target]: checklist }));
     void jobs[target].run(() =>
       // The schema wants the checklist only when the user changed it.
-      turnaroundGenerate({ character_id: analysis.character_id, target_view: target, features: edited ? checklist : null }),
+      turnaroundGenerate({ character_id: analysis.character_id, target_view: target, features: edited ? checklist : null, ...(fresh ? { fresh: true } : {}) }),
     );
   };
 
@@ -175,6 +176,12 @@ export default function TurnaroundPage() {
           {view && result && (
             <Panel
               title={`Check: ${VIEW_LABELS[view]} view`}
+              // Alternates come back with an image and a total only, so the details below are always the winner's.
+              hint={
+                altIndex !== null && result.alternates[altIndex]
+                  ? `These scores and checks are for the best image, not alternate ${altIndex + 1} (overall ${Math.round(result.alternates[altIndex].total * 100)}).`
+                  : undefined
+              }
               actions={failed === 0 ? <Badge tone="good">all passed</Badge> : <Badge tone="bad">{failed} failed</Badge>}
             >
               <ScoreBars
@@ -296,7 +303,7 @@ export default function TurnaroundPage() {
           )}
           {view && result && shownImage && (
             <div className="absolute right-3 top-3 flex items-center gap-2">
-              <Button size="sm" variant="glass" onClick={() => generate(view)}>
+              <Button size="sm" variant="glass" onClick={() => generate(view, true)}>
                 <RefreshIcon />
                 Regenerate
               </Button>
