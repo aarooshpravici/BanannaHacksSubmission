@@ -173,17 +173,55 @@ def diffuse(geom: Geometry, light: Light) -> np.ndarray:
     return np.clip(cos, 0.0, 1.0) * falloff
 
 
+# Cast shadows are sorted by how far the thing casting them stands in front of
+# the surface receiving them ("the gap", as a fraction of the scene's relief),
+# into three layers that are blurred by different amounts. A small gap is a
+# contact shadow (a nose on a cheek) and stays crisp. A large gap is a far
+# background, which the height field wrongly treats as a wall right behind the
+# subject: its shadow is spread wide and faded, as a real one would be.
+#
+# The gaps at which a shadow is fully "near", "mid" and "far"; in between, it is
+# shared between the two neighbouring layers. Lower values soften more shadows,
+# higher values keep more of them crisp.
+SHADOW_GAP_NEAR = 0.1
+SHADOW_GAP_MID = 0.3
+SHADOW_GAP_FAR = 0.7
+# Blur of the near, mid and far layers, in pixels of the reduced shadow map. The
+# first only hides the pixel grid; the last has to be wide enough that a shadow
+# on a far background shows no steps, and narrow enough that it does not spill
+# far onto whatever stands next to it.
+SHADOW_BLUR_SIGMAS = (1.0, 3.0, 8.0)
+# How dark a shadow on a far background gets (1 = as dark as a contact shadow).
+# Lower hides the height field's mistakes more but also weakens real shadows.
+SHADOW_FAR_STRENGTH = 0.35
+# The gap is measured from the highest surface within this many shadow-map
+# pixels of the blocker to the lowest within as many of the receiver, so the
+# blurred rim of a silhouette counts as the tall object it belongs to and not as
+# a low wall. Larger is safer at edges but lets small bumps beside a tall object
+# borrow its height.
+SHADOW_SPREAD = 2
+
+
+def _smoothstep(lo: float, hi: float, x: np.ndarray) -> np.ndarray:
+    t = np.clip((x - lo) / (hi - lo), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
 def shadows(geom: Geometry, light: Light, *, steps: int = 48, max_side: int = 256, softness: float = 0.02) -> np.ndarray:
     """Cast-shadow map, (H, W): 1 = fully lit, 0 = fully shadowed.
 
     For every pixel, walk in a straight line toward the light and check whether
-    the height field rises above the line anywhere on the way. Done at reduced
+    the height field rises above the line anywhere on the way. Whatever blocks
+    the line is filed under near, mid or far by its gap to the pixel, and each
+    layer is blurred on its own: see the SHADOW_ constants. Done at reduced
     resolution and upsampled, since shadows are low-frequency.
     """
     full_h, full_w = geom.z.shape
     scale = min(1.0, max_side / max(full_h, full_w))
     w, h = max(1, round(full_w * scale)), max(1, round(full_h * scale))
     z = cv2.resize(geom.z, (w, h), interpolation=cv2.INTER_AREA)
+    spread = np.ones((2 * SHADOW_SPREAD + 1, 2 * SHADOW_SPREAD + 1), np.uint8)
+    crest, floor = cv2.dilate(z, spread), cv2.erode(z, spread)
 
     xs = (np.arange(w, dtype=np.float32) + 0.5) / w
     ys = (np.arange(h, dtype=np.float32) + 0.5) / w  # widths, so the aspect ratio is kept
@@ -195,14 +233,25 @@ def shadows(geom: Geometry, light: Light, *, steps: int = 48, max_side: int = 25
     t_end = np.clip((geom.relief - z) / np.maximum(lz - z, 1e-6), 0.0, 1.0)
     # Skip the first stretch so a surface does not shadow itself.
     bias = 0.02 * geom.relief
-    occlusion = np.zeros_like(z)
+    near, mid, far = np.zeros_like(z), np.zeros_like(z), np.zeros_like(z)
     for i in range(1, steps + 1):
         t = t_end * (i / steps)
         qx, qy, qz = px + (lx - px) * t, py + (ly - py) * t, z + (lz - z) * t
-        surface = cv2.remap(z, qx * w - 0.5, qy * w - 0.5, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
-        occlusion = np.maximum(occlusion, np.clip((surface - qz - bias) / softness, 0.0, 1.0))
+        mx, my = qx * w - 0.5, qy * w - 0.5
+        surface = cv2.remap(z, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+        top = cv2.remap(crest, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+        occlusion = np.clip((surface - qz - bias) / softness, 0.0, 1.0)
+        gap = (top - floor) / geom.relief
+        to_mid = _smoothstep(SHADOW_GAP_NEAR, SHADOW_GAP_MID, gap)
+        to_far = _smoothstep(SHADOW_GAP_MID, SHADOW_GAP_FAR, gap)
+        occlusion = occlusion * (1.0 - (1.0 - SHADOW_FAR_STRENGTH) * _smoothstep(SHADOW_GAP_NEAR, SHADOW_GAP_FAR, gap))
+        near = np.maximum(near, occlusion * (1.0 - to_mid))
+        mid = np.maximum(mid, occlusion * to_mid * (1.0 - to_far))
+        far = np.maximum(far, occlusion * to_mid * to_far)
 
-    lit = cv2.GaussianBlur(1.0 - occlusion, (0, 0), 1.0)
+    lit = np.ones_like(z)
+    for layer, sigma in zip((near, mid, far), SHADOW_BLUR_SIGMAS):
+        lit = lit * (1.0 - cv2.GaussianBlur(layer, (0, 0), sigma))
     return cv2.resize(lit, (full_w, full_h), interpolation=cv2.INTER_LINEAR)
 
 

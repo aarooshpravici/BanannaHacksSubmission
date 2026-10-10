@@ -16,11 +16,29 @@ def _dome() -> np.ndarray:
     return np.clip(1.0 - r2, 0.0, 1.0).astype(np.float32)
 
 
-def _block() -> np.ndarray:
-    """A tall square block in the middle of a flat plane."""
-    h = np.zeros((N, N), np.float32)
-    h[54:74, 54:74] = 1.0
+def _block(height: float = 1.0, floor: float = 0.0) -> np.ndarray:
+    """A square block in the middle of a flat plane; by default as tall as the scene is deep."""
+    h = np.full((N, N), floor, np.float32)
+    h[54:74, 54:74] = floor + height
     return h
+
+
+def _near_and_far_shadows() -> tuple[np.ndarray, np.ndarray]:
+    """The same block top lit from the left, over a floor just behind it and over one far behind it."""
+    light = R.Light(-0.2, 0.5, height=0.15)
+    near = R.shadows(R.build_geometry(_block(0.1, floor=0.9), relief=0.3, smooth=0), light, max_side=N)
+    far = R.shadows(R.build_geometry(_block(1.0, floor=0.0), relief=0.3, smooth=0), light, max_side=N)
+    return near, far
+
+
+def _edge_width(profile: np.ndarray) -> int:
+    """Pixels a shadow's edge takes to go from 10% to 90% of its full darkness."""
+    depth = 1.0 - profile.min()
+    return int(((profile < 1.0 - 0.1 * depth) & (profile > 1.0 - 0.9 * depth)).sum())
+
+
+def _largest_step(a: np.ndarray) -> float:
+    return float(max(np.abs(np.diff(a, axis=0)).max(), np.abs(np.diff(a, axis=1)).max()))
 
 
 def test_normals_point_outward_from_a_bump():
@@ -79,18 +97,19 @@ def test_light_position_respects_non_square_images():
 def test_block_casts_a_shadow_away_from_the_light():
     g = R.build_geometry(_block(), relief=0.3, smooth=0)
     left_light = R.shadows(g, R.Light(-0.2, 0.5, height=0.15), max_side=N)
-    assert left_light[64, 85] < 0.2, "just right of the block should be shadowed"
+    # The plane is a whole scene-depth behind the block, so its shadow is the soft, faint kind.
+    assert left_light[64, 85] < 0.8, "just right of the block should be shadowed"
     assert left_light[64, 40] > 0.9, "left of the block should be lit"
     assert left_light[20, 85] > 0.9, "off to the side should be lit"
     right_light = R.shadows(g, R.Light(1.2, 0.5, height=0.15), max_side=N)
-    assert right_light[64, 43] < 0.2 and right_light[64, 88] > 0.9
+    assert right_light[64, 43] < 0.8 and right_light[64, 88] > 0.9
 
 
 def test_lower_light_gives_longer_shadows():
     g = R.build_geometry(_block(), relief=0.3, smooth=0)
     high = R.shadows(g, R.Light(-0.2, 0.5, height=0.8), max_side=N)
     low = R.shadows(g, R.Light(-0.2, 0.5, height=0.1), max_side=N)
-    assert (low < 0.5).sum() > (high < 0.5).sum() * 1.5
+    assert (low < 0.9).sum() > (high < 0.9).sum() * 1.5
 
 
 def test_light_straight_above_a_flat_plane_casts_no_shadow():
@@ -102,6 +121,30 @@ def test_a_block_does_not_shadow_its_own_top():
     g = R.build_geometry(_block(), relief=0.3, smooth=0)
     s = R.shadows(g, R.Light(-0.2, 0.5, height=0.3), max_side=N)
     assert s[64, 64] > 0.9
+
+
+def test_shadow_edge_is_wider_on_a_far_receiver_than_on_a_near_one():
+    near, far = _near_and_far_shadows()
+    # Walk down a column from lit plane into the shadow, where each shadow is darkest.
+    near_x, far_x = 74 + near[64, 74:90].argmin(), 74 + far[64, 74:90].argmin()
+    near_edge, far_edge = _edge_width(near[30:64, near_x]), _edge_width(far[30:64, far_x])
+    assert 1 <= near_edge <= 5, "a shadow on a surface just behind the block is well defined"
+    assert far_edge >= 3 * near_edge
+
+
+def test_a_far_receiver_is_darkened_less_than_a_near_one():
+    near, far = _near_and_far_shadows()
+    assert near.min() < 0.2
+    assert 0.5 < far.min() < 0.8, "fainter, but still a shadow"
+
+
+@pytest.mark.parametrize("light_xy", [(-0.2, 0.5), (1.2, 0.5), (0.5, -0.3), (0.3, 0.4), (1.5, 1.5)])
+@pytest.mark.parametrize("light_height", [0.03, 0.15, 0.8])
+def test_a_shadow_on_a_far_receiver_has_no_hard_edge(light_xy, light_height):
+    g = R.build_geometry(_block(), relief=0.3, smooth=0)
+    s = R.shadows(g, R.Light(*light_xy, height=light_height), max_side=N)
+    assert s.min() < 0.9, "there is a shadow to look at"
+    assert _largest_step(s) < 0.05  # the old hard-edged shadows stepped by about 0.4 from one pixel to the next
 
 
 def test_apply_shading_identity_darker_and_no_clipping_artifacts():
@@ -119,9 +162,11 @@ def test_apply_shading_identity_darker_and_no_clipping_artifacts():
 
 
 def test_shading_is_ambient_in_shadow_and_above_one_under_a_strong_light():
+    # Only a shadow on a surface close behind its caster goes all the way down to ambient.
+    near = R.build_geometry(_block(0.1, floor=0.9), relief=1.0, smooth=0)
+    side = R.shading_map(near, R.Light(-0.2, 0.5, height=0.15, ambient=0.3, intensity=1.5))
+    assert side.min() >= 0.3 and side[64, 80] == pytest.approx(0.3, abs=0.01)  # in the block's shadow
     g = R.build_geometry(_block(), smooth=0)
-    side = R.shading_map(g, R.Light(-0.2, 0.5, height=0.15, ambient=0.3, intensity=1.5))
-    assert side.min() >= 0.3 and side[64, 85] == pytest.approx(0.3, abs=0.01)  # in the block's shadow
     above = R.shading_map(g, R.Light(0.5, 0.5, height=0.15, ambient=0.3, intensity=1.5))
     assert above[64, 64] > 0.3 + 1.5  # top of the block, right under the light, nearer than the scene centre
 
@@ -138,7 +183,8 @@ def test_enhance_renders_its_input_with_the_shadow_setting_on_screen():
         return np.asarray(decode_image(router._enhance(scene, light, "", **kwargs)["image"])).astype(float)
 
     off, on = sent(shadows=False), sent(shadows=True)
-    assert off[64, 85].mean() > on[64, 85].mean() * 1.2, "no cast shadow beside the block when shadows are off"
+    # 1.05, not more: the plane is far behind this block, so the shadow on it is faint.
+    assert off[64, 85].mean() > on[64, 85].mean() * 1.05, "no cast shadow beside the block when shadows are off"
     assert np.array_equal(sent(), on), "shadows stay on unless the request says otherwise"
 
 

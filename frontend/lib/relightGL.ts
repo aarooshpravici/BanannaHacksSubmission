@@ -3,9 +3,10 @@
 // lib/relightMath.ts is the same math on the CPU and is the reference for this.
 //
 // Four passes per frame, mirroring the Python step for step:
-//   1. shadow march   at <= 256 px, 48 steps toward the light  (shadows(), the loop)
-//   2. blur, rows     9-tap Gaussian, sigma 1 px                (cv2.GaussianBlur)
-//   3. blur, columns
+//   1. shadow march   at <= 256 px, 48 steps toward the light; what blocks the
+//                     ray goes into a near, mid or far layer    (shadows(), the loop)
+//   2. blur, rows     one Gaussian per layer, sigma 1, 3, 8 px  (cv2.GaussianBlur)
+//   3. blur, columns  then the three layers are multiplied into one shadow map
 //   4. shade          Lambert * falloff * shadow, multiplied into the photo in
 //                     linear light with a highlight knee        (diffuse, apply_shading)
 //      sampling pass 3 bilinearly, which is the cv2.resize back to full size.
@@ -19,7 +20,11 @@ import {
   MAX_FALLOFF,
   REMAP_SUBPIXEL,
   SHADOW_BIAS,
-  SHADOW_BLUR_SIGMA,
+  SHADOW_BLUR_SIGMAS,
+  SHADOW_FAR_STRENGTH,
+  SHADOW_GAP_FAR,
+  SHADOW_GAP_MID,
+  SHADOW_GAP_NEAR,
   SHADOW_SOFTNESS,
   SHADOW_STEPS,
   gaussianKernel,
@@ -40,81 +45,101 @@ void main() {
   gl_Position = vec4(a_pos, 0.0, 1.0);
 }`;
 
-// shadows(): for every pixel, walk toward the light and see whether the height
-// field rises above the ray. Output 1 - occlusion.
+// shadows(), the loop: for every pixel, walk toward the light and see whether
+// the height field rises above the ray. Output the near, mid and far occlusion
+// layers in R, G and B. The built-in smoothstep is relight.py's _smoothstep.
 const SHADOW_FRAGMENT = `#version 300 es
 precision highp float;
 precision highp sampler2D;
-uniform sampler2D u_z;   // height field in image widths, shadow resolution
+uniform sampler2D u_z;   // shadow resolution, image widths: R = z, G = crest (dilated z), B = floor (eroded z)
 uniform ivec2 u_size;    // shadow resolution (w, h)
 uniform vec3 u_light;    // light position in image widths
 uniform float u_relief;
 out vec4 o_color;
 
-float fetchZ(ivec2 p) {
-  if (p.x < 0 || p.y < 0 || p.x >= u_size.x || p.y >= u_size.y) return 0.0; // BORDER_CONSTANT, 0
-  return texelFetch(u_z, p, 0).r;
+vec2 fetchZ(ivec2 p) {
+  if (p.x < 0 || p.y < 0 || p.x >= u_size.x || p.y >= u_size.y) return vec2(0.0); // BORDER_CONSTANT, 0
+  return texelFetch(u_z, p, 0).rg;
 }
 
-// cv2.remap(z, x, y, INTER_LINEAR): integer coordinates are pixel centres and
-// the fraction is snapped to 1/32 of a pixel.
-float sampleZ(vec2 p) {
+// cv2.remap(z, x, y, INTER_LINEAR) and the same for crest: integer coordinates
+// are pixel centres and the fraction is snapped to 1/32 of a pixel.
+vec2 sampleZ(vec2 p) {
   p = floor(p * ${f(REMAP_SUBPIXEL)} + 0.5) / ${f(REMAP_SUBPIXEL)};
   vec2 base = floor(p);
   vec2 a = p - base;
   ivec2 i = ivec2(base);
-  float top = mix(fetchZ(i), fetchZ(i + ivec2(1, 0)), a.x);
-  float bottom = mix(fetchZ(i + ivec2(0, 1)), fetchZ(i + ivec2(1, 1)), a.x);
+  vec2 top = mix(fetchZ(i), fetchZ(i + ivec2(1, 0)), a.x);
+  vec2 bottom = mix(fetchZ(i + ivec2(0, 1)), fetchZ(i + ivec2(1, 1)), a.x);
   return mix(top, bottom, a.y);
 }
 
 void main() {
   float w = float(u_size.x);
+  vec3 here = texelFetch(u_z, ivec2(gl_FragCoord.xy), 0).rgb;
   // gl_FragCoord is (i + 0.5, j + 0.5): dividing by the width gives positions
   // in image widths for both axes, which keeps the aspect ratio.
-  vec3 p = vec3(gl_FragCoord.xy / w, texelFetch(u_z, ivec2(gl_FragCoord.xy), 0).r);
+  vec3 p = vec3(gl_FragCoord.xy / w, here.r);
+  float floorZ = here.b;
   // The ray can only be blocked while it is below the tallest surface.
   float tEnd = clamp((u_relief - p.z) / max(u_light.z - p.z, 1e-6), 0.0, 1.0);
   float bias = ${f(SHADOW_BIAS)} * u_relief; // skip the start so a surface does not shadow itself
-  float occlusion = 0.0;
+  float nearLayer = 0.0; // "near" and "far" alone read too much like GLSL keywords
+  float midLayer = 0.0;
+  float farLayer = 0.0;
   for (int i = 1; i <= ${SHADOW_STEPS}; i++) {
     float t = tEnd * (float(i) / ${f(SHADOW_STEPS)});
     vec3 q = p + (u_light - p) * t;
-    float surface = sampleZ(q.xy * w - 0.5);
-    occlusion = max(occlusion, clamp((surface - q.z - bias) / ${f(SHADOW_SOFTNESS)}, 0.0, 1.0));
+    vec2 surface = sampleZ(q.xy * w - 0.5); // x = surface, y = top
+    float occlusion = clamp((surface.x - q.z - bias) / ${f(SHADOW_SOFTNESS)}, 0.0, 1.0);
+    float gap = (surface.y - floorZ) / u_relief;
+    float toMid = smoothstep(${f(SHADOW_GAP_NEAR)}, ${f(SHADOW_GAP_MID)}, gap);
+    float toFar = smoothstep(${f(SHADOW_GAP_MID)}, ${f(SHADOW_GAP_FAR)}, gap);
+    occlusion = occlusion * (1.0 - (1.0 - ${f(SHADOW_FAR_STRENGTH)}) * smoothstep(${f(SHADOW_GAP_NEAR)}, ${f(SHADOW_GAP_FAR)}, gap));
+    nearLayer = max(nearLayer, occlusion * (1.0 - toMid));
+    midLayer = max(midLayer, occlusion * toMid * (1.0 - toFar));
+    farLayer = max(farLayer, occlusion * toMid * toFar);
   }
-  o_color = vec4(1.0 - occlusion, 0.0, 0.0, 1.0);
+  o_color = vec4(nearLayer, midLayer, farLayer, 1.0);
 }`;
 
-const BLUR_KERNEL = gaussianKernel(SHADOW_BLUR_SIGMA);
-const BLUR_RADIUS = BLUR_KERNEL.length - 1;
+// One kernel per layer, padded with zeros to the length of the widest so a
+// single loop blurs all three: entry k holds the three weights at distance k.
+const BLUR_KERNELS = SHADOW_BLUR_SIGMAS.map(gaussianKernel);
+const BLUR_RADIUS = Math.max(...BLUR_KERNELS.map((kernel) => kernel.length)) - 1;
+const BLUR_WEIGHTS = new Float32Array((BLUR_RADIUS + 1) * 3);
+BLUR_KERNELS.forEach((kernel, layer) => kernel.forEach((weight, k) => (BLUR_WEIGHTS[k * 3 + layer] = weight)));
 
-// One direction of cv2.GaussianBlur(lit, (0, 0), 1.0), BORDER_REFLECT_101.
+// One direction of cv2.GaussianBlur(layer, (0, 0), sigma), BORDER_REFLECT_101,
+// for the three layers at once. The second direction also multiplies the layers
+// into the finished shadow map: lit = (1 - near) * (1 - mid) * (1 - far).
 const BLUR_FRAGMENT = `#version 300 es
 precision highp float;
 precision highp sampler2D;
 uniform sampler2D u_src;
 uniform ivec2 u_size;
 uniform ivec2 u_dir;
-uniform float u_kernel[${BLUR_KERNEL.length}];
+uniform float u_final; // 1.0 on the second direction
+uniform vec3 u_kernel[${BLUR_RADIUS + 1}];
 out vec4 o_color;
 
 int reflect101(int i, int n) {
   if (n == 1) return 0;
-  if (i < 0) i = -i;
-  if (i >= n) i = 2 * (n - 1) - i;
-  return clamp(i, 0, n - 1);
+  int period = 2 * (n - 1);
+  i = abs(i) % period;
+  return i >= n ? period - i : i;
 }
 
 void main() {
   ivec2 p = ivec2(gl_FragCoord.xy);
-  float acc = 0.0;
+  vec3 acc = vec3(0.0);
   for (int k = -${BLUR_RADIUS}; k <= ${BLUR_RADIUS}; k++) {
     ivec2 q = p + u_dir * k;
     q = ivec2(reflect101(q.x, u_size.x), reflect101(q.y, u_size.y));
-    acc += u_kernel[abs(k)] * texelFetch(u_src, q, 0).r;
+    acc += u_kernel[abs(k)] * texelFetch(u_src, q, 0).rgb;
   }
-  o_color = vec4(acc, 0.0, 0.0, 1.0);
+  float lit = (1.0 - acc.r) * (1.0 - acc.g) * (1.0 - acc.b);
+  o_color = u_final > 0.5 ? vec4(lit, 0.0, 0.0, 1.0) : vec4(acc, 1.0);
 }`;
 
 // diffuse() -> shading_map() -> apply_shading().
@@ -203,7 +228,7 @@ interface SceneState {
   z: WebGLTexture;
   shadowWidth: number;
   shadowHeight: number;
-  /** march output, row-blurred, fully blurred */
+  /** the three layers as marched, the layers row-blurred, the finished shadow map */
   targets: [Target, Target, Target];
 }
 
@@ -232,7 +257,7 @@ export class RelightRenderer {
     this.floatTargets = gl.getExtension("EXT_color_buffer_float") !== null;
 
     this.shadowProgram = this.link(SHADOW_FRAGMENT, ["u_flip", "u_z", "u_size", "u_light", "u_relief"]);
-    this.blurProgram = this.link(BLUR_FRAGMENT, ["u_flip", "u_src", "u_size", "u_dir", "u_kernel"]);
+    this.blurProgram = this.link(BLUR_FRAGMENT, ["u_flip", "u_src", "u_size", "u_dir", "u_final", "u_kernel"]);
     this.shadeProgram = this.link(SHADE_FRAGMENT, [
       "u_flip", "u_image", "u_depth", "u_normals", "u_shadow", "u_aspect", "u_relief",
       "u_light", "u_intensity", "u_ambient", "u_color", "u_shadows",
@@ -313,7 +338,8 @@ export class RelightRenderer {
   private target(width: number, height: number, filter: number): Target {
     const gl = this.gl;
     const texture = this.texture(filter);
-    if (this.floatTargets) gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, width, height, 0, gl.RED, gl.HALF_FLOAT, null);
+    // Four channels: the march and the first blur carry one shadow layer in each of R, G and B.
+    if (this.floatTargets) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height, 0, gl.RGBA, gl.HALF_FLOAT, null);
     else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     const framebuffer = gl.createFramebuffer();
     if (!framebuffer) throw new Error("WebGL could not create a framebuffer.");
@@ -345,7 +371,8 @@ export class RelightRenderer {
     this.canvas.height = data.height;
 
     // The height field the shadow pass marches: the depth map, area-averaged
-    // down to the shadow resolution on the CPU (cv2.resize INTER_AREA), as floats.
+    // down to the shadow resolution on the CPU (cv2.resize INTER_AREA), as
+    // floats, with its dilated and eroded copies in the next two channels.
     const probe = document.createElement("canvas");
     probe.width = data.depth.width;
     probe.height = data.depth.height;
@@ -357,9 +384,15 @@ export class RelightRenderer {
     for (let i = 0; i < depth.length; i++) depth[i] = pixels[i * 4] / 255;
     const field = shadowHeightField(depth, probe.width, probe.height, data.width, data.height, data.relief);
 
+    const packed = new Float32Array(field.width * field.height * 4);
+    for (let i = 0; i < field.z.length; i++) {
+      packed[i * 4] = field.z[i];
+      packed[i * 4 + 1] = field.crest[i];
+      packed[i * 4 + 2] = field.floor[i];
+    }
     const z = this.texture(gl.NEAREST);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, field.width, field.height, 0, gl.RED, gl.FLOAT, field.z);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, field.width, field.height, 0, gl.RGBA, gl.FLOAT, packed);
 
     let targets: SceneState["targets"];
     try {
@@ -426,14 +459,16 @@ export class RelightRenderer {
       gl.useProgram(this.blurProgram.program);
       gl.uniform1f(u.u_flip, 0);
       gl.uniform2i(u.u_size, scene.shadowWidth, scene.shadowHeight);
-      gl.uniform1fv(u.u_kernel, BLUR_KERNEL);
+      gl.uniform3fv(u.u_kernel, BLUR_WEIGHTS);
       gl.bindFramebuffer(gl.FRAMEBUFFER, rows.framebuffer);
       this.bind(0, march.texture, u.u_src);
       gl.uniform2i(u.u_dir, 1, 0);
+      gl.uniform1f(u.u_final, 0);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.bindFramebuffer(gl.FRAMEBUFFER, blurred.framebuffer);
       this.bind(0, rows.texture, u.u_src);
       gl.uniform2i(u.u_dir, 0, 1);
+      gl.uniform1f(u.u_final, 1);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
 

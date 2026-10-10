@@ -14,7 +14,18 @@ export const SHADOW_STEPS = 48; // shadows(steps=48)
 export const SHADOW_MAX_SIDE = 256; // shadows(max_side=256)
 export const SHADOW_SOFTNESS = 0.02; // shadows(softness=0.02)
 export const SHADOW_BIAS = 0.02; // bias = 0.02 * relief
-export const SHADOW_BLUR_SIGMA = 1.0; // cv2.GaussianBlur(1 - occlusion, (0, 0), 1.0)
+// The next six are relight.py's constants of the same names; the reasons for
+// each value are written there. Shadows are sorted into a near, a mid and a far
+// layer by the gap between blocker and receiver (as a fraction of the relief).
+export const SHADOW_GAP_NEAR = 0.1;
+export const SHADOW_GAP_MID = 0.3;
+export const SHADOW_GAP_FAR = 0.7;
+/** Blur of the near, mid and far layers, in shadow-map pixels. */
+export const SHADOW_BLUR_SIGMAS = [1.0, 3.0, 8.0] as const;
+/** How dark a shadow on a far background gets (1 = as dark as a contact shadow). */
+export const SHADOW_FAR_STRENGTH = 0.35;
+/** The gap is measured between the highest and lowest surface within this many shadow-map pixels. */
+export const SHADOW_SPREAD = 2;
 export const HIGHLIGHT_KNEE = 0.8; // apply_shading knee
 /** cv2.remap interpolates on a 1/32-pixel grid (INTER_BITS = 5). */
 export const REMAP_SUBPIXEL = 32;
@@ -118,9 +129,52 @@ export function resizeArea(src: Float32Array, sw: number, sh: number, dw: number
   return out;
 }
 
+/** _smoothstep */
+export function smoothstep(lo: number, hi: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - lo) / (hi - lo)));
+  return t * t * (3.0 - 2.0 * t);
+}
+
 /**
- * The height field shadows() marches: z resized to the shadow resolution.
- * `depth` is nearness in 0..1 (the scene's depth PNG / 255), dw x dh pixels.
+ * cv2.dilate (sign = 1) or cv2.erode (sign = -1) with a square of ones reaching
+ * `radius` pixels each way: the largest or smallest value in the square.
+ * Pixels outside the image are ignored, as OpenCV's default border does.
+ */
+function spread(src: Float32Array, w: number, h: number, radius: number, sign: 1 | -1): Float32Array {
+  const pass = (from: Float32Array, n: number, m: number, at: (line: number, i: number) => number) => {
+    const to = new Float32Array(w * h);
+    for (let line = 0; line < m; line++) {
+      for (let i = 0; i < n; i++) {
+        let best = from[at(line, i)];
+        for (let k = Math.max(0, i - radius); k <= Math.min(n - 1, i + radius); k++) {
+          const v = from[at(line, k)];
+          if (sign * v > sign * best) best = v;
+        }
+        to[at(line, i)] = best;
+      }
+    }
+    return to;
+  };
+  const rows = pass(src, w, h, (j, i) => j * w + i);
+  return pass(rows, h, w, (i, j) => j * w + i);
+}
+
+/** The height field shadows() marches, at the shadow resolution. */
+export interface ShadowField {
+  width: number;
+  height: number;
+  /** z resized to the shadow resolution. */
+  z: Float32Array;
+  /** cv2.dilate(z): the highest surface within SHADOW_SPREAD pixels. */
+  crest: Float32Array;
+  /** cv2.erode(z): the lowest surface within SHADOW_SPREAD pixels. */
+  floor: Float32Array;
+}
+
+/**
+ * The height field shadows() marches: z resized to the shadow resolution, with
+ * its dilated and eroded copies. `depth` is nearness in 0..1 (the scene's depth
+ * PNG / 255), dw x dh pixels.
  */
 export function shadowHeightField(
   depth: Float32Array,
@@ -129,64 +183,24 @@ export function shadowHeightField(
   sceneWidth: number,
   sceneHeight: number,
   relief: number,
-): { z: Float32Array; width: number; height: number } {
+): ShadowField {
   const [width, height] = shadowSize(sceneWidth, sceneHeight);
   const z = resizeArea(depth, dw, dh, width, height);
   for (let i = 0; i < z.length; i++) z[i] *= relief;
-  return { z, width, height };
+  const crest = spread(z, width, height, SHADOW_SPREAD, 1);
+  const floor = spread(z, width, height, SHADOW_SPREAD, -1);
+  return { width, height, z, crest, floor };
 }
 
-/**
- * shadows(): 1 = fully lit, 0 = fully shadowed, at the shadow resolution
- * (already blurred; the caller upsamples it bilinearly).
- */
-export function shadowMap(z: Float32Array, w: number, h: number, relief: number, lightPos: Vec3): Float32Array {
-  const [lx, ly, lz] = lightPos;
-  const bias = SHADOW_BIAS * relief;
-  const fetch = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : z[y * w + x]);
-  // cv2.remap(z, mx, my, INTER_LINEAR, borderMode=BORDER_CONSTANT, borderValue=0)
-  const sample = (mx: number, my: number) => {
-    mx = Math.round(mx * REMAP_SUBPIXEL) / REMAP_SUBPIXEL;
-    my = Math.round(my * REMAP_SUBPIXEL) / REMAP_SUBPIXEL;
-    const x0 = Math.floor(mx);
-    const y0 = Math.floor(my);
-    const ax = mx - x0;
-    const ay = my - y0;
-    const top = fetch(x0, y0) * (1 - ax) + fetch(x0 + 1, y0) * ax;
-    const bottom = fetch(x0, y0 + 1) * (1 - ax) + fetch(x0 + 1, y0 + 1) * ax;
-    return top * (1 - ay) + bottom * ay;
-  };
-
-  const lit = new Float32Array(w * h);
-  for (let j = 0; j < h; j++) {
-    for (let i = 0; i < w; i++) {
-      const px = (i + 0.5) / w;
-      const py = (j + 0.5) / w; // widths, so the aspect ratio is kept
-      const pz = z[j * w + i];
-      // The ray can only be blocked while it is below the tallest surface.
-      const tEnd = Math.min(1, Math.max(0, (relief - pz) / Math.max(lz - pz, 1e-6)));
-      let occlusion = 0;
-      for (let s = 1; s <= SHADOW_STEPS; s++) {
-        const t = tEnd * (s / SHADOW_STEPS);
-        const qx = px + (lx - px) * t;
-        const qy = py + (ly - py) * t;
-        const qz = pz + (lz - pz) * t;
-        const surface = sample(qx * w - 0.5, qy * w - 0.5);
-        const o = Math.min(1, Math.max(0, (surface - qz - bias) / SHADOW_SOFTNESS));
-        if (o > occlusion) occlusion = o;
-      }
-      lit[j * w + i] = 1 - occlusion;
-    }
-  }
-
-  // cv2.GaussianBlur(lit, (0, 0), 1.0): separable, BORDER_REFLECT_101.
-  const kernel = gaussianKernel(SHADOW_BLUR_SIGMA);
+/** cv2.GaussianBlur(src, (0, 0), sigma) on a float image: separable, BORDER_REFLECT_101. */
+function gaussianBlur(src: Float32Array, w: number, h: number, sigma: number): Float32Array {
+  const kernel = gaussianKernel(sigma);
   const radius = kernel.length - 1;
   const tmp = new Float32Array(w * h);
   for (let j = 0; j < h; j++) {
     for (let i = 0; i < w; i++) {
       let acc = 0;
-      for (let k = -radius; k <= radius; k++) acc += kernel[Math.abs(k)] * lit[j * w + reflect101(i + k, w)];
+      for (let k = -radius; k <= radius; k++) acc += kernel[Math.abs(k)] * src[j * w + reflect101(i + k, w)];
       tmp[j * w + i] = acc;
     }
   }
@@ -199,6 +213,68 @@ export function shadowMap(z: Float32Array, w: number, h: number, relief: number,
     }
   }
   return out;
+}
+
+/**
+ * shadows(): 1 = fully lit, 0 = fully shadowed, at the shadow resolution
+ * (already blurred; the caller upsamples it bilinearly).
+ */
+export function shadowMap(field: ShadowField, relief: number, lightPos: Vec3): Float32Array {
+  const { width: w, height: h, z, crest, floor } = field;
+  const [lx, ly, lz] = lightPos;
+  const bias = SHADOW_BIAS * relief;
+  // cv2.remap(src, mx, my, INTER_LINEAR, borderMode=BORDER_CONSTANT, borderValue=0)
+  const sample = (src: Float32Array, mx: number, my: number) => {
+    const fetch = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : src[y * w + x]);
+    mx = Math.round(mx * REMAP_SUBPIXEL) / REMAP_SUBPIXEL;
+    my = Math.round(my * REMAP_SUBPIXEL) / REMAP_SUBPIXEL;
+    const x0 = Math.floor(mx);
+    const y0 = Math.floor(my);
+    const ax = mx - x0;
+    const ay = my - y0;
+    const top = fetch(x0, y0) * (1 - ax) + fetch(x0 + 1, y0) * ax;
+    const bottom = fetch(x0, y0 + 1) * (1 - ax) + fetch(x0 + 1, y0 + 1) * ax;
+    return top * (1 - ay) + bottom * ay;
+  };
+
+  const near = new Float32Array(w * h);
+  const mid = new Float32Array(w * h);
+  const far = new Float32Array(w * h);
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      const p = j * w + i;
+      const px = (i + 0.5) / w;
+      const py = (j + 0.5) / w; // widths, so the aspect ratio is kept
+      const pz = z[p];
+      // The ray can only be blocked while it is below the tallest surface.
+      const tEnd = Math.min(1, Math.max(0, (relief - pz) / Math.max(lz - pz, 1e-6)));
+      for (let s = 1; s <= SHADOW_STEPS; s++) {
+        const t = tEnd * (s / SHADOW_STEPS);
+        const qx = px + (lx - px) * t;
+        const qy = py + (ly - py) * t;
+        const qz = pz + (lz - pz) * t;
+        const mx = qx * w - 0.5;
+        const my = qy * w - 0.5;
+        const surface = sample(z, mx, my);
+        let occlusion = Math.min(1, Math.max(0, (surface - qz - bias) / SHADOW_SOFTNESS));
+        if (occlusion <= 0) continue; // nothing to add to any layer
+        const gap = (sample(crest, mx, my) - floor[p]) / relief;
+        const toMid = smoothstep(SHADOW_GAP_NEAR, SHADOW_GAP_MID, gap);
+        const toFar = smoothstep(SHADOW_GAP_MID, SHADOW_GAP_FAR, gap);
+        occlusion = occlusion * (1.0 - (1.0 - SHADOW_FAR_STRENGTH) * smoothstep(SHADOW_GAP_NEAR, SHADOW_GAP_FAR, gap));
+        near[p] = Math.max(near[p], occlusion * (1.0 - toMid));
+        mid[p] = Math.max(mid[p], occlusion * toMid * (1.0 - toFar));
+        far[p] = Math.max(far[p], occlusion * toMid * toFar);
+      }
+    }
+  }
+
+  const lit = new Float32Array(w * h).fill(1);
+  [near, mid, far].forEach((layer, k) => {
+    const blurred = gaussianBlur(layer, w, h, SHADOW_BLUR_SIGMAS[k]);
+    for (let p = 0; p < lit.length; p++) lit[p] = lit[p] * (1.0 - blurred[p]);
+  });
+  return lit;
 }
 
 /** cv2.resize(src, (dw, dh), interpolation=cv2.INTER_LINEAR) sampled at one destination pixel. */
@@ -278,7 +354,7 @@ export function relightPixels(scene: SceneArrays, light: Light, castShadows = tr
   let shadow: { map: Float32Array; width: number; height: number } | null = null;
   if (castShadows) {
     const field = shadowHeightField(depth, w, h, w, h, relief);
-    shadow = { map: shadowMap(field.z, field.width, field.height, relief, lightPos), width: field.width, height: field.height };
+    shadow = { map: shadowMap(field, relief, lightPos), width: field.width, height: field.height };
   }
 
   // diffuse(): exposure is measured relative to the centre of the scene.
