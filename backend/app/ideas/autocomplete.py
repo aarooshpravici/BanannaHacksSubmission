@@ -421,6 +421,38 @@ def _generation_size(w: int, h: int) -> tuple[int, int]:
     return (max(16, round(w * scale / 16) * 16), max(16, round(h * scale / 16) * 16))
 
 
+def register(generated: Image.Image, original: Image.Image, mask: np.ndarray) -> Image.Image:
+    """Line a generated image up with the original before pasting part of it in.
+
+    An edit model that takes no mask redraws the whole picture, and what comes
+    back is typically zoomed by a percent or so and shifted a few pixels. Pasted
+    in as it is, the new element lands off its slot. The pixels outside the mask
+    show the same content in both images, so they are used to find the small
+    shift/zoom between the two, which is then undone. If no alignment is found,
+    or it does not make the surroundings match better, the image is returned
+    unchanged.
+    """
+    ref_rgb, gen_rgb = np.asarray(to_rgb(original)), np.asarray(to_rgb(generated))
+    ref = cv2.cvtColor(ref_rgb, cv2.COLOR_RGB2GRAY).astype(np.float32)
+    gen = cv2.cvtColor(gen_rgb, cv2.COLOR_RGB2GRAY).astype(np.float32)
+    # Stay clear of the region being replaced: its content differs on purpose.
+    outside = (cv2.dilate(mask, np.ones((31, 31), np.uint8)) == 0).astype(np.uint8)
+    if outside.mean() < 0.05:
+        return generated
+    warp = np.eye(2, 3, dtype=np.float32)
+    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 200, 1e-6)
+    try:
+        _, warp = cv2.findTransformECC(ref, gen, warp, cv2.MOTION_AFFINE, criteria, outside * 255, 5)
+    except cv2.error:
+        return generated
+    h, w = ref.shape
+    aligned = cv2.warpAffine(gen_rgb, warp, (w, h), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP, borderMode=cv2.BORDER_REPLICATE)
+    keep = outside > 0
+    before = np.abs(gen - ref)[keep].mean()
+    after = np.abs(cv2.cvtColor(aligned, cv2.COLOR_RGB2GRAY).astype(np.float32) - ref)[keep].mean()
+    return Image.fromarray(aligned) if after < before else generated
+
+
 def composite(original: Image.Image, generated: Image.Image, mask: np.ndarray) -> Image.Image:
     """Generated pixels inside the mask, original pixels everywhere else."""
     out = original.copy()
@@ -527,7 +559,7 @@ def fill(
     fills = []
     for out in outputs:
         generated = img.copy()
-        generated.paste(out.resize(crop.size, Image.LANCZOS), (x0, y0))
+        generated.paste(register(out.resize(crop.size, Image.LANCZOS), crop, crop_mask), (x0, y0))
         raw = composite(img, generated, mask)
         blended = blend(img, generated, mask)
         patch = _crop_to_mask(blended, mask)

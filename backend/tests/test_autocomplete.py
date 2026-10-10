@@ -4,6 +4,7 @@ import json
 import time
 from pathlib import Path
 
+import cv2
 import numpy as np
 import pytest
 from PIL import Image, ImageDraw
@@ -181,6 +182,40 @@ def test_blend_survives_a_tiny_mask():
     mask = np.zeros((200, 300), np.uint8)
     mask[50:52, 60:61] = 255
     assert A.blend(img, Image.new("RGB", img.size, (0, 0, 0)), mask).size == img.size
+
+
+def _slot_error(image: Image.Image, original: Image.Image, mask: np.ndarray) -> float:
+    """Mean difference from the original in a band just outside the mask."""
+    band = (cv2.dilate(mask, np.ones((61, 61), np.uint8)) > 0) & (cv2.dilate(mask, np.ones((33, 33), np.uint8)) == 0)
+    return float(np.abs(np.asarray(image).astype(float) - np.asarray(original).astype(float))[band].mean())
+
+
+@pytest.mark.parametrize("zoom, dx, dy", [(1.012, 5.0, -3.0), (0.99, -4.0, 6.0), (1.0, 0.0, 0.0)])
+def test_register_undoes_a_small_zoom_and_shift(zoom, dx, dy):
+    img, truth = DESIGNS["pricing_missing_right"]()
+    x, y, w, h = truth[0]
+    mask = np.zeros((img.height, img.width), np.uint8)
+    mask[y : y + h, x : x + w] = 255
+    # What an edit model returns: the design with the slot filled, slightly zoomed and shifted.
+    filled = img.copy()
+    ImageDraw.Draw(filled).rounded_rectangle((x, y, x + w, y + h), radius=18, fill=(255, 255, 255), outline=(222, 226, 235))
+    cx, cy = img.width / 2, img.height / 2
+    m = np.float32([[zoom, 0, (1 - zoom) * cx + dx], [0, zoom, (1 - zoom) * cy + dy]])
+    drifted = Image.fromarray(cv2.warpAffine(np.asarray(filled), m, img.size, borderMode=cv2.BORDER_REPLICATE))
+
+    aligned = A.register(drifted, img, mask)
+    assert _slot_error(aligned, img, mask) <= max(0.6, _slot_error(drifted, img, mask) * 0.25)
+    # The filled card's left edge is back on the slot's left edge (within a pixel).
+    row = np.asarray(aligned.convert("L")).astype(int)[y + h // 2]
+    edge = int(np.argmax(np.abs(np.diff(row[x - 12 : x + 12])))) + x - 12
+    assert abs(edge - x) <= 1
+
+
+def test_register_gives_up_gracefully_when_nothing_lies_outside_the_mask():
+    img, _ = _scene()
+    full = np.full((200, 300), 255, np.uint8)
+    other = Image.new("RGB", img.size, (9, 9, 9))
+    assert A.register(other, img, full) is other
 
 
 def test_composite_touches_only_the_masked_pixels():
