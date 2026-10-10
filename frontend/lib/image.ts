@@ -43,6 +43,15 @@ export function base64ToBlob(base64: string): Blob {
   return new Blob([bytes], { type: sniffMime(raw) });
 }
 
+export function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(stripDataUrl(String(reader.result)));
+    reader.onerror = () => reject(new Error("Could not read a downloaded image."));
+    reader.readAsDataURL(blob);
+  });
+}
+
 // --- canvases -------------------------------------------------------------------
 
 export function makeCanvas(width: number, height: number): HTMLCanvasElement {

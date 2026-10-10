@@ -64,8 +64,8 @@ interface SliderProps {
 export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint }: SliderProps) {
   const fill = ((value - min) / (max - min)) * 100;
   return (
-    <label className="block">
-      <span className="mb-2 flex items-baseline justify-between gap-3 text-[13px]">
+    <label className="block" title={hint}>
+      <span className="mb-1.5 flex items-baseline justify-between gap-3 text-[13px]">
         <span className="font-medium text-zinc-200">{label}</span>
         <span className="font-mono text-xs tabular-nums text-zinc-400">{format ? format(value) : value.toFixed(2)}</span>
       </span>
@@ -79,7 +79,8 @@ export function Slider({ label, value, min, max, step = 0.01, onChange, format, 
         onChange={(e) => onChange(Number(e.target.value))}
         style={(track ? { background: track } : { "--fill": `${fill}%` }) as CSSProperties}
       />
-      {hint && <span className="mt-1.5 block text-xs leading-4 text-zinc-500">{hint}</span>}
+      {/* On a short window the hint moves to the tooltip, so the whole sidebar fits without scrolling. */}
+      {hint && <span className="mt-1.5 hidden text-xs leading-4 text-zinc-500 tall:block">{hint}</span>}
     </label>
   );
 }
@@ -95,10 +96,10 @@ interface ToggleProps {
 
 export function Toggle({ label, checked, onChange, hint }: ToggleProps) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-4">
+    <label className="flex cursor-pointer items-center justify-between gap-4" title={hint}>
       <span>
         <span className="block text-[13px] font-medium text-zinc-200">{label}</span>
-        {hint && <span className="mt-0.5 block text-xs leading-4 text-zinc-500">{hint}</span>}
+        {hint && <span className="mt-0.5 hidden text-xs leading-4 text-zinc-500 tall:block">{hint}</span>}
       </span>
       <button
         type="button"

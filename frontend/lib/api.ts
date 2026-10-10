@@ -55,6 +55,12 @@ async function readDetail(res: Response): Promise<string> {
   return fallback;
 }
 
+/**
+ * Fired on `window` when a request could not reach the backend at all, so the
+ * status pill in the nav can re-check at once instead of at its next poll.
+ */
+export const BACKEND_UNREACHABLE_EVENT = "relight:backend-unreachable";
+
 async function request<T>(method: "GET" | "POST", path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   let res: Response;
   try {
@@ -66,6 +72,7 @@ async function request<T>(method: "GET" | "POST", path: string, body?: unknown, 
     });
   } catch (error) {
     if (isAbort(error)) throw error;
+    if (typeof window !== "undefined") window.dispatchEvent(new Event(BACKEND_UNREACHABLE_EVENT));
     throw new ApiError(`Cannot reach the backend at ${API_URL}. Is it running?`, 0);
   }
   if (!res.ok) throw new ApiError(await readDetail(res), res.status);
@@ -92,6 +99,17 @@ export async function getJob<T>(jobId: string, signal?: AbortSignal): Promise<Jo
 export async function relightScene(body: RelightSceneIn, signal?: AbortSignal): Promise<RelightScene> {
   if (MOCK) return (await mock()).relightScene(body);
   return request("POST", "/relight/scene", body, signal);
+}
+
+/**
+ * Give the backend a scene the browser built from static files (a built-in
+ * sample), and get back a scene id that /relight/render and /relight/enhance
+ * accept. The backend re-estimates the geometry from the photo, with the same
+ * settings the sample was baked with.
+ */
+export async function relightAdoptScene(scene: RelightScene, signal?: AbortSignal): Promise<string> {
+  if (MOCK) return (await mock()).adoptScene(scene);
+  return (await relightScene({ image: scene.image, detail: true }, signal)).scene_id;
 }
 
 export async function relightRender(body: RelightRenderIn, signal?: AbortSignal): Promise<RelightRender> {

@@ -70,11 +70,18 @@ export const AlertIcon = (p: IconProps) => (
   </Svg>
 );
 
-export const ImageIcon = (p: IconProps) => (
+export const ChevronDownIcon = (p: IconProps) => (
   <Svg {...p}>
-    <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
-    <circle cx="9" cy="10" r="1.6" />
-    <path d="m4 17 5-4.5 3.5 3 3-2.5 4.5 4" />
+    <path d="m6 9.5 6 6 6-6" />
+  </Svg>
+);
+
+/** A dot travelling along an arc: the light sweep. */
+export const OrbitIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 16a8.5 8.5 0 0 1 16 0" />
+    <circle cx="20" cy="16" r="1.6" fill="currentColor" />
+    <circle cx="12" cy="15" r="2.2" />
   </Svg>
 );
 

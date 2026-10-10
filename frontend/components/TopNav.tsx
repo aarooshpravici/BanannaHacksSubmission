@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BananaMark } from "./icons";
-import { getHealth, isAbort } from "@/lib/api";
+import { BACKEND_UNREACHABLE_EVENT, getHealth, isAbort } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { API_URL, MOCK } from "@/lib/config";
 import type { Health } from "@/lib/types";
@@ -29,7 +29,12 @@ function BackendStatus() {
     };
     void check();
     const timer = setInterval(check, HEALTH_POLL_MS);
+    // A request anywhere on the page just failed to connect: say so now, not at the next poll.
+    // The poll keeps running and turns the pill back when the backend returns.
+    const onUnreachable = () => setStatus((s) => (s.kind === "offline" ? s : { kind: "offline" }));
+    window.addEventListener(BACKEND_UNREACHABLE_EVENT, onUnreachable);
     return () => {
+      window.removeEventListener(BACKEND_UNREACHABLE_EVENT, onUnreachable);
       clearInterval(timer);
       controller.abort();
     };

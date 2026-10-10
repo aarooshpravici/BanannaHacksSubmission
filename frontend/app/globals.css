@@ -47,6 +47,13 @@
   }
 }
 
+/*
+ * "tall": the window has room for the helper text under the sidebar's controls.
+ * Below 800px (a 1280 x 720 laptop) the hints are dropped to tooltips so every
+ * control fits without scrolling; at 1440 x 900 and on phones they show.
+ */
+@custom-variant tall (@media (min-height: 800px));
+
 html {
   color-scheme: dark;
 }
@@ -109,8 +116,44 @@ input[type="range"].slider:focus-visible {
   box-shadow: 0 0 0 2px var(--color-ink), 0 0 0 4px rgb(251 209 61 / 0.6);
 }
 
-/* Slim scrollbars inside panels. */
-.thin-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(255 255 255 / 0.15) transparent;
+/*
+ * Slim scrollbars inside panels, always drawn while there is something to
+ * scroll to: macOS hides its own until the user scrolls, which made the last
+ * sidebar panel look like it did not exist. Styling ::-webkit-scrollbar is what
+ * switches Chrome and Safari to a permanent bar, and they ignore it once the
+ * standard properties are set, so those are kept for browsers without it.
+ */
+.thin-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.22);
+}
+.thin-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.35);
+}
+@supports not selector(::-webkit-scrollbar) {
+  .thin-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+  }
+}
+
+/*
+ * The stage on a stacked (narrow) page: exactly as tall as the photo needs.
+ * --stage-ratio is the photo's height / width, set by <Stage hug>.
+ * 64rem is Tailwind's lg, where the sidebar moves beside the stage.
+ */
+@media (width < 64rem) {
+  .stage-hug {
+    /* Page padding (2 x 1rem) plus the stage's side insets (2 x 1.5rem): what the photo's width loses to margins. */
+    --stage-side-margins: 5rem;
+    /* The strips above and below the photo that hold the stage's buttons (2 x 4rem). */
+    --stage-bars: 8rem;
+    /* A tall photo stops here, so some of the controls below stay on screen; it is letterboxed instead. */
+    --stage-max-height: 62svh;
+    flex: none;
+    height: min(calc((100vw - var(--stage-side-margins)) * var(--stage-ratio) + var(--stage-bars)), var(--stage-max-height));
+  }
 }

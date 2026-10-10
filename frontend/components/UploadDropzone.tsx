@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBanner } from "./ErrorBanner";
 import { BusyLabel } from "./Spinner";
-import { ImageIcon, UploadIcon } from "./icons";
+import { UploadIcon } from "./icons";
 import { errorMessage } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { type LoadedImage, fileToImage } from "@/lib/image";
@@ -15,8 +15,8 @@ interface UploadDropzoneProps {
   hint?: string;
   /** "auto" keeps JPEGs as JPEG and turns everything else into PNG. */
   format?: "auto" | "png" | "jpeg";
-  /** Offers a built-in example so the page can be tried without a file. */
-  sample?: { label: string; make: () => LoadedImage };
+  /** Shown under the drop box, above its error line (the built-in sample photos). */
+  footer?: ReactNode;
   disabled?: boolean;
   className?: string;
 }
@@ -27,7 +27,7 @@ export function UploadDropzone({
   title = "Drop an image here",
   hint = "or click to browse, or paste from the clipboard",
   format = "auto",
-  sample,
+  footer,
   disabled = false,
   className,
 }: UploadDropzoneProps) {
@@ -93,7 +93,7 @@ export function UploadDropzone({
           void accept(e.dataTransfer.files[0]);
         }}
         className={cn(
-          "group relative flex min-h-56 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-6 py-10 text-center transition-colors",
+          "group relative flex min-h-44 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-6 py-8 text-center transition-colors",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/70",
           dragging ? "border-accent bg-accent/10" : "border-white/15 bg-white/[0.025] hover:border-white/30 hover:bg-white/[0.05]",
           disabled && "pointer-events-none opacity-50",
@@ -124,24 +124,7 @@ export function UploadDropzone({
         )}
       </div>
 
-      {sample && (
-        <button
-          type="button"
-          disabled={disabled || reading}
-          onClick={() => {
-            setError(null);
-            try {
-              onImage(sample.make());
-            } catch (e) {
-              setError(errorMessage(e));
-            }
-          }}
-          className="mt-3 inline-flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-zinc-400 transition-colors hover:text-accent disabled:opacity-50"
-        >
-          <ImageIcon />
-          {sample.label}
-        </button>
-      )}
+      {footer}
 
       <ErrorBanner message={error} onDismiss={() => setError(null)} className="mt-3" />
     </div>

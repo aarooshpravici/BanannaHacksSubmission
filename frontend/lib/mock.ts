@@ -93,6 +93,7 @@ interface MockScene {
   image: HTMLCanvasElement;
   depth: HTMLCanvasElement;
   normals: HTMLCanvasElement;
+  relief: number;
   arrays?: SceneArrays;
 }
 
@@ -152,7 +153,7 @@ export async function relightScene(body: RelightSceneIn): Promise<RelightScene> 
   const [image] = await Promise.all([decode(body.image), sleep(between(900, 1500))]);
   const { depth, normals } = syntheticGeometry(image.width, image.height);
   const scene_id = uid("scene");
-  scenes.set(scene_id, { image, depth, normals });
+  scenes.set(scene_id, { image, depth, normals, relief: MOCK_RELIEF });
   return {
     scene_id,
     width: image.width,
@@ -162,6 +163,17 @@ export async function relightScene(body: RelightSceneIn): Promise<RelightScene> 
     normals: canvasToBase64(normals),
     relief: MOCK_RELIEF,
   };
+}
+
+/**
+ * Register a scene the page already holds (a built-in sample, which comes with
+ * real depth and normals) so mock renders and Enhance use its own geometry.
+ */
+export async function adoptScene(scene: RelightScene): Promise<string> {
+  const [image, depth, normals] = await Promise.all([decode(scene.image), base64ToCanvas(scene.depth, true), base64ToCanvas(scene.normals, true), sleep(between(300, 600))]);
+  const scene_id = uid("scene");
+  scenes.set(scene_id, { image, depth, normals, relief: scene.relief });
+  return scene_id;
 }
 
 /** The backend's relight(), run by lib/relightMath.ts on a reduced copy of the scene. */
@@ -178,7 +190,7 @@ function renderScene(sceneId: string, lightIn: LightIn | undefined, shadows: boo
       ctx.drawImage(source, 0, 0, w, h);
       return ctx.getImageData(0, 0, w, h);
     };
-    scene.arrays = sceneArrays(read(scene.image), read(scene.depth), read(scene.normals), MOCK_RELIEF);
+    scene.arrays = sceneArrays(read(scene.image), read(scene.depth), read(scene.normals), scene.relief);
   }
   const { width, height } = scene.arrays;
   const pixels = relightPixels(scene.arrays, { ...DEFAULT_LIGHT, ...lightIn }, shadows);
