@@ -619,6 +619,45 @@ def _generation_size(w: int, h: int) -> tuple[int, int]:
     return (max(16, round(w * scale / 16) * 16), max(16, round(h * scale / 16) * 16))
 
 
+# What register() accepts as a redraw's drift. The two real outputs it was
+# built on were zoomed 1 to 1.5% and shifted about 5 px on a 1024 px crop, the
+# same in both directions and with no rotation. Where the surroundings are
+# plain rows, columns or a thin strip they cannot pin the alignment down, and
+# the best match found is a shear or a stretch that moves the fill tens of
+# pixels. Looser limits correct a model that drifts more, but let more of those
+# wrong alignments through; tighter ones leave a real drift uncorrected.
+MAX_REGISTER_ZOOM = 0.04  # zoom may differ from 1 by this much
+MAX_REGISTER_UNEVEN = 0.03  # shear, rotation or uneven zoom beyond this: the fit is not a redraw's drift at all
+MAX_REGISTER_MOVE_FRAC = 0.04  # no corner may move further than this share of the longer side
+MIN_REGISTER_MOVE_PX = 0.5  # below this there is nothing worth correcting
+
+
+def _zoom_and_shift(warp: np.ndarray, w: int, h: int) -> np.ndarray | None:
+    """The even-zoom-plus-shift part of a fitted affine warp, or None.
+
+    The fit has six numbers but a redraw's drift has three: one zoom and a
+    shift in x and y. On surroundings with little detail the other three
+    (shear, rotation, a different zoom across and down) are fitted to noise.
+    Keeping only the zoom and the shift, measured at the centre of the image,
+    still undoes a real drift and can never shear the picture. None means the
+    fit is too far from a plain zoom and shift to trust, too large to be a
+    drift, or too small to matter.
+    """
+    m = warp.astype(np.float64)
+    a, b, c, d = m[0, 0], m[0, 1], m[1, 0], m[1, 1]
+    zoom = (a + d) / 2
+    if max(abs(b), abs(c), abs(a - d)) > MAX_REGISTER_UNEVEN or abs(zoom - 1) > MAX_REGISTER_ZOOM:
+        return None
+    centre = np.float64([w / 2, h / 2])
+    shift = m[:, :2] @ centre + m[:, 2] - zoom * centre  # so the centre moves exactly as the fit moved it
+    simple = np.float64([[zoom, 0, shift[0]], [0, zoom, shift[1]]])
+    corners = np.float64([[0, 0, 1], [w, 0, 1], [0, h, 1], [w, h, 1]]).T
+    moved = float(np.linalg.norm(simple @ corners - corners[:2], axis=0).max())
+    if moved > MAX_REGISTER_MOVE_FRAC * max(w, h) or moved < MIN_REGISTER_MOVE_PX:
+        return None
+    return simple.astype(np.float32)
+
+
 def register(generated: Image.Image, original: Image.Image, mask: np.ndarray) -> Image.Image:
     """Line a generated image up with the original before pasting part of it in.
 
@@ -626,9 +665,10 @@ def register(generated: Image.Image, original: Image.Image, mask: np.ndarray) ->
     back is typically zoomed by a percent or so and shifted a few pixels. Pasted
     in as it is, the new element lands off its slot. The pixels outside the mask
     show the same content in both images, so they are used to find the small
-    shift/zoom between the two, which is then undone. If no alignment is found,
-    or it does not make the surroundings match better, the image is returned
-    unchanged.
+    shift/zoom between the two, which is then undone. Only the even zoom and
+    the shift of the fitted alignment are applied (see _zoom_and_shift). If no
+    usable alignment is found, or it does not make the surroundings match
+    better, the image is returned unchanged.
     """
     ref_rgb, gen_rgb = np.asarray(to_rgb(original)), np.asarray(to_rgb(generated))
     ref = cv2.cvtColor(ref_rgb, cv2.COLOR_RGB2GRAY).astype(np.float32)
@@ -644,6 +684,9 @@ def register(generated: Image.Image, original: Image.Image, mask: np.ndarray) ->
     except cv2.error:
         return generated
     h, w = ref.shape
+    warp = _zoom_and_shift(warp, w, h)
+    if warp is None:
+        return generated
     aligned = cv2.warpAffine(gen_rgb, warp, (w, h), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP, borderMode=cv2.BORDER_REPLICATE)
     keep = outside > 0
     before = np.abs(gen - ref)[keep].mean()
@@ -666,7 +709,8 @@ def blend(original: Image.Image, generated: Image.Image, mask: np.ndarray) -> Im
     cannot handle a mask that touches the image border, so the image is padded
     first. It also solves over the mask's whole bounding box and so disturbs
     pixels outside an irregular (brush-drawn) mask; only the masked pixels of
-    its result are kept.
+    its result are kept. For such a mask that can leave a faint color step
+    along its edge, which is the price of never touching pixels outside it.
     """
     pad = 8
     base = np.asarray(to_rgb(original))

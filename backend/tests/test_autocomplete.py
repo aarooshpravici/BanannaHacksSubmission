@@ -83,6 +83,45 @@ def test_row_aligned_to_one_margin_reports_nothing():
     assert _gaps(_row([920, 1040], y=700, w=100, h=44)) == []
 
 
+def test_end_slot_needs_the_row_to_be_off_centre_by_one_block_quite_exactly():
+    # Pitch 240. Off-centre by 1.05 pitches: a centred trio missing its last card, drawn a little loosely.
+    assert [(g.x, g.y) for g in _gaps(_row([254, 494]))] == [(734, 300)]
+    # Off-centre by 1.2 pitches: nothing a third card would centre, so the row is simply placed there.
+    assert _gaps(_row([236, 476])) == []
+
+
+def test_hole_inside_a_grid_that_is_off_centre_by_one_column_is_still_reported():
+    # Three of a page grid's four columns, two rows, one card missing inside. The column
+    # guessed at the right end must not count towards "too many cells are empty".
+    cells = [(x, y) for y in (100, 420) for x in (60, 335, 610) if (x, y) != (335, 100)]
+    gaps = _gaps([A.Block(x, y, 255, 280) for x, y in cells])
+    assert (gaps[0].x, gaps[0].y) == (335, 100) and gaps[0].confidence >= 0.9
+
+
+def test_two_missing_corners_that_are_not_both_in_the_last_row_are_reported():
+    cells = [(x, y) for y in (60, 300, 540) for x in (140, 460, 780)]
+    for missing in ({cells[0], cells[8]}, {cells[2], cells[8]}):
+        gaps = _gaps([A.Block(x, y, 280, 200) for x, y in cells if (x, y) not in missing])
+        assert {(g.x, g.y) for g in gaps} == missing
+
+
+def test_slot_holding_loose_content_on_a_page_packed_with_blocks_is_not_empty():
+    # Cards with 12 px gutters leave no free background to read a texture from; the
+    # slot's own content must not pass as "the texture of the page".
+    cells = [(16 + 148 * i, 12 + 132 * j) for j in range(6) for i in range(8)]
+    cards = [A.Block(x, y, 136, 120) for x, y in cells if (x, y) != cells[19]]
+    assert _gaps(cards, extra=[A.Block(*cells[19], 136, 120)]) == []
+    assert [(g.x, g.y) for g in _gaps(cards)] == [cells[19]]
+
+
+def test_page_covered_in_content_is_not_mistaken_for_a_textured_background():
+    # Lines of text everywhere, in the slot too. Nothing that busy is a paper texture,
+    # so the slot is not "as empty as the page".
+    edges = np.zeros((H, W), bool)
+    edges[::6] = True
+    assert A.find_gaps(_canvas(), _row([60, 300, 780, 1020], w=180), edges) == []
+
+
 def test_last_row_short_by_one_is_reported_but_short_by_more_is_the_end_of_the_list():
     cells = [(x, y) for y in (100, 420) for x in (60, 340, 620, 900)]
     seven = _gaps([A.Block(x, y, 240, 280) for x, y in cells[:7]])
@@ -174,6 +213,12 @@ def test_designs_by_an_independent_reviewer(name):
     assert correct, [(g.bbox, g.confidence, g.reason) for g in gaps]
 
 
+def test_bordered_placeholder_is_reported_at_its_frame_not_inside_it():
+    img, truth = INDEPENDENT["thick_border_placeholder"]()
+    gaps = A.detect(img)
+    assert len(gaps) == 1 and A.iou(A.Block(*truth[0]), A.Block(*gaps[0].bbox)) >= 0.97, [g.bbox for g in gaps]
+
+
 def test_detection_is_fast():
     img, _ = DESIGNS["gallery_missing_cell"]()
     t = time.perf_counter()
@@ -225,6 +270,12 @@ def test_blend_leaves_pixels_outside_an_irregular_mask_untouched():
     assert not np.array_equal(out[mask == 255], np.asarray(img)[mask == 255])
 
 
+def _brush_stroke(size) -> np.ndarray:
+    stroke = Image.new("L", size, 0)
+    ImageDraw.Draw(stroke).line([(150, 200), (400, 420), (700, 260)], fill=255, width=46)  # across two photos
+    return np.asarray(stroke).copy()
+
+
 def test_blend_survives_a_tiny_mask():
     img, _ = _scene()
     mask = np.zeros((200, 300), np.uint8)
@@ -257,6 +308,71 @@ def test_register_undoes_a_small_zoom_and_shift(zoom, dx, dy):
     row = np.asarray(aligned.convert("L")).astype(int)[y + h // 2]
     edge = int(np.argmax(np.abs(np.diff(row[x - 12 : x + 12])))) + x - 12
     assert abs(edge - x) <= 1
+
+
+def test_register_applies_only_the_zoom_and_shift_of_a_fitted_warp():
+    fit = lambda m: A._zoom_and_shift(np.float32(m), 1024, 768)  # noqa: E731
+    # What the real model outputs looked like: kept as it is.
+    assert np.allclose(fit([[1.015, 0, -5], [0, 1.015, 3]]), [[1.015, 0, -5], [0, 1.015, 3]], atol=1e-4)
+    # A slightly sheared, unevenly zoomed fit (noise on sparse surroundings): the
+    # shear is dropped, the zoom averaged, and the centre still moves as fitted.
+    noisy = np.float32([[1.016, 0.006, -7], [-0.004, 1.010, 5]])
+    simple = fit(noisy)
+    assert simple[0, 1] == 0 and simple[1, 0] == 0 and simple[0, 0] == simple[1, 1] == pytest.approx(1.013, abs=1e-4)
+    centre = np.float32([512, 384, 1])
+    assert np.allclose(simple @ centre, noisy @ centre, atol=1e-3)
+    # Not a redraw's drift at all: refused.
+    assert fit([[1, 0.05, 0], [0, 1, 0]]) is None  # strongly sheared
+    assert fit([[1.06, 0, 0], [0, 1.0, 0]]) is None  # stretched one way only
+    assert fit([[1.08, 0, -40], [0, 1.08, -30]]) is None  # zoomed too far
+    assert fit([[1, 0, 60], [0, 1, 0]]) is None  # moved too far
+    assert fit([[1, 0, 0.1], [0, 1, 0.1]]) is None  # nothing worth correcting
+
+
+@pytest.mark.parametrize("skew", [0.004, -0.006, 0.01])
+def test_register_still_corrects_a_drift_when_the_fit_comes_out_slightly_sheared(skew, monkeypatch):
+    # The fit on sparse surroundings carries a little shear from noise. The drift must still be undone.
+    img, truth = DESIGNS["pricing_missing_right"]()
+    x, y, w, h = truth[0]
+    mask = np.zeros((img.height, img.width), np.uint8)
+    mask[y : y + h, x : x + w] = 255
+    cx, cy = img.width / 2, img.height / 2
+    drift = np.float32([[1.012, 0, (1 - 1.012) * cx + 5], [0, 1.012, (1 - 1.012) * cy - 3]])
+    drifted = Image.fromarray(cv2.warpAffine(np.asarray(img), drift, img.size, borderMode=cv2.BORDER_REPLICATE))
+    real_ecc = cv2.findTransformECC
+
+    def sheared_fit(*args, **kwargs):
+        cc, warp = real_ecc(*args, **kwargs)
+        warp = warp.copy()
+        warp[0, 1] += skew  # shear about the centre, as noise would add
+        warp[0, 2] -= skew * cy
+        return cc, warp
+
+    monkeypatch.setattr(cv2, "findTransformECC", sheared_fit)
+    aligned = A.register(drifted, img, mask)
+    assert aligned is not drifted
+    assert _slot_error(aligned, img, mask) <= max(0.6, _slot_error(drifted, img, mask) * 0.25)
+
+
+def test_register_leaves_a_fill_alone_when_the_surroundings_cannot_place_it():
+    # Full-height columns: nothing outside the mask says where the picture sits vertically,
+    # so the best "alignment" of a correctly placed fill used to be a shear.
+    img = Image.new("RGB", (1200, 800), (250, 250, 252))
+    d = ImageDraw.Draw(img)
+    for k, x in enumerate(range(60, 1140, 180)):
+        if k != 3:
+            d.rectangle((x, 0, x + 140, 800), fill=(232, 236, 244), outline=(190, 196, 210), width=2)
+    filled = img.copy()
+    d = ImageDraw.Draw(filled)
+    d.rectangle((600, 0, 740, 800), fill=(232, 236, 244), outline=(190, 196, 210), width=2)
+    d.ellipse((640, 300, 700, 360), fill=(60, 90, 200))
+    mask = np.zeros((800, 1200), np.uint8)
+    mask[244:556, 594:746] = 255
+    # A redraw is never pixel-identical: mild noise, as a generator adds.
+    noisy = np.asarray(filled).astype(np.float32) + np.random.default_rng(0).normal(0, 2.0, (800, 1200, 3))
+    box = tuple(int(v) for v in A.context_box(mask))  # fill() registers within this crop
+    generated = Image.fromarray(np.clip(noisy, 0, 255).astype(np.uint8)).crop(box)
+    assert A.register(generated, img.crop(box), mask[box[1] : box[3], box[0] : box[2]]) is generated
 
 
 def test_register_gives_up_gracefully_when_nothing_lies_outside_the_mask():
