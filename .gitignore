@@ -1,6 +1,17 @@
-# secrets
+# secrets: never commit these. tools/check_secrets.py enforces it before each commit.
 .env
-.env.local
+.env.*
+!.env.example
+!.env.local.example
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials.json
+token.json
+.netrc
+.modal.toml
 
 # macOS
 .DS_Store
