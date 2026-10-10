@@ -6,7 +6,7 @@ import pytest
 # Blanking the keys matters as much as mock mode: some tests switch mock mode
 # off on purpose, and must then find no key rather than a real one.
 os.environ["MOCK_MODE"] = "1"
-for _key in ("FAL_KEY", "REPLICATE_API_TOKEN", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "HF_TOKEN"):
+for _key in ("FAL_KEY", "GEMINI_API_KEY", "HF_TOKEN"):
     os.environ[_key] = ""
 
 

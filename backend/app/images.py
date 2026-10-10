@@ -1,8 +1,7 @@
-"""Image and mask conversion helpers shared by every endpoint.
+"""Image conversion helpers shared by every endpoint.
 
 Wire format: images travel as base64 strings (a `data:image/...;base64,` prefix
-is accepted on input and never produced on output). Masks are single-channel
-PNGs the same size as their image, white = the region to act on.
+is accepted on input and never produced on output).
 """
 
 import base64
@@ -17,7 +16,7 @@ MAX_SIDE = 2048
 
 
 class ImageError(ValueError):
-    """The client sent something that is not a usable image or mask."""
+    """The client sent something that is not a usable image."""
 
 
 def _b64_bytes(data: str) -> bytes:
@@ -44,45 +43,6 @@ def decode_image(data: str, *, max_side: int = MAX_SIDE) -> Image.Image:
     return resize_max_side(img, max_side)
 
 
-def decode_mask(data: str, size: tuple[int, int]) -> np.ndarray:
-    """Decode a base64 mask to a uint8 array of 0/255 with shape (h, w).
-
-    `size` is the (width, height) of the image the mask belongs to. A mask of a
-    different size is resized, since browsers often export the canvas at another
-    scale than the uploaded image.
-    """
-    try:
-        mask = Image.open(io.BytesIO(_b64_bytes(data)))
-        mask.load()
-    except ImageError:
-        raise
-    except Exception as e:
-        raise ImageError("could not read mask") from e
-    if mask.mode == "P" and "transparency" in mask.info:
-        mask = mask.convert("RGBA")
-    if mask.mode in ("RGBA", "LA"):
-        opaque = np.asarray(mask.getchannel("A")) > 127
-        bright = np.asarray(mask.convert("L")) > 127
-        if opaque.all():
-            # Nothing is see-through (a browser canvas exported as white on
-            # black), so brightness carries the mask, as for a plain PNG.
-            pass
-        elif bright[opaque].any() and not bright[opaque].all():
-            # White on black with a few see-through pixels: still a brightness
-            # mask. Reading it by alpha would select nearly the whole image.
-            mask = Image.fromarray(np.where(bright & opaque, 255, 0).astype(np.uint8))
-        else:
-            # Drawn in one tone on a transparent canvas: the painted pixels are the mask.
-            mask = mask.getchannel("A")
-    mask = mask.convert("L")
-    if mask.size != size:
-        mask = mask.resize(size, Image.NEAREST)
-    arr = np.where(np.asarray(mask) > 127, 255, 0).astype(np.uint8)
-    if not arr.any():
-        raise ImageError("mask is empty")
-    return arr
-
-
 def encode_image(img: Image.Image, fmt: str = "PNG") -> str:
     buf = io.BytesIO()
     if fmt.upper() in ("JPEG", "JPG"):
@@ -91,10 +51,6 @@ def encode_image(img: Image.Image, fmt: str = "PNG") -> str:
     else:
         img.save(buf, format=fmt)
     return base64.b64encode(buf.getvalue()).decode("ascii")
-
-
-def encode_mask(mask: np.ndarray) -> str:
-    return encode_image(Image.fromarray(mask.astype(np.uint8)))
 
 
 def to_data_url(img: Image.Image, fmt: str = "PNG") -> str:

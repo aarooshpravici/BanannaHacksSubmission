@@ -11,12 +11,11 @@ from fastapi.responses import JSONResponse
 
 from .images import ImageError
 from .providers.generation import GenerationError
-from .providers.llm import LLMError
-from .routers import autocomplete, common, relight, turnaround
+from .routers import common, relight
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
-app = FastAPI(title="Banana Hacks backend")
+app = FastAPI(title="Relight backend")
 log = logging.getLogger(__name__)
 
 
@@ -43,12 +42,9 @@ async def bad_image(_: Request, exc: ImageError) -> JSONResponse:
 
 
 @app.exception_handler(GenerationError)
-@app.exception_handler(LLMError)
-async def provider_failed(_: Request, exc: Exception) -> JSONResponse:
+async def provider_failed(_: Request, exc: GenerationError) -> JSONResponse:
     return JSONResponse(status_code=502, content={"detail": str(exc)})
 
 
 app.include_router(common.router)
 app.include_router(relight.router)
-app.include_router(autocomplete.router)
-app.include_router(turnaround.router)

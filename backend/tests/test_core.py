@@ -11,8 +11,6 @@ from PIL import Image
 
 from app import images
 from app.cache import ImageCache
-from app.critic.palette import extract_palette, palette_score
-from app.critic.scoring import generate_and_rank, weighted_total
 from app.jobs import JobStore
 
 
@@ -45,43 +43,6 @@ def test_decode_rejects_garbage():
 def test_decode_downscales_huge_images():
     out = images.decode_image(_png_b64(Image.new("RGB", (5000, 2500))))
     assert out.size == (2048, 1024)
-
-
-def test_mask_is_binarized_and_resized_to_image():
-    mask = Image.new("L", (20, 10), 0)
-    mask.paste(200, (0, 0, 10, 10))
-    arr = images.decode_mask(_png_b64(mask), size=(40, 20))
-    assert arr.shape == (20, 40) and set(np.unique(arr)) == {0, 255}
-    assert arr[:, :20].all() and not arr[:, 20:].any()
-
-
-def test_mask_drawn_on_transparent_canvas_uses_alpha():
-    canvas = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
-    canvas.paste((0, 0, 0, 255), (2, 2, 6, 6))  # black brush strokes
-    arr = images.decode_mask(_png_b64(canvas), size=(10, 10))
-    assert arr[3, 3] == 255 and arr[0, 0] == 0
-
-
-def test_opaque_rgba_mask_uses_brightness_not_alpha():
-    # What canvas.toDataURL() gives for white strokes on a black fill: alpha is 255 everywhere.
-    canvas = Image.new("RGBA", (10, 10), (0, 0, 0, 255))
-    canvas.paste((255, 255, 255, 255), (2, 2, 6, 6))
-    arr = images.decode_mask(_png_b64(canvas), size=(10, 10))
-    assert arr[3, 3] == 255 and arr[0, 0] == 0 and (arr == 255).sum() == 16
-
-
-@pytest.mark.parametrize("stray_alpha", [254, 0])
-def test_opaque_mask_with_a_stray_see_through_pixel_still_uses_brightness(stray_alpha):
-    canvas = Image.new("RGBA", (40, 40), (0, 0, 0, 255))
-    canvas.paste((255, 255, 255, 255), (10, 10, 20, 20))
-    canvas.putpixel((30, 30), (0, 0, 0, stray_alpha))
-    arr = images.decode_mask(_png_b64(canvas), size=(40, 40))
-    assert (arr == 255).sum() == 100 and arr[15, 15] == 255 and arr[30, 30] == 0
-
-
-def test_empty_mask_is_rejected():
-    with pytest.raises(images.ImageError):
-        images.decode_mask(_png_b64(Image.new("L", (10, 10), 0)), size=(10, 10))
 
 
 def test_to_rgb_flattens_transparency_onto_background():
@@ -155,107 +116,3 @@ def test_interrupted_cache_overwrite_is_a_miss_not_a_partial_hit(tmp_path, monke
         c.set("ns", {"a": 1}, [red])
     monkeypatch.setattr(Path, "touch", real_touch)
     assert c.get("ns", {"a": 1}) is None
-
-
-# --- palette --------------------------------------------------------------
-
-
-def _two_tone(left: tuple, right: tuple, split: int = 30) -> Image.Image:
-    img = Image.new("RGB", (40, 40), right)
-    img.paste(left, (0, 0, split, 40))
-    return img
-
-
-def test_palette_finds_colors_in_order_of_area():
-    p = extract_palette(_two_tone((255, 0, 0), (0, 0, 255)), k=2)
-    assert [s.hex for s in p] == ["#ff0000", "#0000ff"]
-    assert p[0].weight == pytest.approx(0.75, abs=0.02)
-
-
-def test_palette_ignores_transparent_pixels():
-    img = Image.new("RGBA", (40, 40), (0, 255, 0, 0))  # transparent green
-    img.paste((255, 0, 0, 255), (0, 0, 10, 10))
-    p = extract_palette(img, k=3)
-    assert [s.hex for s in p] == ["#ff0000"]
-
-
-def test_palette_of_a_single_visible_pixel_or_flat_color():
-    dot = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
-    dot.putpixel((5, 5), (10, 200, 30, 255))
-    assert [s.hex for s in extract_palette(dot)] == ["#0ac81e"]
-    flat = extract_palette(Image.new("RGB", (40, 40), (0, 0, 0)))
-    assert [(s.hex, s.weight) for s in flat] == [("#000000", 1.0)]
-    assert palette_score(flat, flat) == pytest.approx(1.0)
-
-
-def test_palette_respects_mask():
-    mask = np.zeros((40, 40), np.uint8)
-    mask[:, 30:] = 255
-    p = extract_palette(_two_tone((255, 0, 0), (0, 0, 255)), k=2, mask=mask)
-    assert [s.hex for s in p] == ["#0000ff"]
-
-
-def test_palette_score_orders_same_similar_different():
-    base = extract_palette(_two_tone((200, 30, 30), (30, 30, 200)), k=2)
-    same = extract_palette(_two_tone((200, 30, 30), (30, 30, 200)), k=2)
-    near = extract_palette(_two_tone((215, 45, 40), (40, 40, 185)), k=2)
-    far = extract_palette(_two_tone((30, 200, 30), (240, 240, 60)), k=2)
-    s_same, s_near, s_far = (palette_score(base, p) for p in (same, near, far))
-    assert s_same == pytest.approx(1.0)
-    assert s_same > s_near > s_far
-    assert s_near > 0.8 and s_far < 0.3
-
-
-def test_palette_score_penalizes_a_dropped_color():
-    full = extract_palette(_two_tone((200, 30, 30), (30, 30, 200), split=20), k=2)
-    lost_blue = extract_palette(Image.new("RGB", (40, 40), (200, 30, 30)), k=2)
-    assert palette_score(full, lost_blue) < 0.8
-    assert palette_score(full, lost_blue) == pytest.approx(palette_score(lost_blue, full))
-
-
-# --- scoring --------------------------------------------------------------
-
-
-def test_weighted_total_renormalizes_over_present_axes():
-    weights = {"style": 0.4, "seam": 0.4, "intent": 0.2}
-    assert weighted_total({"style": 1.0, "seam": 0.5, "intent": 0.0}, weights) == pytest.approx(0.6)
-    assert weighted_total({"style": 1.0, "seam": 0.5}, weights) == pytest.approx(0.75)
-    with pytest.raises(ValueError):
-        weighted_total({"other": 1.0}, weights)
-
-
-def test_loop_ranks_and_stops_when_first_batch_passes():
-    calls = []
-
-    def generate(attempt, best):
-        calls.append(attempt)
-        return [0.2, 0.9, 0.5]
-
-    result = generate_and_rank(generate, lambda x: ({"q": x}, None), {"q": 1.0}, threshold=0.8, max_retries=2)
-    assert calls == [0]
-    assert result.best.item == 0.9 and result.passed and result.retries == 0
-    assert [c.item for c in result.candidates] == [0.9, 0.5, 0.2]
-
-
-def test_loop_retries_with_feedback_until_threshold():
-    seen_feedback = []
-
-    def generate(attempt, best):
-        seen_feedback.append(best.notes if best else None)
-        return [0.3 + 0.3 * attempt]
-
-    result = generate_and_rank(
-        generate, lambda x: ({"q": x}, f"missing scarf at {x:.1f}"), {"q": 1.0}, threshold=0.8, max_retries=3
-    )
-    assert result.retries == 2 and result.passed and result.best.item == pytest.approx(0.9)
-    assert seen_feedback == [None, "missing scarf at 0.3", "missing scarf at 0.6"]
-    assert result.history == pytest.approx([0.3, 0.6, 0.9])
-
-
-def test_loop_keeps_earlier_best_when_retries_get_worse():
-    def generate(attempt, best):
-        return [0.6 - 0.2 * attempt]
-
-    result = generate_and_rank(generate, lambda x: ({"q": x}, None), {"q": 1.0}, threshold=0.9, max_retries=2)
-    assert result.best.item == pytest.approx(0.6) and result.best.attempt == 0
-    assert not result.passed and result.retries == 2 and len(result.candidates) == 3

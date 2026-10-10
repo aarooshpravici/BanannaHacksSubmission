@@ -11,22 +11,19 @@ pillow
 numpy
 opencv-python-headless
 
-# local models (SAM, DINOv2, CLIP, depth) and background removal
+# local models (depth, surface normals)
 torch
-torchvision
+torchvision  # not imported here, but transformers picks its faster image processors when it is present
 transformers
 diffusers
-accelerate
-rembg[cpu]
+accelerate  # not imported here; diffusers uses it to load the normals model
 
 # hosted providers
 fal-client
-replicate
-anthropic
 google-genai
 
 # tests
 pytest
 
-# sample images for proofs and tests
+# sample photos for the proof script and tests
 scikit-image

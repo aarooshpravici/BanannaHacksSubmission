@@ -22,13 +22,22 @@ import torch
 from PIL import Image
 from transformers import AutoImageProcessor, AutoModelForDepthEstimation
 
-from ..critic.embeddings import device
 from ..images import to_rgb
 
 DEPTH_MODEL = "depth-anything/Depth-Anything-V2-Small-hf"
 NORMALS_MODEL = "prs-eth/marigold-normals-v1-1"
 
 _lock = threading.Lock()
+
+
+@lru_cache
+def device() -> str:
+    """Where the normals model runs: a GPU if there is one, otherwise the CPU."""
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
 
 
 @lru_cache

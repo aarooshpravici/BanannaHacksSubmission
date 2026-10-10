@@ -1,4 +1,4 @@
-"""In-memory background jobs for slow work (generation, scoring).
+"""In-memory background jobs for slow work (the Enhance call).
 
 An endpoint submits a function and returns the job id straight away; the
 frontend polls until the status is "done" or "error". State lives in this

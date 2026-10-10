@@ -1,15 +1,10 @@
-"""Endpoints every idea needs: health, job polling, cutout, scoring."""
+"""Endpoints that are not about one photo: health and job polling."""
 
 from fastapi import APIRouter, HTTPException
 
 from ..config import get_settings
-from ..critic import embeddings
-from ..critic.palette import extract_palette, palette_score
-from ..critic.scoring import weighted_total
-from ..cutout import remove_background
-from ..images import decode_image, encode_image
 from ..jobs import jobs
-from ..schemas import CutoutOut, Health, ImageIn, JobStatus, ScoreIn, ScoreOut
+from ..schemas import Health, JobStatus
 
 router = APIRouter()
 
@@ -26,26 +21,3 @@ def job_status(job_id: str) -> JobStatus:
     if job is None:
         raise HTTPException(404, "unknown job id (jobs are lost when the server restarts)")
     return JobStatus(status=job.status, result=job.result, error=job.error)
-
-
-@router.post("/cutout")
-def cutout(body: ImageIn) -> CutoutOut:
-    cut = remove_background(decode_image(body.image))
-    return CutoutOut(cutout=encode_image(cut), palette=[s.hex for s in extract_palette(cut)])
-
-
-@router.post("/score")
-def score(body: ScoreIn) -> ScoreOut:
-    """How closely a candidate matches a reference image, per axis and overall."""
-    reference, candidate = decode_image(body.reference), decode_image(body.candidate)
-    scores = {
-        "identity": embeddings.image_similarity(reference, candidate),
-        "palette": palette_score(extract_palette(reference), extract_palette(candidate)),
-    }
-    if body.prompt:
-        scores["intent"] = embeddings.text_image_similarity(body.prompt, candidate)
-    try:
-        total = weighted_total(scores, body.weights)
-    except ValueError as e:
-        raise HTTPException(422, f"weights must name at least one of {sorted(scores)}") from e
-    return ScoreOut(scores=scores, total=total)
