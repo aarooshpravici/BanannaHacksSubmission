@@ -1,8 +1,89 @@
 # Relight
 
-Upload a photo, or click one of four built-in samples, and drag a light around it: the highlights and shadows follow live in your browser. The backend works out the photo's depth and surface direction once, and an optional "Enhance" step sends the shaded preview to a hosted image model for a photoreal finish.
+Drag a light around a photo and watch the highlights and shadows follow, live, in your browser. Two pretrained vision models measure the photo's shape once; from then on every frame is drawn by our own lighting maths in a WebGL shader, with no model and no server in the loop.
 
-Built for the Banana Hacks hackathon. The earlier three-idea version is on the `overnight-foundation` branch; `docs/overnight-report.md` describes it.
+![The light travelling once around the Portrait sample, with the shading and the cast shadows following it](docs/relight-sweep.gif)
+
+*The Portrait sample with the light on the path the app's Sweep button takes (the yellow dot is the light). These frames were rendered by our Python reference of the shading; the browser runs the same maths in a shader.*
+
+**Live demo: not published yet**
+
+Built for the Banana Hacks hackathon. The app has a "How it works" button in the top bar that shows each step below as a picture.
+
+## How it works
+
+```mermaid
+flowchart LR
+  photo([Your photo])
+
+  subgraph pre["Pretrained models, once per photo"]
+    depth["Depth Anything V2 Small<br/>depth map"]
+    normals["Marigold<br/>surface normals"]
+  end
+
+  subgraph ours["Our code, every frame, in a WebGL2 shader"]
+    diffuse["Diffuse shading<br/>with a falloff that keeps exposure steady"]
+    shadows["Ray-marched cast shadows<br/>near, mid and far layers, each with its own blur"]
+    mix["Multiply into the photo<br/>in linear light"]
+  end
+
+  subgraph hosted["Hosted model, optional"]
+    enhance["Enhance<br/>Gemini image model or IC-Light v2"]
+  end
+
+  light([The light you drag])
+  screen([Live preview])
+
+  photo --> depth
+  photo --> normals
+  normals --> diffuse
+  depth --> shadows
+  light --> diffuse
+  light --> shadows
+  diffuse --> mix
+  shadows --> mix
+  photo --> mix
+  mix --> screen
+  screen -. "only if you press Enhance" .-> enhance
+```
+
+1. **Depth, once per photo (pretrained: Depth Anything V2 Small).** How near each pixel is to the camera. We scale it into a height field.
+2. **Surface normals, once per photo (pretrained: Marigold).** Which way each surface faces. Normals worked out from the depth map alone left faces almost unshaded, so a second model does this.
+3. **Diffuse shading, every frame (ours).** Each pixel is lit by how squarely its surface faces the light, easing to dark as it turns away. Distance falloff is measured against the centre of the scene, so moving the light changes where it falls and not the overall exposure.
+4. **Cast shadows, every frame (ours).** Each pixel walks toward the light across the height field. Whatever blocks it is sorted into a near, mid or far layer by how far in front of the receiving surface it stands, and each layer is blurred by a different amount: a contact shadow stays crisp, a shadow on a far background spreads and fades.
+5. **Into the photo, every frame (ours).** The shading is multiplied into the photo in linear light, with a soft roll-off above white.
+6. **Enhance, only on request (hosted: the Gemini image model, or IC-Light v2 on fal.ai).** Sends the shaded preview for a more photographic finish. The app is complete without it.
+
+Steps 3 to 5 exist three times and are kept in agreement: `backend/app/ideas/relight.py` (the Python reference), `frontend/lib/relightMath.ts` (a CPU port) and `frontend/lib/relightGL.ts` (the shader you watch).
+
+## What is ours and what is not
+
+| | |
+| --- | --- |
+| **Ours** | All of the lighting: the diffuse shading, the exposure-steady falloff, the soft edge where a surface turns from the light, the ray-marched shadows and their three layers, the linear-light mix, written three times (Python, TypeScript, GLSL). The server that runs the two models once and hands the browser the maps. The page. |
+| **Not ours** | The depth model (Depth Anything V2 Small) and the normals model (Marigold): pretrained, downloaded, run as they are. We trained nothing. The optional Enhance model is a hosted service we call. |
+
+Without the two pretrained models there is nothing to shade; without our code there is nothing to drag. Dragging the light never calls a model.
+
+## Honest limits
+
+- One photo gives a height field, not real 3D, so shadows are approximate. Light from below looks blotchy on faces, and a faint dark column remains on open sky.
+- Shading is diffuse only: no shine. Light already in the photo is not removed.
+- The live shader has been tested in one browser on one computer (Chrome on an Apple-chip Mac).
+- Real Enhance has run once, and it weakened the side lighting. In the default setup (`MOCK_MODE=1`) Enhance returns the preview unchanged.
+- The static demo runs the four pre-computed samples only. Analysing your own photo needs the backend running locally.
+
+`testing/PENDING.md` is the full list of what has not been verified.
+
+## Run it
+
+Three ways, shortest first:
+
+- **Samples only, no backend:** `cd frontend && npm install && npm run dev`, then open http://localhost:3000 and click a sample. See "Frontend".
+- **Everything, on your own photos:** start the backend ("Backend"), then the frontend with `NEXT_PUBLIC_MOCK=0`.
+- **A static folder for a web host:** see "Static demo".
+
+The earlier three-idea version of the project is on the `overnight-foundation` branch; `docs/overnight-report.md` describes it.
 
 ## Layout
 
@@ -18,6 +99,8 @@ backend/    FastAPI app (Python 3.12)
 frontend/   Next.js app. One page, served at / and /relight
   out/                        the static demo, written by `npm run build:demo` (see "Static demo")
   public/samples/             the four sample scenes: photo, depth, normals, thumbnail (written by make_samples.py)
+  public/how-it-works/        the stills in the "How it works" panel (written by docs/make_explainer_images.py)
+docs/       relight-sweep.gif and the script that renders it; submission/ holds the write-up drafts
 proofs/     output images from the scripts
 testing/    what to test and how, written for the testers
 tools/      check_secrets.py, which keeps keys out of the repository
@@ -66,7 +149,14 @@ cd backend
 MOCK_MODE=1 .venv/bin/python -m scripts.make_samples
 ```
 
-It uses only the local models and writes about 1 MB in total. Commit the changed files.
+It uses only the local models and writes about 1 MB in total. Commit the changed files. `frontend/README.md` says how to add a fifth sample.
+
+The animation at the top of this page and the stills in the app's "How it works" panel are rendered from the Portrait sample by the Python reference. After changing the shading maths or that sample, render them again:
+
+```bash
+cd backend
+MOCK_MODE=1 PYTHONPATH=. .venv/bin/python ../docs/make_explainer_images.py
+```
 
 ## Tests
 
@@ -82,5 +172,7 @@ npm run lint && npx tsc --noEmit && npm run build
 The tests never call a paid service. `backend/scripts/live_checks.py` does (one image call), so run it only on purpose.
 
 ## Testing by hand
+
+`testing/` is a kit for three human testers: setup steps, a test plan with screenshots of what should appear, and `PENDING.md`, the list of what the developer could not verify.
 
 Testers: do not use the commands above. Start at `testing/README.md` and follow `testing/SETUP.md`; they say exactly what to install, what to click and what should appear.
