@@ -516,8 +516,11 @@ def fill(
     gen_mask = cv2.resize(crop_mask, gen_size, interpolation=cv2.INTER_NEAREST)
     outputs = generation.inpaint(crop.resize(gen_size, Image.LANCZOS), gen_mask, prompt, n=n, fresh=fresh)
 
-    if references:
-        targets = [embeddings.image_embedding(img.crop((x, y, x + w, y + h))) for x, y, w, h in references]
+    # Ignore reference boxes that are empty or fall outside the image.
+    boxes = [(max(0, x), max(0, y), min(img.width, x + w), min(img.height, y + h)) for x, y, w, h in references or []]
+    boxes = [b for b in boxes if b[2] - b[0] >= 8 and b[3] - b[1] >= 8]
+    if boxes:
+        targets = [embeddings.image_embedding(img.crop(b)) for b in boxes]
     else:
         targets = [embeddings.image_embedding(crop)]
 

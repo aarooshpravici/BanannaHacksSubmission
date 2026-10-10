@@ -125,6 +125,8 @@ def test_score_endpoint_separates_same_from_different():
         json={"reference": encode_image(char), "candidate": encode_image(char), "prompt": "a person in a red coat"},
     ).json()
     assert "intent" in with_prompt["scores"]
+    bad = client.post("/score", json={"reference": encode_image(char), "candidate": encode_image(char), "weights": {"nope": 1}})
+    assert bad.status_code == 422 and "identity" in bad.json()["detail"]
 
 
 @pytest.mark.models

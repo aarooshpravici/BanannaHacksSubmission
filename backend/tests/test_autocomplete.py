@@ -232,7 +232,7 @@ def test_fill_pipeline_and_endpoints_end_to_end():
     assert plan["analysis"] and 2 <= len(plan["suggestions"]) <= 3
 
     body = {"image": encode_image(img), "mask": region["mask"], "prompt": plan["suggestions"][0]["prompt"], "n": 3,
-            "references": region["siblings"]}
+            "references": [*region["siblings"], [5, 5, 0, 40], [99999, 0, 50, 50]]}  # two unusable boxes are ignored
     job_id = client.post("/autocomplete/fill", json=body).json()["job_id"]
     for _ in range(600):
         status = client.get(f"/jobs/{job_id}").json()

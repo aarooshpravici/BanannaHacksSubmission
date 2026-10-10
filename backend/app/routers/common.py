@@ -44,4 +44,8 @@ def score(body: ScoreIn) -> ScoreOut:
     }
     if body.prompt:
         scores["intent"] = embeddings.text_image_similarity(body.prompt, candidate)
-    return ScoreOut(scores=scores, total=weighted_total(scores, body.weights))
+    try:
+        total = weighted_total(scores, body.weights)
+    except ValueError as e:
+        raise HTTPException(422, f"weights must name at least one of {sorted(scores)}") from e
+    return ScoreOut(scores=scores, total=total)
