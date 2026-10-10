@@ -117,24 +117,6 @@ export function Toggle({ label, checked, onChange, hint }: ToggleProps) {
   );
 }
 
-// --- Badge ----------------------------------------------------------------------
-
-const BADGE_TONES = {
-  neutral: "border-white/10 bg-white/[0.06] text-zinc-300",
-  accent: "border-accent/30 bg-accent/15 text-accent",
-  good: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-  warn: "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  bad: "border-rose-400/30 bg-rose-400/10 text-rose-300",
-} as const;
-
-export function Badge({ tone = "neutral", className, children }: { tone?: keyof typeof BADGE_TONES; className?: string; children: ReactNode }) {
-  return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-4", BADGE_TONES[tone], className)}>
-      {children}
-    </span>
-  );
-}
-
 // --- Segmented control ------------------------------------------------------------
 
 interface SegmentedProps<T extends string> {

@@ -32,7 +32,7 @@ export function Panel({
 }
 
 /**
- * The page layout shared by the three ideas: a large working area on the left
+ * The page layout: a large working area on the left
  * and a scrolling sidebar of panels on the right. On narrow screens they stack.
  */
 export function Workspace({ children, sidebar }: { children: ReactNode; sidebar: ReactNode }) {
@@ -83,7 +83,7 @@ export function FitBox({
   );
 }
 
-/** The centred intro each idea page shows before anything is uploaded. */
+/** The centred intro the page shows before anything is uploaded. */
 export function PageIntro({ eyebrow, title, lead, children }: { eyebrow: string; title: string; lead: string; children: ReactNode }) {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-12">

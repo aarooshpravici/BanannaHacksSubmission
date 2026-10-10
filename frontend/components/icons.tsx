@@ -36,13 +36,6 @@ export const DownloadIcon = (p: IconProps) => (
   </Svg>
 );
 
-export const UndoIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M9 14 4 9l5-5" />
-    <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
-  </Svg>
-);
-
 export const SparklesIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M10 3.5 11.8 8.2 16.5 10l-4.7 1.8L10 16.5l-1.8-4.7L3.5 10l4.7-1.8L10 3.5Z" />
@@ -64,12 +57,6 @@ export const EyeIcon = (p: IconProps) => (
   </Svg>
 );
 
-export const CheckIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="m5 12.5 4.5 4.5L19 7.5" />
-  </Svg>
-);
-
 export const XIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M6 6l12 12M18 6 6 18" />
@@ -80,70 +67,6 @@ export const AlertIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M12 4 2.8 19.5h18.4L12 4Z" />
     <path d="M12 10v4.5M12 17.2v.1" />
-  </Svg>
-);
-
-export const MinusIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M6 12h12" />
-  </Svg>
-);
-
-export const PlusIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M12 5v14M5 12h14" />
-  </Svg>
-);
-
-export const TrashIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12" />
-  </Svg>
-);
-
-export const StarIcon = ({ className, filled }: IconProps & { filled?: boolean }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill={filled ? "currentColor" : "none"}
-    stroke="currentColor"
-    strokeWidth={1.8}
-    strokeLinejoin="round"
-    aria-hidden
-    className={cn("h-4 w-4 shrink-0", className)}
-  >
-    <path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8L12 3.5Z" />
-  </svg>
-);
-
-export const BrushIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M14.5 4.5 19.5 9.5 11 18l-5-5 8.5-8.5Z" />
-    <path d="M6 13c-2 .6-3 2.3-3 4.5 0 1.4-.6 2.2-1 2.5 3.5.6 7-.4 7.5-4" />
-  </Svg>
-);
-
-export const BoxSelectIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <rect x="4" y="5" width="16" height="14" rx="1.5" strokeDasharray="3.2 3" />
-  </Svg>
-);
-
-export const CursorIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="m5 4 5.5 15 2.2-6.3L19 10.5 5 4Z" />
-  </Svg>
-);
-
-export const RefreshIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9" />
-    <path d="M18.5 3.5v4h-4M5.5 20.5v-4h4" />
-  </Svg>
-);
-
-export const ArrowRightIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M5 12h14m0 0-5-5m5 5-5 5" />
   </Svg>
 );
 

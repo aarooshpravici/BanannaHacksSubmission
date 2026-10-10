@@ -3,24 +3,14 @@
 
 import { API_URL, MOCK } from "./config";
 import type {
-  AnalyzeOut,
-  CutoutOut,
-  DetectOut,
-  FillIn,
-  GenerateIn,
   Health,
-  ImageIn,
   JobRef,
   JobStatus,
-  MaskedImageIn,
-  PlanOut,
   RelightEnhanceIn,
   RelightRender,
   RelightRenderIn,
   RelightScene,
   RelightSceneIn,
-  ScoreIn,
-  ScoreOut,
 } from "./types";
 
 /** A failed API call. `message` is what to show the user (the backend's `detail`). */
@@ -97,16 +87,6 @@ export async function getJob<T>(jobId: string, signal?: AbortSignal): Promise<Jo
   return request("GET", `/jobs/${encodeURIComponent(jobId)}`, undefined, signal);
 }
 
-export async function cutout(body: ImageIn, signal?: AbortSignal): Promise<CutoutOut> {
-  if (MOCK) return (await mock()).cutout(body);
-  return request("POST", "/cutout", body, signal);
-}
-
-export async function score(body: ScoreIn, signal?: AbortSignal): Promise<ScoreOut> {
-  if (MOCK) return (await mock()).score(body);
-  return request("POST", "/score", body, signal);
-}
-
 // --- relight ------------------------------------------------------------------
 
 export async function relightScene(body: RelightSceneIn, signal?: AbortSignal): Promise<RelightScene> {
@@ -123,35 +103,4 @@ export async function relightRender(body: RelightRenderIn, signal?: AbortSignal)
 export async function relightEnhance(body: RelightEnhanceIn, signal?: AbortSignal): Promise<JobRef> {
   if (MOCK) return (await mock()).relightEnhance(body);
   return request("POST", "/relight/enhance", body, signal);
-}
-
-// --- design autocomplete --------------------------------------------------------
-
-export async function autocompleteDetect(body: ImageIn, signal?: AbortSignal): Promise<DetectOut> {
-  if (MOCK) return (await mock()).autocompleteDetect(body);
-  return request("POST", "/autocomplete/detect", body, signal);
-}
-
-export async function autocompletePlan(body: MaskedImageIn, signal?: AbortSignal): Promise<PlanOut> {
-  if (MOCK) return (await mock()).autocompletePlan(body);
-  return request("POST", "/autocomplete/plan", body, signal);
-}
-
-/** Job result: FillResult. */
-export async function autocompleteFill(body: FillIn, signal?: AbortSignal): Promise<JobRef> {
-  if (MOCK) return (await mock()).autocompleteFill(body);
-  return request("POST", "/autocomplete/fill", body, signal);
-}
-
-// --- turnaround -----------------------------------------------------------------
-
-export async function turnaroundAnalyze(body: ImageIn, signal?: AbortSignal): Promise<AnalyzeOut> {
-  if (MOCK) return (await mock()).turnaroundAnalyze(body);
-  return request("POST", "/turnaround/analyze", body, signal);
-}
-
-/** Job result: ViewResult. */
-export async function turnaroundGenerate(body: GenerateIn, signal?: AbortSignal): Promise<JobRef> {
-  if (MOCK) return (await mock()).turnaroundGenerate(body);
-  return request("POST", "/turnaround/generate", body, signal);
 }

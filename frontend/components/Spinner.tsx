@@ -10,11 +10,6 @@ export function Spinner({ className }: { className?: string }) {
   );
 }
 
-/** A shimmering placeholder block; size it with classes. */
-export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden className={cn("skeleton rounded-lg", className)} />;
-}
-
 /** A spinner with a line of text, for "the server is working on it" moments. */
 export function BusyLabel({ children, className }: { children: ReactNode; className?: string }) {
   return (

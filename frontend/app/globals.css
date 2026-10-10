@@ -64,11 +64,6 @@ body {
   background: rgb(251 209 61 / 0.3);
 }
 
-/* Transparent areas of cutouts sit on a checkerboard. */
-.checker {
-  background: repeating-conic-gradient(#20232b 0% 25%, #16181e 0% 50%) 50% / 22px 22px;
-}
-
 .skeleton {
   background: linear-gradient(90deg, rgb(255 255 255 / 0.04) 25%, rgb(255 255 255 / 0.1) 50%, rgb(255 255 255 / 0.04) 75%);
   background-size: 200% 100%;

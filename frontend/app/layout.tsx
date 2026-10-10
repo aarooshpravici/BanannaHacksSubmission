@@ -3,8 +3,8 @@ import { TopNav } from "@/components/TopNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Banana Hacks: image AI you can steer",
-  description: "Three image tools with real controls: move the light, autocomplete a design, turn a character around.",
+  title: "Relight: drag the light around any photo",
+  description: "Upload a photo and drag a light around it. Highlights and shadows follow live in your browser; an optional Enhance step makes the result photoreal.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

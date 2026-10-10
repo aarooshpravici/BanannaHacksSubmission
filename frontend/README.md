@@ -1,12 +1,6 @@
-# Banana Hacks frontend
+# Relight frontend
 
-Next.js (App Router) + React + TypeScript + Tailwind. One shared core and one page per idea:
-
-| Route | Idea |
-| --- | --- |
-| `/relight` | Move the light: drag a light around a photo, shaded live in a WebGL2 shader |
-| `/autocomplete` | Design autocomplete: detect or draw a gap, plan, generate and rank fills |
-| `/turnaround` | Character views: feature checklist, generate views, check and score them |
+Next.js (App Router) + React + TypeScript + Tailwind. One page: drag a light around a photo, shaded live in a WebGL2 shader. It is served at both `/` and `/relight`.
 
 ## Run
 
@@ -33,14 +27,15 @@ With neither variable set, `npm run dev` uses mock mode and a production build u
 - `lib/types.ts` mirrors `backend/app/schemas.py` field for field. Change them together.
 - `lib/api.ts` has one typed function per endpoint; `lib/mock.ts` answers them in mock mode.
 - `lib/useJob.ts` submits a background job and polls `/jobs/{id}`.
-- `lib/image.ts` handles files, base64, canvases, masks and downloads.
+- `lib/image.ts` handles files, base64, canvases and downloads.
 - `lib/relightGL.ts` is the live shader; `lib/relightMath.ts` is the same math on the CPU.
   Both are ports of `backend/app/ideas/relight.py`: if the Python changes, change both.
-- `components/` holds the shared UI (dropzone, score bars, candidate grid, before/after, panels).
+- `components/` holds the shared UI (dropzone, before/after, panels, buttons and sliders); `components/relight/RelightCanvas.tsx` is the live preview.
 
 ## Checks
 
 ```bash
 npm run lint
+npx tsc --noEmit
 npm run build
 ```

@@ -1,4 +1,4 @@
-// Browser-side image plumbing: files, base64 strings, canvases and masks.
+// Browser-side image plumbing: files, base64 strings and canvases.
 // Wire format (see lib/types.ts): raw base64 without a `data:` prefix.
 
 /** Longest side, in pixels, of anything we upload. */
@@ -14,8 +14,6 @@ export interface LoadedImage {
   height: number;
   name: string;
 }
-
-export type BBox = [number, number, number, number];
 
 // --- base64 <-> things ----------------------------------------------------------
 
@@ -43,11 +41,6 @@ export function base64ToBlob(base64: string): Blob {
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return new Blob([bytes], { type: sniffMime(raw) });
-}
-
-/** base64 -> object URL. The caller owns it: URL.revokeObjectURL when done. */
-export function base64ToObjectUrl(base64: string): string {
-  return URL.createObjectURL(base64ToBlob(base64));
 }
 
 // --- canvases -------------------------------------------------------------------
@@ -153,82 +146,6 @@ export async function fileToImage(
 
 export function canvasToImage(canvas: HTMLCanvasElement, name: string, mime: ImageMime = "image/png"): LoadedImage {
   return { base64: canvasToBase64(canvas, mime), mime, width: canvas.width, height: canvas.height, name };
-}
-
-// --- masks ----------------------------------------------------------------------
-
-/**
- * A drawing canvas (anything painted = selected, at any resolution) -> the mask
- * the API wants: an opaque PNG exactly `width` x `height`, white = selected.
- * Returns null when nothing is painted.
- */
-export function canvasToMask(source: HTMLCanvasElement, width: number, height: number): { mask: string; bbox: BBox } | null {
-  const out = makeCanvas(width, height);
-  const ctx = ctx2d(out, true);
-  ctx.drawImage(source, 0, 0, out.width, out.height);
-  const pixels = ctx.getImageData(0, 0, out.width, out.height);
-  const data = pixels.data;
-  let minX = out.width, minY = out.height, maxX = -1, maxY = -1;
-  for (let y = 0, i = 0; y < out.height; y++) {
-    for (let x = 0; x < out.width; x++, i += 4) {
-      const on = data[i + 3] > 127;
-      const v = on ? 255 : 0;
-      data[i] = v;
-      data[i + 1] = v;
-      data[i + 2] = v;
-      data[i + 3] = 255;
-      if (on) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-    }
-  }
-  if (maxX < 0) return null;
-  ctx.putImageData(pixels, 0, 0);
-  return { mask: canvasToBase64(out), bbox: [minX, minY, maxX - minX + 1, maxY - minY + 1] };
-}
-
-/** A rectangle, in image pixels -> mask PNG base64. */
-export function rectToMask(bbox: BBox, width: number, height: number): string {
-  const canvas = makeCanvas(width, height);
-  const ctx = ctx2d(canvas);
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(bbox[0], bbox[1], bbox[2], bbox[3]);
-  return canvasToBase64(canvas);
-}
-
-/**
- * Mask PNG (white = selected) -> a canvas whose alpha channel is the mask and
- * whose colour is `rgb`. Used to tint the selection on screen and, in the mock
- * layer, to cut generated content to the mask.
- */
-export async function maskToAlphaCanvas(
-  mask: string,
-  width: number,
-  height: number,
-  rgb: [number, number, number] = [255, 255, 255],
-): Promise<HTMLCanvasElement> {
-  const bitmap = await base64ToBitmap(mask, true);
-  const canvas = makeCanvas(width, height);
-  const ctx = ctx2d(canvas, true);
-  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = pixels.data;
-  for (let i = 0; i < data.length; i += 4) {
-    // A mask may also arrive as "painted on transparent": then alpha is the mask.
-    const luminance = data[i + 3] < 255 ? data[i + 3] : data[i];
-    data[i] = rgb[0];
-    data[i + 1] = rgb[1];
-    data[i + 2] = rgb[2];
-    data[i + 3] = luminance;
-  }
-  ctx.putImageData(pixels, 0, 0);
-  return canvas;
 }
 
 // --- downloads ------------------------------------------------------------------

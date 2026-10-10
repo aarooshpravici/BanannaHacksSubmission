@@ -1,19 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BananaMark } from "./icons";
 import { getHealth, isAbort } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { API_URL, MOCK } from "@/lib/config";
 import type { Health } from "@/lib/types";
-
-const IDEAS = [
-  { href: "/relight", label: "Move the light" },
-  { href: "/autocomplete", label: "Design autocomplete" },
-  { href: "/turnaround", label: "Character views" },
-];
 
 type Status = { kind: "mock" } | { kind: "checking" } | { kind: "online"; health: Health } | { kind: "offline" };
 
@@ -76,33 +69,15 @@ function BackendStatus() {
 }
 
 export function TopNav() {
-  const pathname = usePathname();
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-white/[0.08] bg-ink/80 px-4 backdrop-blur-xl">
-      <Link href="/" className="mr-2 flex items-center gap-2 rounded-lg py-1 pr-2 text-sm font-semibold tracking-tight text-white">
+      <Link href="/" className="mr-auto flex items-center gap-2 rounded-lg py-1 pr-2 text-sm font-semibold tracking-tight text-white">
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-black">
           <BananaMark className="h-4 w-4" />
         </span>
-        <span className="hidden sm:inline">Banana Hacks</span>
+        <span>Relight</span>
+        <span className="hidden font-normal text-zinc-500 sm:inline">Banana Hacks 2026</span>
       </Link>
-      <nav className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
-        {IDEAS.map((idea) => {
-          const active = pathname === idea.href || pathname.startsWith(`${idea.href}/`);
-          return (
-            <Link
-              key={idea.href}
-              href={idea.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors",
-                active ? "bg-white/[0.09] font-medium text-white" : "text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-100",
-              )}
-            >
-              {idea.label}
-            </Link>
-          );
-        })}
-      </nav>
       <BackendStatus />
     </header>
   );

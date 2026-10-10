@@ -1,7 +1,7 @@
 // TypeScript mirror of backend/app/schemas.py, field for field. Keep the two in sync.
 //
 // Images are base64 strings. Requests may carry a `data:image/...;base64,` prefix;
-// responses never do. Masks are PNGs the size of their image, white = selected.
+// responses never do.
 // A field that has a default in the Pydantic model is optional here.
 
 // --- shared -------------------------------------------------------------------
@@ -19,33 +19,9 @@ export interface JobRef {
 /** Poll GET /jobs/{job_id} about once a second until status is not "pending". */
 export interface JobStatus<T = unknown> {
   status: "pending" | "done" | "error";
-  /** The idea-specific result model, once status is "done". */
+  /** The result model (RelightRender), once status is "done". */
   result: T | null;
   error: string | null;
-}
-
-export interface ImageIn {
-  image: string;
-}
-
-export interface CutoutOut {
-  /** PNG with a transparent background. */
-  cutout: string;
-  /** Hex colors, most common first. */
-  palette: string[];
-}
-
-export interface ScoreIn {
-  reference: string;
-  candidate: string;
-  prompt?: string | null;
-  /** Default: { identity: 0.6, palette: 0.4 } */
-  weights?: Record<string, number>;
-}
-
-export interface ScoreOut {
-  scores: Record<string, number>;
-  total: number;
 }
 
 // --- relight ------------------------------------------------------------------
@@ -118,136 +94,4 @@ export interface RelightEnhanceIn {
   prompt?: string;
   /** Default true. Whether the render sent to the model has cast shadows. */
   shadows?: boolean;
-}
-
-// --- design autocomplete --------------------------------------------------------
-
-export interface Region {
-  id: string;
-  /** x, y, w, h in image pixels. */
-  bbox: [number, number, number, number];
-  mask: string;
-  reason: string;
-  confidence: number;
-  /** Matching blocks the fill should resemble (x, y, w, h); pass to /fill as `references`. */
-  siblings: [number, number, number, number][];
-}
-
-export interface DetectOut {
-  width: number;
-  height: number;
-  /** Most confident first. */
-  regions: Region[];
-}
-
-export interface MaskedImageIn {
-  image: string;
-  mask: string;
-}
-
-export interface Suggestion {
-  label: string;
-  prompt: string;
-}
-
-export interface PlanOut {
-  analysis: string;
-  suggestions: Suggestion[];
-}
-
-/** POST /autocomplete/fill returns JobRef; the job result is FillResult. */
-export interface FillIn {
-  image: string;
-  mask: string;
-  prompt: string;
-  /** 1..8. Default 4 */
-  n?: number;
-  /** Boxes of elements the fill should look like (Region.siblings). Default [] */
-  references?: [number, number, number, number][];
-  /** True for "regenerate": skip the cache. Default false */
-  fresh?: boolean;
-}
-
-export interface FillScores {
-  style: number;
-  seam: number;
-  intent: number;
-  total: number;
-}
-
-export interface FillCandidate {
-  id: string;
-  /** Blended into the design. */
-  image: string;
-  /** Straight from the generator, for the before/after comparison. */
-  raw: string;
-  scores: FillScores;
-}
-
-export interface FillResult {
-  /** Best first. */
-  candidates: FillCandidate[];
-}
-
-// --- turnaround (character views) -------------------------------------------------
-
-export type View = "front" | "three_quarter" | "side" | "back";
-
-export const VIEWS: View[] = ["front", "three_quarter", "side", "back"];
-
-export interface Feature {
-  id: string;
-  name: string;
-  visible_from: View[];
-  critical: boolean;
-}
-
-export interface CharacterSpec {
-  summary: string;
-  art_style: string;
-  features: Feature[];
-  palette: string[];
-}
-
-export interface AnalyzeOut {
-  character_id: string;
-  cutout: string;
-  source_view: View;
-  spec: CharacterSpec;
-}
-
-/** POST /turnaround/generate returns JobRef; the job result is ViewResult. */
-export interface GenerateIn {
-  character_id: string;
-  target_view: View;
-  /** The user's edited checklist, if they changed it. */
-  features?: Feature[] | null;
-  /** Default false. True skips the cache, for regenerating a view that already has a result. */
-  fresh?: boolean;
-}
-
-export interface ChecklistItem {
-  feature_id: string;
-  expected_visible: boolean;
-  present: boolean;
-}
-
-export interface ViewScores {
-  identity: number;
-  palette: number;
-  checklist: number;
-  total: number;
-}
-
-export interface Alternate {
-  image: string;
-  total: number;
-}
-
-export interface ViewResult {
-  image: string;
-  scores: ViewScores;
-  checklist: ChecklistItem[];
-  retries: number;
-  alternates: Alternate[];
 }
