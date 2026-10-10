@@ -73,7 +73,7 @@
     "viewport": "1440x1300",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 1.8,
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -95,7 +95,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 1.8,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -117,7 +117,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 1.7,
     "light": {
       "x": 1.1,
       "y": 0.4,
@@ -135,14 +135,14 @@
     "name": "preset-top",
     "status": "ok",
     "about": "Portrait photo after clicking the \"Top\" preset button.",
-    "see": "The sun is above the photo in the middle, at the very top of the dark stage. Readouts: x 0.50, y -0.07 (the preset asks for -0.15; the stage stops it at -0.07 in this window), Height 0.35, Intensity 1.30. The hair and forehead are bright; under the chin is dark.",
+    "see": "The sun is at the very top of the dark stage, above the photo in the middle. Readouts: x 0.50, y -0.15, Height 0.35, Intensity 1.30. These are the preset's own numbers on every window; that point is just above the stage here, so the sun is drawn at the stage's top edge. The hair and forehead are bright; under the chin is dark.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 2,
     "light": {
       "x": 0.5,
-      "y": -0.07,
+      "y": -0.15,
       "height": "0.35",
       "intensity": "1.30",
       "ambient": "0.06",
@@ -161,7 +161,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 1.8,
     "light": {
       "x": 0,
       "y": 0.9,
@@ -227,7 +227,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.7,
+    "sceneSeconds": 2,
     "light": {
       "x": 0.5,
       "y": 0.03,
@@ -271,7 +271,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 5.7,
+    "sceneSeconds": 2,
     "light": {
       "x": 0.5,
       "y": 0.45,
@@ -293,7 +293,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 1.7,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -315,7 +315,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 1.7,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -337,7 +337,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.7,
+    "sceneSeconds": 2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -359,7 +359,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -381,7 +381,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -403,7 +403,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -447,7 +447,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -465,13 +465,13 @@
     "name": "shadows-on",
     "status": "ok",
     "about": "Object photo, \"Left\" preset, Height 0.10, Cast shadows ON (the default).",
-    "see": "Coffee cup, sun at the left edge (x -0.04, y 0.40), Height 0.10, Cast shadows on. The cup throws a dark, soft-edged shadow to the right across the saucer and the spoon.",
+    "see": "Coffee cup, Left preset: readouts x -0.10, y 0.40, Height 0.10, Cast shadows on. The sun is drawn at the left edge of the stage (the true point is a little further left than the stage reaches). The cup throws a dark, soft-edged shadow to the right across the saucer and the spoon.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
     "sceneSeconds": 1.2,
     "light": {
-      "x": -0.04,
+      "x": -0.1,
       "y": 0.4,
       "height": "0.10",
       "intensity": "1.30",
@@ -491,9 +491,9 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.1,
+    "sceneSeconds": 1.2,
     "light": {
-      "x": -0.04,
+      "x": -0.1,
       "y": 0.4,
       "height": "0.10",
       "intensity": "1.30",
@@ -513,7 +513,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.7,
+    "sceneSeconds": 1.9,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -535,7 +535,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 2.1,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -553,7 +553,7 @@
     "name": "hold-original",
     "status": "ok",
     "about": "Portrait photo, \"Left\" preset, while the \"Hold to see original\" button is held down.",
-    "see": "While the \"Hold to see original\" button is held: the untouched photo, evenly lit, with a small tag \"Original\" in its top left corner. The sun and the readouts (x -0.10, y 0.40) do not change.",
+    "see": "While the \"Hold to see original\" button is held: the untouched photo, evenly lit, with a small tag \"Original\" in its top left corner. The held button has yellow letters and a yellow outline. The sun and the readouts (x -0.10, y 0.40) do not change.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
@@ -579,7 +579,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.7,
+    "sceneSeconds": 2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -623,7 +623,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.7,
+    "sceneSeconds": 2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -645,7 +645,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 2.1,
     "divider": 25,
     "light": {
       "x": -0.1,
@@ -668,7 +668,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 1.9,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -709,13 +709,13 @@
     "name": "object-side-light",
     "status": "ok",
     "about": "The coffee cup photo with the \"Right\" preset.",
-    "see": "Coffee cup with the Right preset. The sun is on the dark stage just right of the photo; readouts x 1.04, y 0.40 (the stage stops it short of 1.10), Height 0.35, Intensity 1.30. The right of the table is bright and the cup's shadow falls to the left.",
+    "see": "Coffee cup with the Right preset. Readouts x 1.10, y 0.40, Height 0.35, Intensity 1.30. The sun is drawn at the right edge of the stage, next to the sidebar (the true point is a little further right). The right of the table is bright and the cup's shadow falls to the left.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.6,
+    "sceneSeconds": 1.3,
     "light": {
-      "x": 1.04,
+      "x": 1.1,
       "y": 0.4,
       "height": "0.35",
       "intensity": "1.30",
@@ -731,13 +731,13 @@
     "name": "cat-side-light",
     "status": "ok",
     "about": "The cat photo with the \"Left\" preset.",
-    "see": "Cat with the Left preset. The sun is at the left edge of the stage; readouts x -0.04, y 0.40. The left of the cat's face is bright and the right side, past the nose, is in shadow.",
+    "see": "Cat with the Left preset. The sun is at the left edge of the stage; readouts x -0.10, y 0.40. The left of the cat's face is bright and the right side, past the nose, falls off gradually into shade, with no hard dark wedge.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.1,
+    "sceneSeconds": 1.2,
     "light": {
-      "x": -0.04,
+      "x": -0.1,
       "y": 0.4,
       "height": "0.35",
       "intensity": "1.30",
@@ -753,13 +753,13 @@
     "name": "dark-photo",
     "status": "ok",
     "about": "The dark night-time rocket photo with the \"Left\" preset.",
-    "see": "Night rocket with the Left preset; readouts x -0.04, y 0.40. The left faces of the rocket and of the towers are a little brighter, with faint soft shadows to their right on the sky. No hard black bands.",
+    "see": "Night rocket with the Left preset; readouts x -0.10, y 0.40, sun at the left edge of the stage. The left faces of the rocket and of the towers are a little brighter, with faint soft shadows to their right on the sky. No hard black bands.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.1,
+    "sceneSeconds": 1.3,
     "light": {
-      "x": -0.04,
+      "x": -0.1,
       "y": 0.4,
       "height": "0.35",
       "intensity": "1.30",
@@ -779,7 +779,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1,
+    "sceneSeconds": 1.2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -801,7 +801,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.6,
+    "sceneSeconds": 0.7,
     "light": {
       "x": 0.5,
       "y": -0.15,
@@ -819,13 +819,13 @@
     "name": "tiny-photo",
     "status": "ok",
     "about": "A very small photo (200 x 133 px) with the \"Left\" preset. It is stretched to fill the stage, so it looks soft.",
-    "see": "The cat photo, soft and blurry because a 200 px picture is stretched to fill the stage. Left preset, readouts x -0.04, y 0.40. The shading still works.",
+    "see": "The cat photo, soft and blurry because a 200 px picture is stretched to fill the stage. Left preset, readouts x -0.10, y 0.40, sun at the left edge of the stage. The shading still works.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.1,
+    "sceneSeconds": 1.2,
     "light": {
-      "x": -0.04,
+      "x": -0.1,
       "y": 0.4,
       "height": "0.35",
       "intensity": "1.30",
@@ -845,7 +845,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 2.4,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -879,8 +879,8 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "light": null,
-    "backend": "really stopped while this picture was taken",
     "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health"
     ]
   },
@@ -903,8 +903,8 @@
       "shadows": true,
       "detailedNormals": true
     },
-    "backend": "really stopped while this picture was taken",
     "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
     ]
@@ -913,13 +913,14 @@
     "file": "44-enhance-error.jpg",
     "name": "enhance-error",
     "status": "ok",
-    "about": "The backend stopped after the photo was loaded, then Enhance was clicked: a red error inside the Enhance panel.",
-    "see": "The live preview is still there (Left preset). In the ENHANCE panel, under the yellow \"Enhance\" button, a red bar reads \"Cannot reach the backend at http://localhost:8123. Is it running?\" with an x. The pill reads \"offline\".",
+    "about": "The backend stopped after the photo was loaded, then Enhance was clicked: a red bar above the photo (on a window wide enough for the sidebar).",
+    "see": "The live preview is still there (Left preset). Above the photo, across the top of the stage column, a red bar reads \"Cannot reach the backend at http://localhost:8123. Is it running?\" with an x to close it. Nothing red is in the ENHANCE panel, the yellow button reads \"Enhance\" again, and the pill reads \"offline\".",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 1.9,
     "error": "Cannot reach the backend at http://localhost:8123. Is it running?",
+    "barIsAbovePhoto": true,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -943,7 +944,7 @@
     "viewport": "390x844",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.1,
+    "sceneSeconds": 2,
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -961,7 +962,7 @@
     "name": "phone-full-page",
     "status": "ok",
     "about": "The same phone-sized page photographed from top to bottom, as if you scrolled all the way down.",
-    "see": "The whole phone page: stage, LIGHT (the \"Reset\" button wraps onto its own row), ENHANCE with its helper line and a two-row box, and the one-row GEOMETRY panel at the bottom.",
+    "see": "The whole phone page: stage, LIGHT (the five buttons Left, Right, Top, Low and warm, Reset light on one line), ENHANCE with its helper line and a two-row box that reads \"Optional: a mood, such as golden hour\", and the one-row GEOMETRY panel at the bottom.",
     "viewport": "390x844",
     "appMode": "backend",
     "shading": "webgl",
@@ -1035,7 +1036,6 @@
     "appMode": "backend",
     "tooltip": "Cannot reach the backend at http://localhost:8123",
     "light": null,
-    "backend": "really stopped while this picture was taken",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health"
     ]
@@ -1049,7 +1049,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "server",
-    "sceneSeconds": 2.1,
+    "sceneSeconds": 2.8,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1107,7 +1107,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 1.1,
+    "sceneSeconds": 1.5,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1129,7 +1129,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 1.5,
+    "sceneSeconds": 1.2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1151,7 +1151,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 1.2,
+    "sceneSeconds": 1.3,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1281,9 +1281,7 @@
       "shadows": true,
       "detailedNormals": true
     },
-    "backend": "really stopped while this picture was taken",
     "console": [
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health"
     ]
   },
@@ -1291,11 +1289,11 @@
     "file": "65-sample-load-error.jpg",
     "name": "sample-load-error",
     "status": "ok",
-    "about": "The \"Cat\" sample's files could not be fetched: a red bar appears under the thumbnails and the first page stays.",
-    "see": "The first page. Under the thumbnails a red bar reads \"Failed to fetch\" with an x. No photo opened.",
+    "about": "The \"Cat\" sample's files could not be fetched: a red bar with a plain-words message appears under the thumbnails and the first page stays.",
+    "see": "The first page. Under the thumbnails a red bar reads \"Could not load the sample photo. Check your connection and try again.\" with an x. No photo opened.",
     "viewport": "1440x900",
     "appMode": "backend",
-    "error": "Failed to fetch",
+    "error": "Could not load the sample photo. Check your connection and try again.",
     "how": "The request for the sample's scene.json was refused inside Chrome. This does not happen in normal use.",
     "light": null,
     "console": [
@@ -1311,7 +1309,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.3,
     "sample": "Portrait",
     "sweepTooltip": "Moves the light once around the subject in about six seconds, then gives it back. Handy for recording a demo.",
     "light": {
@@ -1331,14 +1329,14 @@
     "name": "sweep-during",
     "status": "ok",
     "about": "About two and a half seconds after clicking \"Sweep\": the light has travelled from the left edge over the top to the right edge, and the button reads \"Stop sweep\".",
-    "see": "The button reads \"Stop sweep\". The sun has moved to the right edge of the photo, about a quarter of the way down (x about 0.93, y about 0.24, changing as you watch). The right side of the face is bright and the left half is dark. The sliders have not moved.",
+    "see": "The button reads \"Stop sweep\" in yellow letters with a yellow outline. The sun has moved to the right edge of the photo, about a quarter of the way down (x about 0.93, y about 0.24, changing as you watch). The right side of the face is bright and the left half is dark. The sliders have not moved.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.3,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "light": {
-      "x": 0.92,
+      "x": 0.91,
       "y": 0.22,
       "height": "0.12",
       "intensity": "1.80",
@@ -1351,8 +1349,8 @@
     "button": "Stop sweep",
     "buttonStyle": {
       "pressed": "true",
-      "textColour": "lab(96.1634 0.0993311 -0.364041)",
-      "borderColour": "oklab(0.999994 0.0000455678 0.0000200868 / 0.1)"
+      "textColour": "rgb(251, 209, 61)",
+      "borderColour": "oklab(0.872968 -0.00617361 0.161396 / 0.6)"
     },
     "console": []
   },
@@ -1432,15 +1430,15 @@
     "name": "sample-enhance-done",
     "status": "ok",
     "about": "Enhance finished on the \"Coffee cup\" sample (\"Right\" preset) with the backend running: the Enhanced tab with the before/after divider.",
-    "see": "The Enhanced tab on the coffee cup sample: divider in the middle, \"Live preview\" on the left, \"Enhanced\" on the right, \"Download enhanced\" below. Sidebar: x 1.04, y 0.40, the button reads \"Enhance again\". Pill: \"online, mock providers\".",
+    "see": "The Enhanced tab on the coffee cup sample: divider in the middle, \"Live preview\" on the left, \"Enhanced\" on the right, \"Download enhanced\" below. Sidebar: x 1.10, y 0.40, the button reads \"Enhance again\" and \"Sweep\" is greyed out. Pill: \"online, mock providers\".",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
     "sceneSeconds": 0.1,
     "sample": "Coffee cup",
-    "enhanceSeconds": 2.8,
+    "enhanceSeconds": 3,
     "light": {
-      "x": 1.04,
+      "x": 1.1,
       "y": 0.4,
       "height": "0.35",
       "intensity": "1.30",
@@ -1455,8 +1453,8 @@
     "file": "72-sample-enhance-backend-stopped.jpg",
     "name": "sample-enhance-backend-stopped",
     "status": "ok",
-    "about": "Enhance clicked on the \"Coffee cup\" sample while the backend is not running: a red bar in the ENHANCE panel, and the live preview stays.",
-    "see": "The coffee cup is still lit live with the Right preset. Under the \"Enhance\" button a red bar reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" Pill: \"offline\".",
+    "about": "Enhance clicked on the \"Coffee cup\" sample while the backend is not running: a red bar above the photo, and the live preview stays.",
+    "see": "The coffee cup is still lit live with the Right preset (x 1.10, y 0.40). Above the photo a red bar reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. Pill: \"offline\".",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
@@ -1464,7 +1462,7 @@
     "sample": "Coffee cup",
     "error": "Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.",
     "light": {
-      "x": 1.04,
+      "x": 1.1,
       "y": 0.4,
       "height": "0.35",
       "intensity": "1.30",
@@ -1473,7 +1471,6 @@
       "shadows": true,
       "detailedNormals": true
     },
-    "backend": "really stopped while this picture was taken",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
@@ -1484,14 +1481,14 @@
     "name": "sample-rocket-left",
     "status": "ok",
     "about": "The \"Rocket\" sample (a night photo) with the \"Left\" preset: the shadows are soft-edged and faint on the far background.",
-    "see": "Rocket sample, Left preset: the sun is at the left edge of the stage, x -0.04, y 0.40, Height 0.35, Intensity 1.30. To the right of the rocket and of each thin mast there is a faint, blurred darker patch on the sky. There are no hard-edged black stripes.",
+    "see": "Rocket sample, Left preset: the sun is at the left edge of the stage, x -0.10, y 0.40, Height 0.35, Intensity 1.30. To the right of the rocket and of each thin mast there is a faint, blurred darker patch on the sky. There are no hard-edged black stripes.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
     "sceneSeconds": 0.1,
     "sample": "Rocket",
     "light": {
-      "x": -0.04,
+      "x": -0.1,
       "y": 0.4,
       "height": "0.35",
       "intensity": "1.30",
@@ -1524,9 +1521,7 @@
       "shadows": true,
       "detailedNormals": true
     },
-    "backend": "really stopped while this picture was taken",
     "console": [
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
     ]
@@ -1536,11 +1531,11 @@
     "name": "laptop-1280x720-scene",
     "status": "ok",
     "about": "A small laptop window (1280 x 720) with the \"Portrait\" sample loaded: the whole sidebar fits, down to the GEOMETRY row, with no scrolling.",
-    "see": "Everything fits with no scrolling: the photo, and in the sidebar LIGHT, ENHANCE and the GEOMETRY row. There are no grey helper lines under Height, Ambient or Cast shadows and no line under ENHANCE. The Enhance box is one row and its grey text is cut off at the right edge. Readouts x 0.12, y 0.35.",
+    "see": "Everything fits with no scrolling: the photo, and in the sidebar LIGHT, ENHANCE and the GEOMETRY row. There are no grey helper lines under Height, Ambient or Cast shadows and no line under ENHANCE. The Enhance box is one row and shows \"Optional: a mood, such as golden hour\" in full. The five preset buttons fill one line. Readouts x 0.12, y 0.35.",
     "viewport": "1280x720",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "sidebarScrolls": false,
     "pageScrolls": false,
@@ -1580,14 +1575,14 @@
     "name": "laptop-1366x768-scene",
     "status": "ok",
     "about": "A 1366 x 768 window with an uploaded photo (the coffee cup) and the \"Right\" preset: the whole sidebar fits without scrolling.",
-    "see": "The uploaded coffee cup with the Right preset (x 1.05, y 0.40). The sidebar fits without scrolling, in the same compact form as at 1280 x 720: no helper lines, a one-row Enhance box.",
+    "see": "The uploaded coffee cup with the Right preset (x 1.10, y 0.40; the sun is drawn at the right edge of the stage). The sidebar fits without scrolling, in the same compact form as at 1280 x 720: no helper lines, a one-row Enhance box.",
     "viewport": "1366x768",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.1,
+    "sceneSeconds": 2.4,
     "sidebarScrolls": false,
     "light": {
-      "x": 1.05,
+      "x": 1.1,
       "y": 0.4,
       "height": "0.35",
       "intensity": "1.30",
@@ -1672,12 +1667,13 @@
     "file": "81-phone-load-failed-wide.jpg",
     "name": "phone-load-failed-wide",
     "status": "ok",
-    "about": "A phone-sized window, a wide photo chosen while the backend is not running: the failed-load card fits between the buttons above and below it.",
-    "see": "On a phone: the red-bordered card \"This photo could not be analysed\" with \"Retry\" and \"Choose another photo\" sits in the stage with clear space between it and \"New photo\" above and the two greyed-out buttons below. The LIGHT panel under it is faded. Pill: \"offline\".",
+    "about": "A phone-sized window, a wide photo chosen while the backend is not running: the failed-load card sits under the stage, not on the photo.",
+    "see": "On a phone: the stage is short and holds only the grey, dimmed photo with \"New photo\" above it and the two greyed-out buttons below it. Under the stage, in its own red-bordered card: \"This photo could not be analysed\", \"Cannot reach the backend at http://localhost:8123. Is it running?\", a yellow \"Retry\" and \"Choose another photo\". The LIGHT panel under the card is faded. Pill: \"offline\".",
     "viewport": "390x844",
     "appMode": "backend",
     "error": "Cannot reach the backend at http://localhost:8123. Is it running?",
-    "stageHeight": 320,
+    "stageHeight": 231,
+    "cardIsUnderStage": true,
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -1688,9 +1684,7 @@
       "shadows": true,
       "detailedNormals": true
     },
-    "backend": "really stopped while this picture was taken",
     "console": [
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
     ]
@@ -1722,15 +1716,18 @@
     "file": "83-no-webgl-backend-stopped-sample.jpg",
     "name": "no-webgl-backend-stopped-sample",
     "status": "ok",
-    "about": "A browser without WebGL2, a sample, and the backend not running: two red bars above the plain photo, and \"Hold to see original\" and \"Export PNG\" are greyed out.",
-    "see": "Two red bars above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser). Showing server renders instead, which lag slightly behind the light.\" and \"This browser cannot shade the photo itself, so it needs the backend, which cannot be reached at http://localhost:8123.\" The photo is the plain original, not relit. \"Hold to see original\" and \"Export PNG\" are greyed out.",
+    "about": "A browser without WebGL2, a sample, and the backend not running: one red bar with a \"Retry\" link above the plain photo, no sun, and the light controls, Sweep, Enhance, \"Hold to see original\" and \"Export PNG\" all greyed out.",
+    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with the word \"Retry\" at its right end and no x. The photo is the plain original with no sun on it. The LIGHT panel is faded, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. Pill: \"offline\".",
     "viewport": "1440x900",
     "appMode": "backend",
     "errors": [
-      "Live shading is unavailable (WebGL2 is not available in this browser). Showing server renders instead, which lag slightly behind the light.",
-      "This browser cannot shade the photo itself, so it needs the backend, which cannot be reached at http://localhost:8123."
+      "Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives."
     ],
+    "retryLink": true,
+    "sunShown": false,
     "greyedOut": [
+      "Sweep: disabled",
+      "Enhance: disabled",
       "Hold to see original: disabled",
       "Export PNG: disabled"
     ],
@@ -1745,7 +1742,6 @@
       "detailedNormals": true
     },
     "shading": "server",
-    "backend": "really stopped while this picture was taken",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
@@ -1757,14 +1753,14 @@
     "name": "mock-sample",
     "status": "ok",
     "about": "Frontend mock mode with the \"Cat\" sample and the \"Left\" preset: samples carry their own real geometry, so the shading follows the cat, not a made-up dome.",
-    "see": "Frontend mock mode (pill \"mock\") with the Cat sample and the Left preset (x -0.04, y 0.40). The shading follows the cat's face, as in 35-cat-side-light: left side bright, right side in shadow.",
+    "see": "Frontend mock mode (pill \"mock\") with the Cat sample and the Left preset (x -0.10, y 0.40). The shading follows the cat's face, as in 35-cat-side-light: left side bright, right side in shade.",
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
     "sceneSeconds": 0.1,
     "sample": "Cat",
     "light": {
-      "x": -0.04,
+      "x": -0.1,
       "y": 0.4,
       "height": "0.35",
       "intensity": "1.30",
@@ -1773,6 +1769,529 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "console": []
+  },
+  "85-sweep-stop-button.jpg": {
+    "file": "85-sweep-stop-button.jpg",
+    "name": "sweep-stop-button",
+    "status": "ok",
+    "about": "Close-up of the top of the LIGHT panel while a sweep is running: the button reads \"Stop sweep\" in yellow letters with a yellow outline.",
+    "see": "Enlarged: the word LIGHT, \"Drag the sun on the photo.\", and at the right the button \"Stop sweep\" in yellow letters with a thin yellow outline. Under them the readout row (x, y, colour dot); its numbers change while the sweep runs.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.2,
+    "sample": "Portrait",
+    "buttonStyle": {
+      "pressed": "true",
+      "textColour": "rgb(251, 209, 61)",
+      "borderColour": "oklab(0.872968 -0.00617361 0.161396 / 0.6)"
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.32,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true,
+      "moving": true
+    },
+    "console": []
+  },
+  "86-hold-original-button.jpg": {
+    "file": "86-hold-original-button.jpg",
+    "name": "hold-original-button",
+    "status": "ok",
+    "about": "Close-up of the two buttons under the photo while \"Hold to see original\" is held down: it has yellow letters and a yellow outline; \"Export PNG\" beside it stays white.",
+    "see": "Enlarged: \"Hold to see original\" with yellow letters, a yellow eye icon and a yellow outline while it is held down. \"Export PNG\" to its right keeps white letters and a grey outline.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Portrait",
+    "buttonStyle": {
+      "textColour": "rgb(251, 209, 61)",
+      "borderColour": "oklab(0.872968 -0.00617361 0.161396 / 0.6)"
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "87-preset-row.jpg": {
+    "file": "87-preset-row.jpg",
+    "name": "preset-row",
+    "status": "ok",
+    "about": "Close-up of the bottom of the LIGHT panel: Left, Right, Top, Low and warm and Reset light share one row that fills the panel's width. The mouse rests on \"Reset light\".",
+    "see": "The LIGHT panel, enlarged. Its last row holds five buttons on one line, from the panel's left edge to its right edge: Left, Right, Top, Low and warm (grey boxes) and Reset light (no box until the mouse is on it; here it is, so it has a faint grey background). Resting the mouse on \"Reset light\" shows the tooltip \"Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone.\"",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Portrait",
+    "resetTooltip": "Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone.",
+    "row": {
+      "labels": [
+        "Left",
+        "Right",
+        "Top",
+        "Low and warm",
+        "Reset light"
+      ],
+      "lines": 1,
+      "widths": [
+        42,
+        50,
+        41,
+        107,
+        82
+      ],
+      "rowWidth": 346
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "88-phone-360-preset-row.jpg": {
+    "file": "88-phone-360-preset-row.jpg",
+    "name": "phone-360-preset-row",
+    "status": "ok",
+    "about": "A narrow phone (360 px wide): close-up of the LIGHT panel with the \"Coffee cup\" sample. The five preset buttons still fit on one line.",
+    "see": "The LIGHT panel on a 360 px wide phone. Left, Right, Top, Low and warm and Reset light are on one line and reach from edge to edge of the panel, with less space inside each button than on a wider screen. Nothing is cut off.",
+    "viewport": "360x740",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Coffee cup",
+    "row": {
+      "labels": [
+        "Left",
+        "Right",
+        "Top",
+        "Low and warm",
+        "Reset light"
+      ],
+      "lines": 1,
+      "widths": [
+        33,
+        41,
+        31,
+        97,
+        72
+      ],
+      "rowWidth": 298
+    },
+    "pageScrollsSideways": false,
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "89-phone-320-preset-row.jpg": {
+    "file": "89-phone-320-preset-row.jpg",
+    "name": "phone-320-preset-row",
+    "status": "ok",
+    "about": "The narrowest phone (320 px wide): close-up of the LIGHT panel with the \"Coffee cup\" sample. The five preset buttons take two lines: \"Reset light\" drops to its own line and stretches across the panel.",
+    "see": "The LIGHT panel on a 320 px wide phone. Left, Right, Top and Low and warm fill one line; \"Reset light\" is alone on a second line, centred, as wide as the panel. The helper lines under Height and Ambient wrap onto two lines.",
+    "viewport": "320x740",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Coffee cup",
+    "row": {
+      "labels": [
+        "Left",
+        "Right",
+        "Top",
+        "Low and warm",
+        "Reset light"
+      ],
+      "lines": 2,
+      "widths": [
+        42,
+        50,
+        41,
+        107,
+        258
+      ],
+      "rowWidth": 258
+    },
+    "pageScrollsSideways": false,
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "90-laptop-1280x720-preset-top.jpg": {
+    "file": "90-laptop-1280x720-preset-top.jpg",
+    "name": "laptop-1280x720-preset-top",
+    "status": "ok",
+    "about": "A small laptop window (1280 x 720), \"Portrait\" sample, \"Top\" preset: the readout shows the preset's own numbers although that point is above the stage, and the sun is drawn at the stage's top edge.",
+    "see": "Readouts x 0.50, y -0.15, Height 0.35, Intensity 1.30: the same numbers as in 08-preset-top. The sun is at the very top edge of the stage, touching the top bar, above the middle of the photo. The hair and forehead are bright.",
+    "viewport": "1280x720",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Portrait",
+    "sun": {
+      "centreAbovePhotoPx": 46,
+      "wherePresetAsksPx": 75
+    },
+    "light": {
+      "x": 0.5,
+      "y": -0.15,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "91-new-photo-starts-clean.jpg": {
+    "file": "91-new-photo-starts-clean.jpg",
+    "name": "new-photo-starts-clean",
+    "status": "ok",
+    "about": "After changing everything on one photo (a typed mood, Cast shadows off, Detailed normals off, \"Low and warm\"), then \"New photo\" and a second photo: every control is back at its starting value.",
+    "see": "The coffee cup, freshly loaded. Sun on the table at the left, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, colour dot white, Cast shadows on (yellow). The Enhance box is empty and shows its grey \"Optional: a mood, such as golden hour\". GEOMETRY is open and Detailed normals is on (yellow).",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2.5,
+    "before": {
+      "x": 0,
+      "y": 0.9,
+      "height": "0.12",
+      "intensity": "1.60",
+      "ambient": "0.20",
+      "colour": "warm 100",
+      "shadows": false,
+      "detailedNormals": false,
+      "prompt": "golden hour"
+    },
+    "prompt": "",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "92-laptop-1280x720-enhance-error.jpg": {
+    "file": "92-laptop-1280x720-enhance-error.jpg",
+    "name": "laptop-1280x720-enhance-error",
+    "status": "ok",
+    "about": "A small laptop window (1280 x 720), Enhance clicked on a sample while the backend is not running: the red bar is above the photo and the sidebar still fits without scrolling.",
+    "see": "Above the photo a two-line red bar: \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. The photo is a little smaller to make room. The sidebar is exactly as without the error (LIGHT, ENHANCE, the GEOMETRY row) and does not scroll. Pill: \"offline\".",
+    "viewport": "1280x720",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Portrait",
+    "error": "Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.",
+    "sidebarScrolls": false,
+    "pageScrolls": false,
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
+    ]
+  },
+  "93-phone-enhance-error.jpg": {
+    "file": "93-phone-enhance-error.jpg",
+    "name": "phone-enhance-error",
+    "status": "ok",
+    "about": "A phone-sized window, Enhance clicked on a sample while the backend is not running: here the red bar stays inside the ENHANCE panel, under the button.",
+    "see": "The page is scrolled down to the ENHANCE panel. Under the yellow \"Enhance\" button a red box reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. There is no red bar above the photo on a phone. Pill: \"offline\".",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Coffee cup",
+    "error": "Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.",
+    "barIsInEnhancePanel": true,
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
+    ]
+  },
+  "94-no-webgl-render-lost.jpg": {
+    "file": "94-no-webgl-render-lost.jpg",
+    "name": "no-webgl-render-lost",
+    "status": "ok",
+    "about": "A browser without WebGL2, an uploaded photo already shown by the server with the \"Left\" preset, then the backend stops and \"Right\" is clicked: the one red bar now says the render failed and offers \"Retry\".",
+    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with \"Retry\" at its right end. The photo still shows the last picture the server sent (the Left preset), with no sun. The readout already says x 1.10, y 0.40. The LIGHT panel is faded and \"Sweep\" and \"Enhance\" are greyed out; \"Hold to see original\" and \"Export PNG\" still work on that last picture.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "server",
+    "sceneSeconds": 2.1,
+    "errors": [
+      "Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives."
+    ],
+    "sunShown": false,
+    "buttons": [
+      "Sweep: disabled",
+      "Enhance: disabled",
+      "Hold to see original: enabled",
+      "Export PNG: enabled"
+    ],
+    "light": {
+      "x": 1.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/render"
+    ]
+  },
+  "95-mock-sample-detailed-normals.jpg": {
+    "file": "95-mock-sample-detailed-normals.jpg",
+    "name": "mock-sample-detailed-normals",
+    "status": "ok",
+    "about": "Frontend mock mode with the \"Cat\" sample and GEOMETRY opened: the Detailed normals switch is on, greyed out and cannot be clicked.",
+    "see": "The sidebar is scrolled to the bottom, GEOMETRY open: grey Depth and purple Normals pictures of the cat, then \"Detailed normals\" with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\" Its switch is on but dull (dark yellow) and does nothing when clicked. \"451 x 300 px, relief 0.3\". Pill: \"mock\".",
+    "viewport": "1440x900",
+    "appMode": "mock",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Cat",
+    "detailedNormals": {
+      "on": true,
+      "disabled": true,
+      "hint": "Always on for a sample photo: its maps were made ahead of time with detailed normals."
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "96-demo-landing.jpg": {
+    "file": "96-demo-landing.jpg",
+    "name": "demo-landing",
+    "status": "ok",
+    "about": "The static demo build: the first page. A note card stands where the drop box is in the normal app.",
+    "see": "Pill: green dot, \"demo: runs in your browser\". The text under the heading starts \"Pick a sample photo. Its depth and surface normals were estimated ahead of time\". There is no dashed drop box: in its place a card \"This is the in-browser demo.\" with a yellow link. Then \"Pick a sample photo:\" and the four thumbnails.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "fileInputOnPage": false,
+    "light": null,
+    "console": []
+  },
+  "97-demo-upload-note.jpg": {
+    "file": "97-demo-upload-note.jpg",
+    "name": "demo-upload-note",
+    "status": "ok",
+    "about": "The static demo build: close-up of the note card on the first page, which says why uploading is missing and links to the code.",
+    "see": "The card, enlarged: \"This is the in-browser demo.\" in white, then in grey \"Uploading your own photo needs the Relight server, which this demo runs without. To try your own photos, run it on your computer:\" and the yellow link \"github.com/aarooshpravici/BanannaHacksSubmission\".",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "text": "This is the in-browser demo. Uploading your own photo needs the Relight server, which this demo runs without. To try your own photos, run it on your computer: github.com/aarooshpravici/BanannaHacksSubmission",
+    "link": "https://github.com/aarooshpravici/BanannaHacksSubmission",
+    "light": null,
+    "console": []
+  },
+  "98-demo-status.jpg": {
+    "file": "98-demo-status.jpg",
+    "name": "demo-status",
+    "status": "ok",
+    "about": "The static demo build: close-up of the status pill. Green dot, \"demo: runs in your browser\".",
+    "see": "Green dot, \"demo: runs in your browser\". It never reads \"checking\" or \"offline\".",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "tooltip": "Static demo: the sample photos are shaded entirely in your browser and no server is contacted. Uploading your own photo and Enhance need the Relight server.",
+    "light": null,
+    "console": []
+  },
+  "99-demo-sample.jpg": {
+    "file": "99-demo-sample.jpg",
+    "name": "demo-sample",
+    "status": "ok",
+    "about": "The static demo build with the \"Portrait\" sample loaded, nothing else touched: the top-right stage button reads \"Other samples\" and the Enhance button is greyed out.",
+    "see": "The portrait lit live, sun on the flag, x 0.12, y 0.35. The top-right stage button reads \"Other samples\" and has no icon. ENHANCE holds only the line \"Enhance needs the Relight server, which this demo runs without.\" and a dull, greyed-out \"Enhance\" button; there is no text box. LIGHT, \"Sweep\", \"Hold to see original\" and \"Export PNG\" are all available.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Portrait",
+    "enhance": {
+      "buttonDisabled": true,
+      "promptBoxOnPage": false,
+      "tooltip": "Enhance needs the Relight server, which this demo runs without."
+    },
+    "stageButton": "Other samples",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "100-demo-all-panels.jpg": {
+    "file": "100-demo-all-panels.jpg",
+    "name": "demo-all-panels",
+    "status": "ok",
+    "about": "The static demo build in a taller window (1440 x 1300) with the \"Coffee cup\" sample, the \"Right\" preset and GEOMETRY opened: the whole sidebar at once.",
+    "see": "Coffee cup, Right preset (x 1.10, y 0.40; the sun is at the right edge of the stage). The whole sidebar shows: LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open with Depth and Normals pictures, a dull Detailed normals switch with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\", and \"600 x 400 px, relief 0.3\".",
+    "viewport": "1440x1300",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Coffee cup",
+    "detailedNormals": {
+      "on": true,
+      "disabled": true,
+      "hint": "Always on for a sample photo: its maps were made ahead of time with detailed normals."
+    },
+    "light": {
+      "x": 1.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "101-demo-phone-landing.jpg": {
+    "file": "101-demo-phone-landing.jpg",
+    "name": "demo-phone-landing",
+    "status": "ok",
+    "about": "The static demo build: the first page in a phone-sized window. The pill is shortened to \"runs in your browser\".",
+    "see": "One column. The pill reads only \"runs in your browser\" with a green dot. Heading, the \"Pick a sample photo. Its depth...\" text, the demo card (the yellow link breaks onto a second line), \"Pick a sample photo:\" and the four thumbnails in one row.",
+    "viewport": "390x844",
+    "appMode": "demo",
+    "light": null,
+    "console": []
+  },
+  "102-demo-phone-sample-full-page.jpg": {
+    "file": "102-demo-phone-sample-full-page.jpg",
+    "name": "demo-phone-sample-full-page",
+    "status": "ok",
+    "about": "The static demo build on a phone with the \"Cat\" sample, photographed from top to bottom with GEOMETRY opened.",
+    "see": "The whole phone page with the cat: a short stage with \"Other samples\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch and \"451 x 300 px, relief 0.3\".",
+    "viewport": "390x844",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Cat",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "103-demo-no-webgl.jpg": {
+    "file": "103-demo-no-webgl.jpg",
+    "name": "demo-no-webgl",
+    "status": "ok",
+    "about": "The static demo build in a browser without WebGL2: one red bar above the plain photo, no sun, and everything that would change the light greyed out.",
+    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.\" It has no \"Retry\" and no x. The photo is the plain original with no sun. The LIGHT panel is faded and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. \"Other samples\" still works.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "errors": [
+      "Live shading is unavailable (WebGL2 is not available in this browser), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari."
+    ],
+    "retryLink": false,
+    "sunShown": false,
+    "greyedOut": [
+      "Sweep: disabled",
+      "Enhance: disabled",
+      "Hold to see original: disabled",
+      "Export PNG: disabled"
+    ],
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shading": "none",
     "console": []
   }
 }

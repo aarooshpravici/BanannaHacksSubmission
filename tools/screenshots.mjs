@@ -30,6 +30,11 @@
 //     cd frontend && NEXT_PUBLIC_MOCK=0 NEXT_PUBLIC_API_URL=http://localhost:8123 npm run dev -- --port 3123
 //   The shots named "mock-..." need the frontend alone in its own mock mode (pill reads "mock"):
 //     cd frontend && NEXT_PUBLIC_MOCK=1 npm run dev -- --port 3123
+//   The shots named "demo-..." need the static demo build (pill reads "demo: runs in your browser"),
+//   served from a folder that matches the base path it was built for (see frontend/README.md):
+//     cd frontend && npm run build:demo
+//     python3 -m http.server 3199 --directory <folder that holds a copy of out/>
+//     node tools/screenshots.mjs http://localhost:3199
 //   The tool reads the status pill first and skips the shots that do not fit, saying so.
 //   The four built-in sample photos come from static files, so their shots work in either setup.
 //
@@ -40,6 +45,8 @@
 //   - Status "online" (green): the real /health reply is passed on with mock_mode changed to false.
 //     The backend itself is never run with MOCK_MODE=0, so no paid API is called.
 //   - "No WebGL2": canvas.getContext("webgl2") is made to return null, as an old browser would.
+//   - A tooltip (the text that appears when the mouse rests on a control) cannot be photographed
+//     headless. Where one matters, its text is read from the page into manifest.json instead.
 //
 // It also writes <out>/manifest.json: for each shot the file, what it shows, the
 // light position read from the page and whether live (WebGL) shading was on screen.
@@ -205,7 +212,8 @@ const IN_PAGE = `
   const sliderOf = (label) => [...document.querySelectorAll("label")].find((e) => e.querySelector("span span")?.textContent.trim() === label)?.querySelector('input[type="range"]') ?? null;
   const lightHandle = () => document.querySelector('button[aria-label^="Light position"]');
   const statusPill = () => document.querySelector("header div[title]");
-  const alerts = () => [...document.querySelectorAll('[role="alert"]')].map((e) => e.querySelector("p")?.textContent.trim() ?? e.textContent.trim());
+  const ACCENT = "rgb(251, 209, 61)"; // --color-accent in globals.css, as getComputedStyle reports it
+  const alerts = () => [...document.querySelectorAll('[role="alert"]')].filter((e) => e.offsetParent !== null).map((e) => e.querySelector("p")?.textContent.trim() ?? e.textContent.trim());
 `;
 
 const KEYS = { Home: 36, End: 35, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 };
@@ -524,6 +532,17 @@ class Page {
     writeFileSync(file, Buffer.from(data, "base64"));
   }
 
+  /**
+   * A clip for capture() around the element the in-page expression returns, scrolled into view first.
+   * `pad` is the margin kept round it in CSS pixels, `scale` the magnification.
+   * The clip is in page coordinates, which is what Chrome wants once the page has scrolled.
+   */
+  async clipOf(elementExpression, what, { pad = 12, scale = 2, block = "center" } = {}) {
+    const r = await this.js(`(() => { const e = ${elementExpression}; if (!e) return null; e.scrollIntoView({ block: ${JSON.stringify(block)}, inline: "nearest", behavior: "instant" }); const r = rectOf(e); return { ...r, x: r.x + window.scrollX, y: r.y + window.scrollY }; })()`);
+    if (!r || r.w === 0) throw new Error(`Could not find on the page: ${what}`);
+    return { clip: { x: Math.max(0, r.x - pad), y: Math.max(0, r.y - pad), width: r.w + 2 * pad, height: r.h + 2 * pad, scale } };
+  }
+
   async close() {
     this.browser.listeners.delete(this.listener);
     await this.browser.send("Target.closeTarget", { targetId: this.targetId }).catch(() => {});
@@ -645,12 +664,29 @@ async function openEnhanced(t) {
   await t.page.waitFor(enhancedReady, "the Enhanced tab with both pictures", 120_000);
 }
 
+/** How much of the top of the LIGHT panel the Stop sweep close-up takes in, in CSS pixels: the header with the button, and the x / y readout under it. */
+const PANEL_TOP_CLOSE_UP_PX = 104;
+
+/** The five buttons at the bottom of the LIGHT panel: their labels, how many lines they take and how wide the row is. */
+function presetRow(t) {
+  return t.page.js(`(() => {
+    const row = byText("button", "Reset light").parentElement;
+    const buttons = [...row.querySelectorAll("button")];
+    return { labels: buttons.map((b) => b.textContent.trim()), lines: new Set(buttons.map((b) => Math.round(b.getBoundingClientRect().top))).size, widths: buttons.map((b) => Math.round(b.getBoundingClientRect().width)), rowWidth: Math.round(row.getBoundingClientRect().width) };
+  })()`);
+}
+
+/** The Detailed normals switch as the page has it: on or off, clickable or not, and the hint beside it (a tooltip on a short window). */
+function detailSwitch(t) {
+  return t.page.js(`(() => { const s = document.querySelector('button[role="switch"][aria-label="Detailed normals"]'); return { on: s.getAttribute("aria-checked") === "true", disabled: s.disabled, hint: s.closest("label").title }; })()`);
+}
+
 /** A magnified picture of the right end of the top bar, where the backend status pill is. */
 const statusClip = (t) => ({ clip: { x: t.page.viewport.width - 480, y: 0, width: 480, height: 56, scale: 3 } });
 
 // ---------------------------------------------------------------------------------
 // The shots, in the order a tester meets them.
-// needs: "backend" = frontend on a MOCK_MODE=1 backend, "mock" = frontend mock mode.
+// needs: "backend" = frontend on a MOCK_MODE=1 backend, "mock" = frontend mock mode, "demo" = the static demo build.
 // ---------------------------------------------------------------------------------
 
 const SHOTS = [
@@ -974,15 +1010,16 @@ const SHOTS = [
   {
     name: "enhance-error",
     needs: "backend",
-    about: "The backend stopped after the photo was loaded, then Enhance was clicked: a red error inside the Enhance panel.",
+    about: "The backend stopped after the photo was loaded, then Enhance was clicked: a red bar above the photo (on a window wide enough for the sidebar).",
     async run(t) {
       await openScene(t);
       await t.page.clickButton("Left");
       await t.page.route(t.api, "fail");
       await t.page.clickButton("Enhance");
-      await t.page.waitFor(`alerts().length > 0`, "the error banner in the Enhance panel");
+      await t.page.waitFor(`alerts().length > 0`, "the red bar above the photo");
       t.note.error = (await t.page.js("alerts()"))[0];
-      await t.snap({ sidebar: "bottom" });
+      t.note.barIsAbovePhoto = await t.page.js(`!document.querySelector('aside [role="alert"]')?.offsetParent && document.querySelector('[role="alert"]').getBoundingClientRect().bottom <= photoBox().getBoundingClientRect().top`);
+      await t.snap();
     },
   },
   {
@@ -1186,7 +1223,7 @@ const SHOTS = [
   },
   {
     name: "sample-load-error",
-    about: "The \"Cat\" sample's files could not be fetched: a red bar appears under the thumbnails and the first page stays.",
+    about: "The \"Cat\" sample's files could not be fetched: a red bar with a plain-words message appears under the thumbnails and the first page stays.",
     async run(t) {
       await t.page.goto(t.url + "/");
       await t.page.route("/samples/cat/scene.json", "fail");
@@ -1277,15 +1314,15 @@ const SHOTS = [
     name: "sample-enhance-backend-stopped",
     needs: "backend",
     stopped: true,
-    about: "Enhance clicked on the \"Coffee cup\" sample while the backend is not running: a red bar in the ENHANCE panel, and the live preview stays.",
+    about: "Enhance clicked on the \"Coffee cup\" sample while the backend is not running: a red bar above the photo, and the live preview stays.",
     async run(t) {
       await t.page.route(t.api, "fail");
       await openSample(t, "Coffee cup");
       await t.page.clickButton("Right");
       await t.page.clickButton("Enhance");
-      await t.page.waitFor(`alerts().length > 0`, "the red bar in the ENHANCE panel");
+      await t.page.waitFor(`alerts().length > 0`, "the red bar above the photo");
       t.note.error = (await t.page.js("alerts()"))[0];
-      await t.snap({ sidebar: "bottom" });
+      await t.snap();
     },
   },
   {
@@ -1381,7 +1418,7 @@ const SHOTS = [
     needs: "backend",
     stopped: true,
     viewport: PHONE,
-    about: "A phone-sized window, a wide photo chosen while the backend is not running: the failed-load card fits between the buttons above and below it.",
+    about: "A phone-sized window, a wide photo chosen while the backend is not running: the failed-load card sits under the stage, not on the photo.",
     async run(t) {
       await t.page.route(t.api, "fail");
       await t.page.goto(t.url + "/", { settleStatus: false });
@@ -1389,6 +1426,7 @@ const SHOTS = [
       await t.page.waitFor(`alerts().length > 0 && !!photoBox() && !!byText("button", "Retry")`, "the failed-load card on the photo");
       t.note.error = (await t.page.js("alerts()"))[0];
       t.note.stageHeight = await t.page.js(`Math.round(document.querySelector(".stage-hug").getBoundingClientRect().height)`);
+      t.note.cardIsUnderStage = await t.page.js(`[...document.querySelectorAll('[role="alert"]')].find((e) => e.offsetParent !== null).getBoundingClientRect().top >= document.querySelector(".stage-hug").getBoundingClientRect().bottom`);
       await t.snap();
     },
   },
@@ -1405,15 +1443,17 @@ const SHOTS = [
     name: "no-webgl-backend-stopped-sample",
     needs: "backend",
     stopped: true,
-    about: "A browser without WebGL2, a sample, and the backend not running: two red bars above the plain photo, and \"Hold to see original\" and \"Export PNG\" are greyed out.",
+    about: "A browser without WebGL2, a sample, and the backend not running: one red bar with a \"Retry\" link above the plain photo, no sun, and the light controls, Sweep, Enhance, \"Hold to see original\" and \"Export PNG\" all greyed out.",
     async run(t) {
       await withoutWebGL2(t);
       await t.page.route(t.api, "fail");
       await t.page.goto(t.url + "/", { settleStatus: false });
       await clickSample(t, "Portrait");
-      await t.page.waitFor(`alerts().some((a) => a.includes("Live shading is unavailable")) && alerts().some((a) => a.includes("cannot shade the photo itself"))`, "both red bars");
+      await t.page.waitFor(`alerts().some((a) => a.includes("the server render that would replace it failed"))`, "the red bar that says the server render failed");
       t.note.errors = await t.page.js("alerts()");
-      t.note.greyedOut = await t.page.js(`["Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "ENABLED"))`);
+      t.note.retryLink = await t.page.js(`!!byText('[role="alert"] button', "Retry")`);
+      t.note.sunShown = await t.page.js(`!!lightHandle()`);
+      t.note.greyedOut = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "ENABLED"))`);
       await t.snap();
     },
   },
@@ -1424,6 +1464,271 @@ const SHOTS = [
     async run(t) {
       await openSample(t, "Cat");
       await t.page.clickButton("Left");
+      await t.snap();
+    },
+  },
+  // ----- Added for the second round: yellow active buttons, the "Reset light" row, the moved error bars,
+  // ----- the fixed Detailed normals switch and the static demo build. Again at the end, so no older number changes.
+  {
+    name: "sweep-stop-button",
+    about: "Close-up of the top of the LIGHT panel while a sweep is running: the button reads \"Stop sweep\" in yellow letters with a yellow outline.",
+    async run(t) {
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Sweep");
+      const stop = `byText("button", "Stop sweep")`;
+      await t.page.waitFor(`!!${stop}`, "the sweep to start");
+      await t.page.waitFor(`getComputedStyle(${stop}).color === ACCENT`, "the button to turn yellow", 3000);
+      t.note.buttonStyle = await t.page.js(`(() => { const c = getComputedStyle(${stop}); return { pressed: ${stop}.getAttribute("aria-pressed"), textColour: c.color, borderColour: c.borderColor }; })()`);
+      const r = await t.page.js(`rectOf(${stop}.closest("section"))`);
+      await t.snap({ quick: true, clip: { x: r.x - 8, y: r.y - 8, width: r.w + 16, height: PANEL_TOP_CLOSE_UP_PX, scale: 3 } });
+      t.note.light = { ...t.note.light, moving: true };
+      if (!(await t.page.js(`!!${stop}`))) throw new Error("The sweep had ended before the picture was taken.");
+      await t.page.waitFor(`!!byText("button", "Sweep")`, "the sweep to finish", 10_000);
+    },
+  },
+  {
+    name: "hold-original-button",
+    about: "Close-up of the two buttons under the photo while \"Hold to see original\" is held down: it has yellow letters and a yellow outline; \"Export PNG\" beside it stays white.",
+    async run(t) {
+      await openSample(t, "Portrait");
+      const hold = `byText("button", "Hold to see original")`;
+      const c = await t.page.centre(hold, "the Hold to see original button");
+      await t.page.mouse("mouseMoved", c.x, c.y);
+      await t.page.mouse("mousePressed", c.x, c.y, 1);
+      await t.page.waitFor(`!!byText("span", "Original")`, "the Original tag");
+      await t.page.waitFor(`getComputedStyle(${hold}).color === ACCENT`, "the button to turn yellow", 3000);
+      t.note.buttonStyle = await t.page.js(`(() => { const c = getComputedStyle(${hold}); return { textColour: c.color, borderColour: c.borderColor }; })()`);
+      const other = await t.page.js(`rectOf(byText("button", "Export PNG"))`);
+      const margin = 48; // enough of the photo round the buttons to see where they are
+      await t.snap({ asIs: true, clip: { x: c.rect.x - margin, y: c.rect.y - margin, width: other.x + other.w - c.rect.x + 2 * margin, height: c.rect.h + 1.5 * margin, scale: 3 } });
+      await t.page.mouse("mouseReleased", c.x, c.y, 0);
+      await t.page.waitFor(`!byText("span", "Original")`, "the Original tag to go away");
+    },
+  },
+  {
+    name: "preset-row",
+    about: "Close-up of the bottom of the LIGHT panel: Left, Right, Top, Low and warm and Reset light share one row that fills the panel's width. The mouse rests on \"Reset light\".",
+    async run(t) {
+      await openSample(t, "Portrait");
+      const reset = `byText("button", "Reset light")`;
+      const c = await t.page.centre(reset, "the Reset light button");
+      await t.page.mouse("mouseMoved", c.x, c.y);
+      t.note.resetTooltip = await t.page.js(`${reset}.title`);
+      t.note.row = await presetRow(t);
+      await t.snap({ asIs: true, ...(await t.page.clipOf(`${reset}.closest("section")`, "the LIGHT panel", { scale: 2 })) });
+    },
+  },
+  ...[
+    ["phone-360-preset-row", 360, 740, 1, "A narrow phone (360 px wide)", "still fit on one line"],
+    ["phone-320-preset-row", 320, 740, 2, "The narrowest phone (320 px wide)", "take two lines: \"Reset light\" drops to its own line and stretches across the panel"],
+  ].map(([name, width, height, lines, what, result]) => ({
+    name,
+    viewport: { width, height, scale: 2, mobile: true },
+    about: `${what}: close-up of the LIGHT panel with the "Coffee cup" sample. The five preset buttons ${result}.`,
+    async run(t) {
+      await openSample(t, "Coffee cup");
+      t.note.row = await presetRow(t);
+      if (t.note.row.lines !== lines) throw new Error(`The preset row takes ${t.note.row.lines} line(s) at ${width} px, expected ${lines}.`);
+      t.note.pageScrollsSideways = await t.page.js(`document.documentElement.scrollWidth > window.innerWidth + 1`);
+      // Lined up with the bottom of the window, so the top bar, which stays put while the page scrolls, is not lying across the panel. The phone's own 2x is magnification enough.
+      await t.snap(await t.page.clipOf(`byText("button", "Reset light").closest("section")`, "the LIGHT panel", { pad: 8, scale: 1, block: "end" }));
+    },
+  })),
+  {
+    name: "laptop-1280x720-preset-top",
+    viewport: { width: 1280, height: 720, scale: 1, mobile: false },
+    about: "A small laptop window (1280 x 720), \"Portrait\" sample, \"Top\" preset: the readout shows the preset's own numbers although that point is above the stage, and the sun is drawn at the stage's top edge.",
+    async run(t) {
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Top");
+      await t.page.painted();
+      t.note.sun = await t.page.js(`(() => { const h = rectOf(lightHandle()), p = rectOf(photoBox()); return { centreAbovePhotoPx: Math.round(p.y - (h.y + h.h / 2)), wherePresetAsksPx: Math.round(0.15 * p.h) }; })()`);
+      await t.snap();
+    },
+  },
+  {
+    name: "new-photo-starts-clean",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "After changing everything on one photo (a typed mood, Cast shadows off, Detailed normals off, \"Low and warm\"), then \"New photo\" and a second photo: every control is back at its starting value.",
+    async run(t) {
+      await openScene(t);
+      await t.page.clickButton("Low and warm");
+      await t.page.toggle("Cast shadows");
+      await t.page.clickOn(`document.querySelector("textarea")`, "the Enhance text box");
+      await t.page.send("Input.insertText", { text: "golden hour" });
+      await openGeometry(t);
+      await t.page.toggle("Detailed normals");
+      await t.page.waitFor(`document.body.innerText.includes("Estimating depth") || document.querySelector('button[role="switch"][aria-label="Detailed normals"]').getAttribute("aria-checked") === "false"`, "the switch to turn off");
+      await t.page.sceneReady();
+      t.note.before = { ...(await t.page.light()), prompt: await t.page.js(`document.querySelector("textarea").value`) };
+      await t.page.clickButton("New photo");
+      await t.page.waitFor(`!photoBox() && !!document.querySelector('input[type="file"]')`, "the first page");
+      await t.page.upload(join(t.photos, PHOTO.object));
+      t.note.shading = await t.page.sceneReady();
+      await openGeometry(t);
+      t.note.prompt = await t.page.js(`document.querySelector("textarea").value`);
+      const after = await t.page.light();
+      if (t.note.prompt !== "" || !after.shadows || !after.detailedNormals || after.x !== 0.12 || after.colour !== "neutral") throw new Error(`"New photo" left something behind: ${JSON.stringify({ ...after, prompt: t.note.prompt })}`);
+      await t.snap();
+    },
+  },
+  {
+    name: "laptop-1280x720-enhance-error",
+    needs: "backend",
+    stopped: true,
+    viewport: { width: 1280, height: 720, scale: 1, mobile: false },
+    about: "A small laptop window (1280 x 720), Enhance clicked on a sample while the backend is not running: the red bar is above the photo and the sidebar still fits without scrolling.",
+    async run(t) {
+      await t.page.route(t.api, "fail");
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Enhance");
+      await t.page.waitFor(`alerts().length > 0`, "the red bar above the photo");
+      t.note.error = (await t.page.js("alerts()"))[0];
+      t.note.sidebarScrolls = await t.page.js(`(() => { const a = document.querySelector("aside"); return a.scrollHeight > a.clientHeight + 1; })()`);
+      t.note.pageScrolls = await t.page.js(`document.documentElement.scrollHeight > window.innerHeight + 1`);
+      await t.snap();
+    },
+  },
+  {
+    name: "phone-enhance-error",
+    needs: "backend",
+    stopped: true,
+    viewport: PHONE,
+    about: "A phone-sized window, Enhance clicked on a sample while the backend is not running: here the red bar stays inside the ENHANCE panel, under the button.",
+    async run(t) {
+      await t.page.route(t.api, "fail");
+      await openSample(t, "Coffee cup");
+      await t.page.clickButton("Enhance");
+      await t.page.waitFor(`alerts().length > 0`, "the red bar under the Enhance button");
+      t.note.error = (await t.page.js("alerts()"))[0];
+      t.note.barIsInEnhancePanel = await t.page.js(`!!document.querySelector('aside [role="alert"]')?.offsetParent`);
+      await t.page.js(`(document.querySelector('aside [role="alert"]').closest("section").scrollIntoView({ block: "center", behavior: "instant" }), true)`);
+      await t.snap();
+    },
+  },
+  {
+    name: "no-webgl-render-lost",
+    needs: "backend",
+    about: "A browser without WebGL2, an uploaded photo already shown by the server with the \"Left\" preset, then the backend stops and \"Right\" is clicked: the one red bar now says the render failed and offers \"Retry\".",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openScene(t);
+      await t.page.clickButton("Left");
+      await t.page.waitFor(`new Promise((r) => setTimeout(() => r(document.querySelector('img[alt="Relit photo"]')?.complete === true), 900))`, "the server render for the Left preset");
+      await t.page.route(t.api, "fail");
+      await t.page.clickButton("Right");
+      await t.page.waitFor(`alerts().some((a) => a.includes("the server render that would replace it failed"))`, "the red bar that says the server render failed");
+      t.note.errors = await t.page.js("alerts()");
+      t.note.sunShown = await t.page.js(`!!lightHandle()`);
+      t.note.buttons = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "enabled"))`);
+      await t.snap();
+    },
+  },
+  {
+    name: "mock-sample-detailed-normals",
+    needs: "mock",
+    about: "Frontend mock mode with the \"Cat\" sample and GEOMETRY opened: the Detailed normals switch is on, greyed out and cannot be clicked.",
+    async run(t) {
+      await openSample(t, "Cat");
+      await openGeometry(t);
+      t.note.detailedNormals = await detailSwitch(t);
+      await t.snap({ sidebar: "bottom" });
+    },
+  },
+  {
+    name: "demo-landing",
+    needs: "demo",
+    about: "The static demo build: the first page. A note card stands where the drop box is in the normal app.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await t.page.waitFor(`[...document.querySelectorAll('button[aria-label^="Sample photo"] img')].length === 4 && [...document.querySelectorAll('button[aria-label^="Sample photo"] img')].every((i) => i.complete && i.naturalWidth > 0)`, "the four thumbnails");
+      t.note.fileInputOnPage = await t.page.js(`!!document.querySelector('input[type="file"]')`);
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-upload-note",
+    needs: "demo",
+    about: "The static demo build: close-up of the note card on the first page, which says why uploading is missing and links to the code.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      const card = `byText("p", "This is the in-browser demo.")?.parentElement`;
+      await t.page.waitFor(`!!${card}`, "the note card");
+      t.note.text = await t.page.js(`${card}.innerText.replace(/\\s+/g, " ").trim()`);
+      t.note.link = await t.page.js(`${card}.querySelector("a").href`);
+      await t.snap(await t.page.clipOf(card, "the note card", { pad: 16, scale: 2 }));
+    },
+  },
+  {
+    name: "demo-status",
+    needs: "demo",
+    about: "The static demo build: close-up of the status pill. Green dot, \"demo: runs in your browser\".",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      t.note.tooltip = (await t.page.status()).title;
+      await t.snap(statusClip(t));
+    },
+  },
+  {
+    name: "demo-sample",
+    needs: "demo",
+    about: "The static demo build with the \"Portrait\" sample loaded, nothing else touched: the top-right stage button reads \"Other samples\" and the Enhance button is greyed out.",
+    async run(t) {
+      await openSample(t, "Portrait");
+      t.note.enhance = await t.page.js(`({ buttonDisabled: byText("button", "Enhance").disabled, promptBoxOnPage: !!document.querySelector("textarea"), tooltip: byText("button", "Enhance").title })`);
+      t.note.stageButton = await t.page.js(`[...document.querySelectorAll("button")].map((b) => b.textContent.trim()).find((x) => x === "Other samples" || x === "New photo")`);
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-all-panels",
+    needs: "demo",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "The static demo build in a taller window (1440 x 1300) with the \"Coffee cup\" sample, the \"Right\" preset and GEOMETRY opened: the whole sidebar at once.",
+    async run(t) {
+      await openSample(t, "Coffee cup");
+      await t.page.clickButton("Right");
+      await openGeometry(t);
+      t.note.detailedNormals = await detailSwitch(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-phone-landing",
+    needs: "demo",
+    viewport: PHONE,
+    about: "The static demo build: the first page in a phone-sized window. The pill is shortened to \"runs in your browser\".",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await t.page.waitFor(`[...document.querySelectorAll('button[aria-label^="Sample photo"] img')].every((i) => i.complete && i.naturalWidth > 0)`, "the four thumbnails");
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-phone-sample-full-page",
+    needs: "demo",
+    viewport: PHONE,
+    about: "The static demo build on a phone with the \"Cat\" sample, photographed from top to bottom with GEOMETRY opened.",
+    async run(t) {
+      await openSample(t, "Cat");
+      await openGeometry(t);
+      await t.page.js(`(window.scrollTo(0, 0), true)`);
+      await t.snap({ fullPage: true });
+    },
+  },
+  {
+    name: "demo-no-webgl",
+    needs: "demo",
+    about: "The static demo build in a browser without WebGL2: one red bar above the plain photo, no sun, and everything that would change the light greyed out.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await t.page.goto(t.url + "/");
+      await clickSample(t, "Portrait");
+      await t.page.waitFor(`alerts().some((a) => a.includes("this demo has no server to shade the photo"))`, "the red bar");
+      t.note.errors = await t.page.js("alerts()");
+      t.note.retryLink = await t.page.js(`!!byText('[role="alert"] button', "Retry")`);
+      t.note.sunShown = await t.page.js(`!!lightHandle()`);
+      t.note.greyedOut = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "ENABLED"))`);
       await t.snap();
     },
   },
@@ -1439,7 +1744,7 @@ const SEE = {
   "scene-all-panels": "The same picture and readouts in a taller window. LIGHT, ENHANCE and the one-row GEOMETRY panel (two tiny thumbnails, \"Show\", down arrow) all show, with empty space under them.",
   "preset-left": "The sun is outside the photo on the left, a little above the middle. Readouts: x -0.10, y 0.40, Height 0.35, Intensity 1.30, Ambient 0.06. The left of the face and suit is bright; the right cheek is in soft shadow.",
   "preset-right": "The sun is outside the photo on the right. Readouts: x 1.10, y 0.40, Height 0.35, Intensity 1.30. The right side of the face and the helmet are bright; the left half of the face is dark.",
-  "preset-top": "The sun is above the photo in the middle, at the very top of the dark stage. Readouts: x 0.50, y -0.07 (the preset asks for -0.15; the stage stops it at -0.07 in this window), Height 0.35, Intensity 1.30. The hair and forehead are bright; under the chin is dark.",
+  "preset-top": "The sun is at the very top of the dark stage, above the photo in the middle. Readouts: x 0.50, y -0.15, Height 0.35, Intensity 1.30. These are the preset's own numbers on every window; that point is just above the stage here, so the sun is drawn at the stage's top edge. The hair and forehead are bright; under the chin is dark.",
   "preset-low-and-warm": "The sun is orange-tinted at the bottom left corner of the photo. Readouts: x 0.00, y 0.90, Height 0.12, Intensity 1.60, Ambient 0.20, Colour warm 100, and the colour dot is pale orange. The whole picture has a warm orange cast and the face is lit from below.",
   "drag-far-left": "The sun sits on the left edge of the photo, half way down. Readouts: x 0.03, y 0.50; the sliders are still at their starting values (0.12, 1.80, 0.06). The left of the face is bright, the right cheek dark.",
   "drag-far-right": "The sun sits on the right edge of the photo, half way down. Readouts: x 0.97, y 0.50. The right of the face and the white helmet rim are bright; the left half of the face is dark.",
@@ -1454,30 +1759,30 @@ const SEE = {
   "ambient-high": "Left preset with Ambient 1.00 (slider fully right). No dark shadows are left; the picture is bright and flat.",
   "colour-warm": "Left preset with Colour \"warm 100\" (slider fully right). The sun handle and the colour dot are pale orange and the whole picture has an orange tint.",
   "colour-cool": "Left preset with Colour \"cool 100\" (slider fully left). The sun handle and the colour dot are pale blue and the whole picture has a blue tint.",
-  "shadows-on": "Coffee cup, sun at the left edge (x -0.04, y 0.40), Height 0.10, Cast shadows on. The cup throws a dark, soft-edged shadow to the right across the saucer and the spoon.",
+  "shadows-on": "Coffee cup, Left preset: readouts x -0.10, y 0.40, Height 0.10, Cast shadows on. The sun is drawn at the left edge of the stage (the true point is a little further left than the stage reaches). The cup throws a dark, soft-edged shadow to the right across the saucer and the spoon.",
   "shadows-off": "The same light with the Cast shadows switch off (grey, knob on the left). The dark shadow to the right of the cup is gone; the saucer and spoon on the right are lit.",
   "detailed-normals-on": "The sidebar is scrolled to the bottom. GEOMETRY is open (\"Hide\", arrow up): a grey Depth picture (\"white = near\"), a rainbow-coloured Normals picture (\"surface direction\") with fine detail, the Detailed normals switch on (yellow), and \"512 x 512 px, relief 0.3\".",
   "detailed-normals-off": "The same with the Detailed normals switch off (grey). The Normals picture is now smooth lilac with no fine detail, and the shading on the photo is flatter with a thin light outline around the head and shoulders.",
-  "hold-original": "While the \"Hold to see original\" button is held: the untouched photo, evenly lit, with a small tag \"Original\" in its top left corner. The sun and the readouts (x -0.10, y 0.40) do not change.",
+  "hold-original": "While the \"Hold to see original\" button is held: the untouched photo, evenly lit, with a small tag \"Original\" in its top left corner. The held button has yellow letters and a yellow outline. The sun and the readouts (x -0.10, y 0.40) do not change.",
   "enhance-before": "Left preset. The ENHANCE box holds the typed words \"golden hour\". The yellow button reads \"Enhance\".",
   "enhance-running": "Top left of the stage: two tabs, \"Live preview\" (selected) and \"Enhancing…\" (greyed out). Bottom left: a pill \"Enhancing in the background, keep dragging\". The yellow button is dimmed and reads \"Enhancing…\" with a spinner. The sun can still be dragged.",
   "enhance-done": "The \"Enhanced\" tab is selected. A vertical white line with a round handle splits the photo in the middle: left half tagged \"Live preview\", right half tagged \"Enhanced\". Below: \"Download enhanced\". In the sidebar the button reads \"Enhance again\" with a small download button beside it, and \"Sweep\" is greyed out. There is no sun.",
   "enhance-divider-dragged": "The same, with the divider line and its round handle a quarter of the way from the left edge, so three quarters of the photo shows the Enhanced side.",
   "enhance-back-to-live": "The \"Live preview\" tab is selected again and the sun is back (x -0.10, y 0.40). The \"Enhanced\" tab can be clicked. The sidebar button still reads \"Enhance again\" with the download button beside it.",
   "sample-portrait": "The astronaut portrait, opened from the \"Portrait\" thumbnail with no wait. Sun on the flag at the left; readouts x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The left of the face is bright, the right cheek in shadow.",
-  "object-side-light": "Coffee cup with the Right preset. The sun is on the dark stage just right of the photo; readouts x 1.04, y 0.40 (the stage stops it short of 1.10), Height 0.35, Intensity 1.30. The right of the table is bright and the cup's shadow falls to the left.",
-  "cat-side-light": "Cat with the Left preset. The sun is at the left edge of the stage; readouts x -0.04, y 0.40. The left of the cat's face is bright and the right side, past the nose, is in shadow.",
-  "dark-photo": "Night rocket with the Left preset; readouts x -0.04, y 0.40. The left faces of the rocket and of the towers are a little brighter, with faint soft shadows to their right on the sky. No hard black bands.",
+  "object-side-light": "Coffee cup with the Right preset. Readouts x 1.10, y 0.40, Height 0.35, Intensity 1.30. The sun is drawn at the right edge of the stage, next to the sidebar (the true point is a little further right). The right of the table is bright and the cup's shadow falls to the left.",
+  "cat-side-light": "Cat with the Left preset. The sun is at the left edge of the stage; readouts x -0.10, y 0.40. The left of the cat's face is bright and the right side, past the nose, falls off gradually into shade, with no hard dark wedge.",
+  "dark-photo": "Night rocket with the Left preset; readouts x -0.10, y 0.40, sun at the left edge of the stage. The left faces of the rocket and of the towers are a little brighter, with faint soft shadows to their right on the sky. No hard black bands.",
   "tall-photo": "A tall, narrow portrait centred in the stage with wide dark margins left and right. Left preset: the sun is on the dark stage left of the photo, readouts x -0.10, y 0.40.",
   "wide-photo": "A wide, short strip of the coffee cup centred in the stage with dark margins above and below. Top preset: the sun is on the dark stage above the photo, readouts x 0.50, y -0.15.",
-  "tiny-photo": "The cat photo, soft and blurry because a 200 px picture is stretched to fill the stage. Left preset, readouts x -0.04, y 0.40. The shading still works.",
+  "tiny-photo": "The cat photo, soft and blurry because a 200 px picture is stretched to fill the stage. Left preset, readouts x -0.10, y 0.40, sun at the left edge of the stage. The shading still works.",
   "huge-photo": "The portrait again; it looks the same as 06-preset-left, because the app shrinks a 3000 px photo before using it. Readouts x -0.10, y 0.40.",
   "error-not-an-image": "The first page is still showing. Under the four thumbnails is a red bar: \"That file is not an image.\" with an x to close it.",
   "backend-offline": "The first page. Top right pill: red dot, \"backend: offline\". The four sample thumbnails are still there and still work.",
   "backend-offline-upload": "The photo is grey and dim. A red-bordered card in the middle reads \"This photo could not be analysed\", then \"Cannot reach the backend at http://localhost:8123. Is it running?\", with a yellow \"Retry\" button and a \"Choose another photo\" button. The sidebar is faded, \"Hold to see original\" and \"Export PNG\" are greyed out, and the pill reads \"offline\".",
-  "enhance-error": "The live preview is still there (Left preset). In the ENHANCE panel, under the yellow \"Enhance\" button, a red bar reads \"Cannot reach the backend at http://localhost:8123. Is it running?\" with an x. The pill reads \"offline\".",
+  "enhance-error": "The live preview is still there (Left preset). Above the photo, across the top of the stage column, a red bar reads \"Cannot reach the backend at http://localhost:8123. Is it running?\" with an x to close it. Nothing red is in the ENHANCE panel, the yellow button reads \"Enhance\" again, and the pill reads \"offline\".",
   "phone-scene": "One column. The photo with the sun on the flag, then \"Hold to see original\" and \"Export PNG\", then the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The helper lines under Height and Ambient show. The pill has no word \"backend:\", only \"online, mock providers\".",
-  "phone-full-page": "The whole phone page: stage, LIGHT (the \"Reset\" button wraps onto its own row), ENHANCE with its helper line and a two-row box, and the one-row GEOMETRY panel at the bottom.",
+  "phone-full-page": "The whole phone page: stage, LIGHT (the five buttons Left, Right, Top, Low and warm, Reset light on one line), ENHANCE with its helper line and a two-row box that reads \"Optional: a mood, such as golden hour\", and the one-row GEOMETRY panel at the bottom.",
   "phone-landing": "The first page in one column: heading on two lines, the dashed drop box, \"Or try a sample photo:\" and the four thumbnails in one row.",
   "status-checking": "Grey dot, \"backend: checking\". It shows for a moment after the page opens.",
   "status-online-mock-providers": "Amber dot, \"backend: online, mock providers\".",
@@ -1496,26 +1801,45 @@ const SEE = {
   "sample-cat": "The cat sample. Sun at the left by the ear, x 0.12, y 0.35. The left of the face is bright; the right side, past the nose, is in shadow.",
   "sample-rocket": "The night rocket sample. Sun on the left tower, x 0.12, y 0.35. The sky near the sun is lighter, the rocket's left side is lit, and the right of the picture is darker.",
   "sample-backend-stopped": "Pill: red dot, \"backend: offline\". The Portrait sample is loaded and lit with the Right preset all the same: sun right of the photo, x 1.10, y 0.40, right side of the face bright. No red bar anywhere.",
-  "sample-load-error": "The first page. Under the thumbnails a red bar reads \"Failed to fetch\" with an x. No photo opened.",
+  "sample-load-error": "The first page. Under the thumbnails a red bar reads \"Could not load the sample photo. Check your connection and try again.\" with an x. No photo opened.",
   "sweep-before": "The Portrait sample at its starting light (x 0.12, y 0.35). The \"Sweep\" button at the top right of the LIGHT panel is slightly lighter because the mouse is on it.",
-  "sweep-during": "The button reads \"Stop sweep\". The sun has moved to the right edge of the photo, about a quarter of the way down (x about 0.93, y about 0.24, changing as you watch). The right side of the face is bright and the left half is dark. The sliders have not moved.",
+  "sweep-during": "The button reads \"Stop sweep\" in yellow letters with a yellow outline. The sun has moved to the right edge of the photo, about a quarter of the way down (x about 0.93, y about 0.24, changing as you watch). The right side of the face is bright and the left half is dark. The sliders have not moved.",
   "sweep-after": "The button reads \"Sweep\" again and the sun is back on the flag: x 0.12, y 0.35. The picture is the same as before the sweep.",
   "geometry-collapsed": "The sidebar only, enlarged: LIGHT (with \"Sweep\"), ENHANCE, and at the bottom the single row \"GEOMETRY\" with two tiny thumbnails (grey depth, purple normals), the word \"Show\" and a down arrow.",
   "geometry-expanded": "The sidebar is scrolled to the bottom. GEOMETRY is open: \"Hide\" and an up arrow, the sentence \"What the models recovered from the photo. The shader lights these.\", a grey Depth picture of the cup, a purple and green Normals picture, the Detailed normals switch on, and \"600 x 400 px, relief 0.3\".",
-  "sample-enhance-done": "The Enhanced tab on the coffee cup sample: divider in the middle, \"Live preview\" on the left, \"Enhanced\" on the right, \"Download enhanced\" below. Sidebar: x 1.04, y 0.40, the button reads \"Enhance again\". Pill: \"online, mock providers\".",
-  "sample-enhance-backend-stopped": "The coffee cup is still lit live with the Right preset. Under the \"Enhance\" button a red bar reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" Pill: \"offline\".",
-  "sample-rocket-left": "Rocket sample, Left preset: the sun is at the left edge of the stage, x -0.04, y 0.40, Height 0.35, Intensity 1.30. To the right of the rocket and of each thin mast there is a faint, blurred darker patch on the sky. There are no hard-edged black stripes.",
+  "sample-enhance-done": "The Enhanced tab on the coffee cup sample: divider in the middle, \"Live preview\" on the left, \"Enhanced\" on the right, \"Download enhanced\" below. Sidebar: x 1.10, y 0.40, the button reads \"Enhance again\" and \"Sweep\" is greyed out. Pill: \"online, mock providers\".",
+  "sample-enhance-backend-stopped": "The coffee cup is still lit live with the Right preset (x 1.10, y 0.40). Above the photo a red bar reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. Pill: \"offline\".",
+  "sample-rocket-left": "Rocket sample, Left preset: the sun is at the left edge of the stage, x -0.10, y 0.40, Height 0.35, Intensity 1.30. To the right of the rocket and of each thin mast there is a faint, blurred darker patch on the sky. There are no hard-edged black stripes.",
   "sample-detailed-normals-backend-stopped": "A red bar above the stage: \"Cannot reach the backend at http://localhost:8123. Is it running? The sample keeps the geometry it came with.\" The portrait is still lit (x 0.12, y 0.35), GEOMETRY is open and the Detailed normals switch is back on (yellow). Pill: \"offline\".",
-  "laptop-1280x720-scene": "Everything fits with no scrolling: the photo, and in the sidebar LIGHT, ENHANCE and the GEOMETRY row. There are no grey helper lines under Height, Ambient or Cast shadows and no line under ENHANCE. The Enhance box is one row and its grey text is cut off at the right edge. Readouts x 0.12, y 0.35.",
+  "laptop-1280x720-scene": "Everything fits with no scrolling: the photo, and in the sidebar LIGHT, ENHANCE and the GEOMETRY row. There are no grey helper lines under Height, Ambient or Cast shadows and no line under ENHANCE. The Enhance box is one row and shows \"Optional: a mood, such as golden hour\" in full. The five preset buttons fill one line. Readouts x 0.12, y 0.35.",
   "laptop-1280x720-landing": "The first page fits with no scrolling: heading, a lower drop box, \"Or try a sample photo:\" and the four thumbnails, with a little space left under them.",
-  "laptop-1366x768-scene": "The uploaded coffee cup with the Right preset (x 1.05, y 0.40). The sidebar fits without scrolling, in the same compact form as at 1280 x 720: no helper lines, a one-row Enhance box.",
+  "laptop-1366x768-scene": "The uploaded coffee cup with the Right preset (x 1.10, y 0.40; the sun is drawn at the right edge of the stage). The sidebar fits without scrolling, in the same compact form as at 1280 x 720: no helper lines, a one-row Enhance box.",
   "window-1440x820-scene": "The sidebar fits without scrolling. There are no grey helper lines under Height, Ambient or Cast shadows, but the line \"A photoreal pass over this lighting. Takes a few seconds.\" under ENHANCE is there and the Enhance box has two rows.",
   "phone-sample": "The coffee cup sample on a phone: a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35 and the helper lines showing.",
   "phone-sample-full-page": "The whole phone page with GEOMETRY opened at the bottom: Depth and Normals pictures side by side, the Detailed normals switch on, \"600 x 400 px, relief 0.3\".",
-  "phone-load-failed-wide": "On a phone: the red-bordered card \"This photo could not be analysed\" with \"Retry\" and \"Choose another photo\" sits in the stage with clear space between it and \"New photo\" above and the two greyed-out buttons below. The LIGHT panel under it is faded. Pill: \"offline\".",
+  "phone-load-failed-wide": "On a phone: the stage is short and holds only the grey, dimmed photo with \"New photo\" above it and the two greyed-out buttons below it. Under the stage, in its own red-bordered card: \"This photo could not be analysed\", \"Cannot reach the backend at http://localhost:8123. Is it running?\", a yellow \"Retry\" and \"Choose another photo\". The LIGHT panel under the card is faded. Pill: \"offline\".",
   "tablet-768x1024-sample": "One column, wider: the cat sample in a stage across the top, then the LIGHT panel at full width with long sliders. Readouts x 0.12, y 0.35. The helper lines show.",
-  "no-webgl-backend-stopped-sample": "Two red bars above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser). Showing server renders instead, which lag slightly behind the light.\" and \"This browser cannot shade the photo itself, so it needs the backend, which cannot be reached at http://localhost:8123.\" The photo is the plain original, not relit. \"Hold to see original\" and \"Export PNG\" are greyed out.",
-  "mock-sample": "Frontend mock mode (pill \"mock\") with the Cat sample and the Left preset (x -0.04, y 0.40). The shading follows the cat's face, as in 35-cat-side-light: left side bright, right side in shadow.",
+  "no-webgl-backend-stopped-sample": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with the word \"Retry\" at its right end and no x. The photo is the plain original with no sun on it. The LIGHT panel is faded, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. Pill: \"offline\".",
+  "mock-sample": "Frontend mock mode (pill \"mock\") with the Cat sample and the Left preset (x -0.10, y 0.40). The shading follows the cat's face, as in 35-cat-side-light: left side bright, right side in shade.",
+  "sweep-stop-button": "Enlarged: the word LIGHT, \"Drag the sun on the photo.\", and at the right the button \"Stop sweep\" in yellow letters with a thin yellow outline. Under them the readout row (x, y, colour dot); its numbers change while the sweep runs.",
+  "hold-original-button": "Enlarged: \"Hold to see original\" with yellow letters, a yellow eye icon and a yellow outline while it is held down. \"Export PNG\" to its right keeps white letters and a grey outline.",
+  "preset-row": "The LIGHT panel, enlarged. Its last row holds five buttons on one line, from the panel's left edge to its right edge: Left, Right, Top, Low and warm (grey boxes) and Reset light (no box until the mouse is on it; here it is, so it has a faint grey background). Resting the mouse on \"Reset light\" shows the tooltip \"Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone.\"",
+  "phone-360-preset-row": "The LIGHT panel on a 360 px wide phone. Left, Right, Top, Low and warm and Reset light are on one line and reach from edge to edge of the panel, with less space inside each button than on a wider screen. Nothing is cut off.",
+  "phone-320-preset-row": "The LIGHT panel on a 320 px wide phone. Left, Right, Top and Low and warm fill one line; \"Reset light\" is alone on a second line, centred, as wide as the panel. The helper lines under Height and Ambient wrap onto two lines.",
+  "laptop-1280x720-preset-top": "Readouts x 0.50, y -0.15, Height 0.35, Intensity 1.30: the same numbers as in 08-preset-top. The sun is at the very top edge of the stage, touching the top bar, above the middle of the photo. The hair and forehead are bright.",
+  "new-photo-starts-clean": "The coffee cup, freshly loaded. Sun on the table at the left, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, colour dot white, Cast shadows on (yellow). The Enhance box is empty and shows its grey \"Optional: a mood, such as golden hour\". GEOMETRY is open and Detailed normals is on (yellow).",
+  "laptop-1280x720-enhance-error": "Above the photo a two-line red bar: \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. The photo is a little smaller to make room. The sidebar is exactly as without the error (LIGHT, ENHANCE, the GEOMETRY row) and does not scroll. Pill: \"offline\".",
+  "phone-enhance-error": "The page is scrolled down to the ENHANCE panel. Under the yellow \"Enhance\" button a red box reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. There is no red bar above the photo on a phone. Pill: \"offline\".",
+  "no-webgl-render-lost": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with \"Retry\" at its right end. The photo still shows the last picture the server sent (the Left preset), with no sun. The readout already says x 1.10, y 0.40. The LIGHT panel is faded and \"Sweep\" and \"Enhance\" are greyed out; \"Hold to see original\" and \"Export PNG\" still work on that last picture.",
+  "mock-sample-detailed-normals": "The sidebar is scrolled to the bottom, GEOMETRY open: grey Depth and purple Normals pictures of the cat, then \"Detailed normals\" with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\" Its switch is on but dull (dark yellow) and does nothing when clicked. \"451 x 300 px, relief 0.3\". Pill: \"mock\".",
+  "demo-landing": "Pill: green dot, \"demo: runs in your browser\". The text under the heading starts \"Pick a sample photo. Its depth and surface normals were estimated ahead of time\". There is no dashed drop box: in its place a card \"This is the in-browser demo.\" with a yellow link. Then \"Pick a sample photo:\" and the four thumbnails.",
+  "demo-upload-note": "The card, enlarged: \"This is the in-browser demo.\" in white, then in grey \"Uploading your own photo needs the Relight server, which this demo runs without. To try your own photos, run it on your computer:\" and the yellow link \"github.com/aarooshpravici/BanannaHacksSubmission\".",
+  "demo-status": "Green dot, \"demo: runs in your browser\". It never reads \"checking\" or \"offline\".",
+  "demo-sample": "The portrait lit live, sun on the flag, x 0.12, y 0.35. The top-right stage button reads \"Other samples\" and has no icon. ENHANCE holds only the line \"Enhance needs the Relight server, which this demo runs without.\" and a dull, greyed-out \"Enhance\" button; there is no text box. LIGHT, \"Sweep\", \"Hold to see original\" and \"Export PNG\" are all available.",
+  "demo-all-panels": "Coffee cup, Right preset (x 1.10, y 0.40; the sun is at the right edge of the stage). The whole sidebar shows: LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open with Depth and Normals pictures, a dull Detailed normals switch with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\", and \"600 x 400 px, relief 0.3\".",
+  "demo-phone-landing": "One column. The pill reads only \"runs in your browser\" with a green dot. Heading, the \"Pick a sample photo. Its depth...\" text, the demo card (the yellow link breaks onto a second line), \"Pick a sample photo:\" and the four thumbnails in one row.",
+  "demo-phone-sample-full-page": "The whole phone page with the cat: a short stage with \"Other samples\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch and \"451 x 300 px, relief 0.3\".",
+  "demo-no-webgl": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.\" It has no \"Retry\" and no x. The photo is the plain original with no sun. The LIGHT panel is faded and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. \"Other samples\" still works.",
 };
 
 const numbered = SHOTS.map((shot, i) => ({ ...shot, needs: shot.needs ?? "any", file: `${String(i + 1).padStart(2, "0")}-${shot.name}.jpg` }));
@@ -1525,7 +1849,7 @@ function selectShots(only) {
   const picked = [];
   for (const want of only) {
     const key = want.replace(/\.(jpe?g|png)$/, "");
-    const hit = key === "stopped" ? numbered.filter((s) => s.stopped || ["backend-offline", "backend-offline-upload", "status-offline"].includes(s.name)) : numbered.filter((s) => s.name === key || s.file === `${key}.jpg` || s.file.slice(0, 2) === key.padStart(2, "0"));
+    const hit = key === "stopped" ? numbered.filter((s) => s.stopped || ["backend-offline", "backend-offline-upload", "status-offline"].includes(s.name)) : numbered.filter((s) => s.name === key || s.file === `${key}.jpg` || s.file.split("-")[0] === key.padStart(2, "0"));
     if (!hit.length) throw new Error(`No shot called "${want}". Run with --list to see the names.`);
     picked.push(...hit);
   }
@@ -1550,7 +1874,8 @@ function writeManifest(out, results) {
   for (const file of Object.keys(manifest)) if (!numbered.some((shot) => shot.file === file)) delete manifest[file];
   const ordered = Object.fromEntries(
     Object.keys(manifest)
-      .sort()
+      // In shot order: plain sorting would put 100 before 11.
+      .sort((a, b) => numbered.findIndex((s) => s.file === a) - numbered.findIndex((s) => s.file === b))
       .map((file) => {
         const shot = numbered.find((s) => s.file === file);
         const { file: f, name, status, about: _about, see: _see, ...rest } = manifest[file];
@@ -1559,6 +1884,8 @@ function writeManifest(out, results) {
   );
   writeFileSync(manifestFile, JSON.stringify(ordered, null, 2) + "\n");
 }
+
+const MODE_NAMES = { backend: "backend", mock: "frontend-mock", demo: "static-demo" };
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -1593,9 +1920,9 @@ async function main() {
     }
     const status = await probe.status();
     await probe.close();
-    const mode = status.label === "mock" ? "mock" : "backend";
+    const mode = status.label === "mock" ? "mock" : status.label === "runs in your browser" ? "demo" : "backend";
     const api = (status.title.match(/https?:\/\/[^\s)]+/) ?? [null])[0];
-    console.log(`Frontend ${args.url}: status "${status.label}"${api ? `, backend ${api}` : ""}. Running the ${mode === "mock" ? "frontend-mock" : "backend"} shots.`);
+    console.log(`Frontend ${args.url}: status "${status.label}"${api ? `, backend ${api}` : ""}. Running the ${MODE_NAMES[mode]} shots.`);
     if (mode === "backend" && status.label !== "online, mock providers" && !(args.backendStopped && status.label === "offline")) {
       throw new Error(`The status pill reads "${status.label}", not "online, mock providers". Start the backend with MOCK_MODE=1 (this tool never drives a backend that could call a paid API).`);
     }
@@ -1605,7 +1932,7 @@ async function main() {
       // "any" shots are taken on the backend setup, so one full set shows one consistent app.
       const fits = shot.needs === mode || (shot.needs === "any" && (mode === "backend" || args.only));
       if (!fits) {
-        console.log(`skip  ${shot.file}  (needs ${shot.needs === "mock" ? "frontend mock mode" : "the backend"}; the app is running ${mode === "mock" ? "in frontend mock mode" : "on the backend"})`);
+        console.log(`skip  ${shot.file}  (needs the ${MODE_NAMES[shot.needs === "any" ? "backend" : shot.needs]} setup; the app is running as ${MODE_NAMES[mode]})`);
         results.push({ file: shot.file, name: shot.name, status: "skipped" });
         continue;
       }
@@ -1625,7 +1952,8 @@ async function main() {
             await page.js(`(document.querySelector("aside")?.scrollTo({ top: ${options.sidebar === "bottom" ? 100000 : 0}, behavior: "instant" }), true)`);
             note.light = await page.light();
             const mainText = await page.js(`document.body.innerText`);
-            if (mainText.includes("Live shading is unavailable")) note.shading = "server";
+            // The demo has no server to fall back on: without WebGL2 nothing shades the photo there.
+            if (mainText.includes("Live shading is unavailable")) note.shading = mode === "demo" ? "none" : "server";
             await page.capture(file, options);
           },
         };
