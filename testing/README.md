@@ -6,6 +6,8 @@
 
 **The project is due Sunday 11:59 PM EDT.** A bug reported early can be fixed. A bug reported Sunday night cannot.
 
+Short on time? Read [TEST_FIRST.md](TEST_FIRST.md): one page saying what to test today.
+
 ## How long it takes
 
 | Part | Time |
@@ -24,6 +26,7 @@ If setup fails, that is a result too. Report it (see [Reporting](#reporting-what
 | File | What it is for |
 | --- | --- |
 | [README.md](README.md) | This page, and the 10-minute smoke test |
+| [TEST_FIRST.md](TEST_FIRST.md) | One page: what helps most to test **today**, and what to leave until the next update. Rewritten after every update |
 | [SETUP.md](SETUP.md) | Getting the app running on macOS or Windows, and fixing common problems |
 | [TEST_PLAN.md](TEST_PLAN.md) | Every test case, with steps, expected result and a screenshot |
 | [PENDING.md](PENDING.md) | Problems that are already known (do not report these), and what the developer could **not** check and most needs you to look at |
