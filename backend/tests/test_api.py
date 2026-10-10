@@ -199,3 +199,19 @@ def test_provider_prefers_gemini_when_it_has_a_key(monkeypatch):
 
 def test_the_test_suite_cannot_see_real_keys():
     assert not any(get_settings().configured().values())
+
+
+def test_fal_regenerate_keeps_the_seed_in_the_cache_key_but_does_not_resend_it(monkeypatch, tmp_path):
+    s = get_settings()
+    monkeypatch.setattr(s, "mock_mode", False)
+    monkeypatch.setattr(s, "image_provider", "fal")
+    monkeypatch.setattr(generation, "cache", generation.cache.__class__(tmp_path))
+    sent = []
+    monkeypatch.setattr(generation, "fal_run", lambda model, args: (sent.append(dict(args)), [Image.new("RGB", (8, 8))])[1])
+    img = Image.new("RGB", (8, 8), (1, 2, 3))
+    generation.edit_image(img, "side view", seed=7)
+    generation.edit_image(img, "side view", seed=7)  # answered from the cache
+    generation.edit_image(img, "side view", seed=7, fresh=True)
+    assert len(sent) == 2 and sent[0]["seed"] == 7 and "seed" not in sent[1]
+    generation.edit_image(img, "side view", seed=7)  # the fresh result replaced the cached one; still no new call
+    assert len(sent) == 2

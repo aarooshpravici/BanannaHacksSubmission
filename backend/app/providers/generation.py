@@ -253,10 +253,13 @@ def edit_image(
         arguments["seed"] = seed
 
     def produce() -> list[Image.Image]:
-        results = fal_run(model, arguments)
+        # The seed stays in the cache key, but a "regenerate" must not resend
+        # it: the same prompt and seed could return the very same image.
+        sent = {k: v for k, v in arguments.items() if not (fresh and k == "seed")}
+        results = fal_run(model, sent)
         # Some edit models return one image per call whatever num_images says.
         while len(results) < n:
-            results += fal_run(model, {**arguments, "num_images": 1})
+            results += fal_run(model, {**sent, "num_images": 1})
         return [r.convert("RGB") for r in results[:n]]
 
     return _cached(model, arguments, produce, fresh)
