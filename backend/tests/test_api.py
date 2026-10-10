@@ -138,3 +138,28 @@ def test_cutout_endpoint_removes_background_and_reports_palette():
     assert alpha[170, 128] > 225, "body should be opaque"
     assert 0.08 < (alpha > 127).mean() < 0.45, "subject should be a minority of the frame"
     assert len(resp.json()["palette"]) >= 2
+
+
+def test_spending_cap_refuses_calls_past_the_limit(monkeypatch, tmp_path):
+    monkeypatch.setattr(get_settings(), "cache_dir", tmp_path)
+    for _ in range(3):
+        generation._charge("gemini_image", 3)
+    with pytest.raises(generation.GenerationError, match="spending cap reached"):
+        generation._charge("gemini_image", 3)
+    assert '"gemini_image": 3' in (tmp_path / "spend.json").read_text()
+
+
+def test_provider_prefers_gemini_when_it_has_a_key(monkeypatch):
+    s = get_settings()
+    monkeypatch.setattr(s, "image_provider", "auto")
+    monkeypatch.setattr(s, "gemini_api_key", "x")
+    assert generation.provider() == "gemini"
+    monkeypatch.setattr(s, "gemini_api_key", "")
+    assert generation.provider() == "fal"
+    monkeypatch.setattr(s, "image_provider", "fal")
+    monkeypatch.setattr(s, "gemini_api_key", "x")
+    assert generation.provider() == "fal"
+
+
+def test_the_test_suite_cannot_see_real_keys():
+    assert not any(get_settings().configured().values())

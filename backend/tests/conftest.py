@@ -3,7 +3,11 @@ import os
 import pytest
 
 # Tests never call a paid API, whatever .env says. Set before app.config loads.
+# Blanking the keys matters as much as mock mode: some tests switch mock mode
+# off on purpose, and must then find no key rather than a real one.
 os.environ["MOCK_MODE"] = "1"
+for _key in ("FAL_KEY", "REPLICATE_API_TOKEN", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "HF_TOKEN"):
+    os.environ[_key] = ""
 
 
 def pytest_addoption(parser):
