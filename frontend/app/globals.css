@@ -48,11 +48,27 @@
 }
 
 /*
- * "tall": the window has room for the helper text under the sidebar's controls.
- * Below 800px (a 1280 x 720 laptop) the hints are dropped to tooltips so every
- * control fits without scrolling; at 1440 x 900 and on phones they show.
+ * The sidebar sits beside the stage from 64rem (Tailwind's lg) up, in a column
+ * as tall as the window minus 88px. It holds 741px with the helper text under
+ * its controls, 683px without, and 621px squeezed.
+ *
+ * "tall": there is room for the helper text. That is a window of 832px or more
+ * (1440 x 900), or a stacked page (a phone), which scrolls anyway. Below that
+ * the hints are dropped to tooltips.
+ *
+ * "short": a window under 771px (a 1280 x 720 laptop). Used as lg:short: to
+ * squeeze the sidebar so every control still fits without scrolling, and on
+ * the first page to keep the sample photos and their error line on screen.
  */
-@custom-variant tall (@media (min-height: 800px));
+@custom-variant tall {
+  @media (min-height: 832px) {
+    @slot;
+  }
+  @media (width < 64rem) {
+    @slot;
+  }
+}
+@custom-variant short (@media (max-height: 770px));
 
 html {
   color-scheme: dark;
@@ -147,7 +163,7 @@ input[type="range"].slider:focus-visible {
  */
 @media (width < 64rem) {
   .stage-hug {
-    /* Page padding (2 x 1rem) plus the stage's side insets (2 x 1.5rem): what the photo's width loses to margins. */
+    /* Page padding (2 x 1rem) plus the stage's side insets (2 x 1.5rem, see inset-x-6 on the page): what the photo's width loses to margins. */
     --stage-side-margins: 5rem;
     /* The strips above and below the photo that hold the stage's buttons (2 x 4rem). */
     --stage-bars: 8rem;
@@ -155,5 +171,11 @@ input[type="range"].slider:focus-visible {
     --stage-max-height: 62svh;
     flex: none;
     height: min(calc((100vw - var(--stage-side-margins)) * var(--stage-ratio) + var(--stage-bars)), var(--stage-max-height));
+  }
+  /* From 40rem (Tailwind's sm) the side insets are 2 x 3.5rem (sm:inset-x-14 on the page). */
+  @media (width >= 40rem) {
+    .stage-hug {
+      --stage-side-margins: 9rem;
+    }
   }
 }

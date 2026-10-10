@@ -16,7 +16,7 @@ export const SAMPLES: SamplePhoto[] = [
   { name: "portrait", label: "Portrait", alt: "An astronaut in an orange suit, head and shoulders" },
   { name: "coffee", label: "Coffee cup", alt: "A coffee cup on a saucer on a wooden table" },
   { name: "cat", label: "Cat", alt: "Close-up of a cat's face" },
-  { name: "rocket", label: "Night rocket", alt: "A rocket on its launch pad at night" },
+  { name: "rocket", label: "Rocket", alt: "A rocket on its launch pad at night" },
 ];
 
 const sampleUrl = (sample: SamplePhoto, file: string) => `/samples/${sample.name}/${file}`;

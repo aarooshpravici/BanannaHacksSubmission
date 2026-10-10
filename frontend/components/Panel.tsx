@@ -7,12 +7,15 @@ export function Panel({
   hint,
   actions,
   className,
+  hintClassName,
   children,
 }: {
   title?: ReactNode;
   hint?: ReactNode;
   actions?: ReactNode;
   className?: string;
+  /** Extra classes for the hint line, e.g. to hide it where there is no room. */
+  hintClassName?: string;
   children: ReactNode;
 }) {
   return (
@@ -21,7 +24,7 @@ export function Panel({
         <header className="mb-2.5 flex items-start justify-between gap-3">
           <div className="min-w-0">
             {title && <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-zinc-400">{title}</h2>}
-            {hint && <p className="mt-0.5 text-xs leading-4 text-zinc-500">{hint}</p>}
+            {hint && <p className={cn("mt-0.5 text-xs leading-4 text-zinc-500", hintClassName)}>{hint}</p>}
           </div>
           {actions && <div className="flex shrink-0 items-center gap-1.5">{actions}</div>}
         </header>
@@ -95,11 +98,11 @@ export function FitBox({
 /** The centred intro the page shows before anything is uploaded. */
 export function PageIntro({ eyebrow, title, lead, children }: { eyebrow: string; title: string; lead: string; children: ReactNode }) {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-8">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-8 short:py-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">{eyebrow}</p>
       <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white sm:text-5xl">{title}</h1>
       <p className="mt-4 max-w-xl text-base leading-7 text-zinc-400">{lead}</p>
-      <div className="mt-6">{children}</div>
+      <div className="mt-6 short:mt-4">{children}</div>
     </div>
   );
 }

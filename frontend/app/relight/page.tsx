@@ -45,6 +45,7 @@ const SWEEP_BLEND = 0.15;
 
 /** Enhance and server renders, for a built-in sample with no backend to send it to. */
 const ENHANCE_OFFLINE = `Enhance needs the backend, which cannot be reached at ${API_URL}. The live preview and Export PNG still work without it.`;
+const ENHANCE_HINT = "A photoreal pass over this lighting. Takes a few seconds.";
 const SERVER_RENDER_OFFLINE = `This browser cannot shade the photo itself, so it needs the backend, which cannot be reached at ${API_URL}.`;
 
 const PRESETS: { label: string; light: Partial<LightBase>; warmth?: number }[] = [
@@ -383,6 +384,8 @@ export default function RelightPage() {
   const enhanced = enhancedBase64 ? toDataUrl(enhancedBase64) : null;
   const live = tab === "live";
   const canShade = scene !== null && (ready || gpuProblem !== null);
+  // There is a relit picture on screen: the live canvas, or (without WebGL2) a render from the server.
+  const canShow = canShade && (gpuProblem === null || server.image !== null);
   const failed = scene === null && !loading && sceneError !== null;
 
   return (
@@ -406,7 +409,7 @@ export default function RelightPage() {
               </Button>
             }
           >
-            <div className={cn("flex flex-col gap-3", !canShade && "pointer-events-none opacity-50")}>
+            <div className={cn("flex flex-col gap-3 lg:short:gap-2", !canShade && "pointer-events-none opacity-50")}>
               <div className="flex items-center justify-between rounded-xl bg-black/30 px-3 py-1.5 font-mono text-xs tabular-nums text-zinc-400">
                 <span>
                   x <span className="text-zinc-100">{light.x.toFixed(2)}</span>
@@ -481,16 +484,17 @@ export default function RelightPage() {
             </div>
           </Panel>
 
-          <Panel title="Enhance" hint="A photoreal pass over this lighting. Takes a few seconds.">
+          {/* On a short window beside the stage the hint moves to the button's tooltip and the box loses a row, so the sidebar fits. */}
+          <Panel title="Enhance" hint={ENHANCE_HINT} hintClassName="lg:short:hidden">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={2}
               placeholder="Optional: describe the mood, e.g. golden hour, soft window light"
-              className="block w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-accent/60 focus:outline-none"
+              className="block w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-accent/60 focus:outline-none lg:short:h-[2.375rem] lg:short:placeholder:truncate"
             />
             <div className="mt-2.5 flex items-center gap-2">
-              <Button variant="primary" className="flex-1" disabled={!canShade} busy={enhance.status === "pending"} onClick={() => void runEnhance()}>
+              <Button variant="primary" className="flex-1" title={ENHANCE_HINT} disabled={!canShade} busy={enhance.status === "pending"} onClick={() => void runEnhance()}>
                 {enhance.status !== "pending" && <SparklesIcon />}
                 {enhance.status === "pending" ? "Enhancing…" : enhanced ? "Enhance again" : "Enhance"}
               </Button>
@@ -566,7 +570,8 @@ export default function RelightPage() {
       )}
       <ErrorBanner message={server.error} />
 
-      <Stage hug={{ width, height }}>
+      {/* A wide photo on a phone gives a stage too low for the failed-load card: keep room for it. */}
+      <Stage hug={{ width, height }} className={cn(failed && "max-lg:min-h-80!")}>
         {/* The whole stage is the drag surface, so the light can be pulled past the photo's edge. */}
         <div
           ref={surface}
@@ -703,7 +708,7 @@ export default function RelightPage() {
               size="sm"
               variant="glass"
               className={cn("pointer-events-auto", comparing && "border-accent/60 text-accent")}
-              disabled={!canShade}
+              disabled={!canShow}
               onPointerDown={() => setComparing(true)}
               onPointerUp={() => setComparing(false)}
               onPointerLeave={() => setComparing(false)}
@@ -717,7 +722,7 @@ export default function RelightPage() {
             </Button>
           )}
           {live ? (
-            <Button size="sm" variant="glass" className="pointer-events-auto" disabled={!canShade} onClick={() => void exportPng()}>
+            <Button size="sm" variant="glass" className="pointer-events-auto" disabled={!canShow} onClick={() => void exportPng()}>
               <DownloadIcon />
               Export PNG
             </Button>

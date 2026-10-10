@@ -93,7 +93,7 @@ export function UploadDropzone({
           void accept(e.dataTransfer.files[0]);
         }}
         className={cn(
-          "group relative flex min-h-44 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-6 py-8 text-center transition-colors",
+          "group relative flex min-h-44 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-6 py-8 text-center transition-colors short:min-h-0 short:py-5",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/70",
           dragging ? "border-accent bg-accent/10" : "border-white/15 bg-white/[0.025] hover:border-white/30 hover:bg-white/[0.05]",
           disabled && "pointer-events-none opacity-50",
