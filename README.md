@@ -60,4 +60,4 @@ The tests never call a paid service. `backend/scripts/live_checks.py` does (one 
 
 ## Testing by hand
 
-See the `testing/` folder: it says exactly what to click and what should appear.
+Testers: do not use the commands above. Start at `testing/README.md` and follow `testing/SETUP.md`; they say exactly what to install, what to click and what should appear.
