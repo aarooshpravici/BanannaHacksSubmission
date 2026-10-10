@@ -108,6 +108,7 @@ class Region(BaseModel):
     mask: str
     reason: str
     confidence: float
+    siblings: list[tuple[int, int, int, int]] = []  # matching blocks the fill should resemble; pass to /fill as references
 
 
 class DetectOut(BaseModel):
@@ -136,6 +137,8 @@ class FillIn(BaseModel):
     mask: str
     prompt: str
     n: int = Field(4, ge=1, le=8)
+    references: list[tuple[int, int, int, int]] = []  # boxes of elements the fill should look like (Region.siblings)
+    fresh: bool = False  # true for "regenerate": skip the cache
 
 
 class FillScores(BaseModel):
