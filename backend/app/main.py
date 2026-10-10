@@ -17,6 +17,21 @@ from .routers import autocomplete, common, relight, turnaround
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 app = FastAPI(title="Banana Hacks backend")
+log = logging.getLogger(__name__)
+
+
+# Declared before the CORS line so that CORS wraps it. Left to itself an
+# unexpected exception is answered outside the CORS layer, with no
+# Access-Control-Allow-Origin header, and the browser then reports a server
+# error as "cannot reach the backend".
+@app.middleware("http")
+async def unexpected_errors(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception:
+        log.exception("unhandled error in %s %s", request.method, request.url.path)
+        return JSONResponse(status_code=500, content={"detail": "The server hit an unexpected error. See the backend log."})
+
 
 # No auth and no cookies, so any origin may call the API (local dev, Vercel previews).
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])

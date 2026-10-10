@@ -50,6 +50,18 @@ def test_missing_field_is_a_422():
     assert client.post("/cutout", json={}).status_code == 422
 
 
+def test_unexpected_error_is_a_json_500_the_browser_is_allowed_to_read(monkeypatch):
+    def boom(_):
+        raise RuntimeError("model fell over")
+
+    monkeypatch.setattr("app.routers.common.remove_background", boom)
+    image = encode_image(Image.new("RGB", (8, 8)))
+    resp = client.post("/cutout", json={"image": image}, headers={"Origin": "http://localhost:3000"})
+    assert resp.status_code == 500 and "unexpected error" in resp.json()["detail"]
+    # Without this header the browser hides the response and the page says the backend is unreachable.
+    assert resp.headers["access-control-allow-origin"] == "*"
+
+
 # --- providers without keys -------------------------------------------------
 
 
@@ -143,6 +155,25 @@ def test_cutout_endpoint_removes_background_and_reports_palette():
     visible = alpha > 0
     assert np.array_equal(np.asarray(cut)[..., :3][visible], np.asarray(_character())[visible])
     assert len(resp.json()["palette"]) >= 2
+
+
+@pytest.mark.models
+def test_cutout_of_an_exif_rotated_image_is_upright_and_lined_up():
+    from app.cutout import remove_background
+
+    upright = _character().resize((256, 192))
+    for orientation, undo in ((3, Image.ROTATE_180), (6, Image.ROTATE_90)):
+        # Store the pixels turned and tag them, the way a phone camera does.
+        stored = upright.transpose(undo)
+        exif = Image.Exif()
+        exif[0x0112] = orientation
+        stored.info["exif"] = exif.tobytes()
+        stored.getexif()[0x0112] = orientation
+        cut = remove_background(stored)
+        assert cut.size == upright.size
+        alpha = np.asarray(cut.getchannel("A"))
+        assert alpha[5, 5] < 30 and alpha[130, 128] > 225, "the alpha must sit on the upright character"
+        assert np.array_equal(np.asarray(cut)[..., :3], np.asarray(upright))
 
 
 def test_spending_cap_refuses_calls_past_the_limit(monkeypatch, tmp_path):

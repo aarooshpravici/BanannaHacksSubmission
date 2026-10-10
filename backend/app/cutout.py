@@ -4,7 +4,7 @@ import threading
 from functools import lru_cache
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 from rembg import new_session, remove
 
 from .images import to_rgb
@@ -24,7 +24,9 @@ def _session(model: str):
 def remove_background(img: Image.Image, *, model: str = DEFAULT_MODEL) -> Image.Image:
     """Return the image as RGBA with the background made transparent."""
     session = _session(model)
-    rgb = to_rgb(img)
+    # rembg turns its own copy upright when the image carries an EXIF rotation,
+    # so do the same here or its alpha would not line up with these pixels.
+    rgb = to_rgb(ImageOps.exif_transpose(img))
     with _lock:
         out = remove(rgb, session=session)
     # rembg darkens the colors at soft edges (it multiplies them by the alpha).
