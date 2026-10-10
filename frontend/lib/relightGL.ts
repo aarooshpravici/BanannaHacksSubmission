@@ -226,7 +226,7 @@ export class RelightRenderer {
       premultipliedAlpha: false,
       preserveDrawingBuffer: true, // so Export and snapshots can read the canvas at any time
     });
-    if (!gl) throw new Error("WebGL2 is not available in this browser.");
+    if (!gl) throw new Error("WebGL2 is not available in this browser");
     this.gl = gl;
     // Rendering to half-float keeps the shadow map smooth; 8-bit is a fine fallback.
     this.floatTargets = gl.getExtension("EXT_color_buffer_float") !== null;
