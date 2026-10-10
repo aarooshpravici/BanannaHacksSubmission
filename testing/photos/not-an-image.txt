@@ -1,0 +1,2 @@
+This is a plain text file, not a picture.
+Use it to check that Relight refuses files that are not images.
