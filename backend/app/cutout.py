@@ -24,9 +24,15 @@ def _session(model: str):
 def remove_background(img: Image.Image, *, model: str = DEFAULT_MODEL) -> Image.Image:
     """Return the image as RGBA with the background made transparent."""
     session = _session(model)
+    rgb = to_rgb(img)
     with _lock:
-        out = remove(to_rgb(img), session=session)
-    return out.convert("RGBA")
+        out = remove(rgb, session=session)
+    # rembg darkens the colors at soft edges (it multiplies them by the alpha).
+    # Compositing that onto a background darkens them a second time, leaving a
+    # grey fringe, so keep only its alpha and take the colors from the original.
+    cutout = rgb.convert("RGBA")
+    cutout.putalpha(out.convert("RGBA").getchannel("A"))
+    return cutout
 
 
 def subject_mask(cutout: Image.Image) -> np.ndarray:

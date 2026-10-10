@@ -137,6 +137,9 @@ def test_cutout_endpoint_removes_background_and_reports_palette():
     assert alpha[5, 5] < 30, "background corner should be transparent"
     assert alpha[170, 128] > 225, "body should be opaque"
     assert 0.08 < (alpha > 127).mean() < 0.45, "subject should be a minority of the frame"
+    # Colors must be the original's, not darkened at soft edges (no grey fringe).
+    visible = alpha > 0
+    assert np.array_equal(np.asarray(cut)[..., :3][visible], np.asarray(_character())[visible])
     assert len(resp.json()["palette"]) >= 2
 
 
