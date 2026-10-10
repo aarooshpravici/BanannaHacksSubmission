@@ -24,6 +24,8 @@ log = logging.getLogger(__name__)
 
 FAL_INPAINT = "fal-ai/flux-pro/v1/fill"
 FAL_RELIGHT = "fal-ai/iclight-v2"
+FAL_EDIT = "fal-ai/nano-banana/edit"  # instruction-based edit that keeps the subject
+FAL_EDIT_KONTEXT = "fal-ai/flux-pro/kontext"  # alternative with the same job
 REPLICATE_NOVEL_VIEW = "jd7h/zero123plusplus"
 
 FAL_MAX_IMAGES_PER_CALL = 4
@@ -118,6 +120,35 @@ def relight_enhance(
     if seed is not None:
         arguments["seed"] = seed
     return _cached(FAL_RELIGHT, arguments, lambda: fal_run(FAL_RELIGHT, arguments)[:1], fresh)[0].convert("RGB")
+
+
+def edit_image(
+    image: Image.Image, prompt: str, *, n: int = 1, seed: int | None = None, model: str = FAL_EDIT, fresh: bool = False
+) -> list[Image.Image]:
+    """Edit an image by instruction while keeping its subject, e.g. "show this
+    character from the side". Returns n results.
+
+    UNTESTED: no FAL_KEY was available when this was written.
+    """
+    image = to_rgb(image)
+    if get_settings().mock_mode:
+        return [image.transpose(Image.FLIP_LEFT_RIGHT) for _ in range(n)]
+    arguments: dict = {"prompt": prompt, "num_images": n, "output_format": "png"}
+    if model == FAL_EDIT_KONTEXT:
+        arguments["image_url"] = to_data_url(image, "PNG")
+    else:
+        arguments["image_urls"] = [to_data_url(image, "PNG")]
+    if seed is not None:
+        arguments["seed"] = seed
+
+    def produce() -> list[Image.Image]:
+        results = fal_run(model, arguments)
+        # Some edit models return one image per call whatever num_images says.
+        while len(results) < n:
+            results += fal_run(model, {**arguments, "num_images": 1})
+        return [r.convert("RGB") for r in results[:n]]
+
+    return _cached(model, arguments, produce, fresh)
 
 
 def novel_views(image: Image.Image, *, fresh: bool = False) -> Image.Image:
