@@ -30,7 +30,8 @@
 //     cd frontend && NEXT_PUBLIC_MOCK=0 NEXT_PUBLIC_API_URL=http://localhost:8123 npm run dev -- --port 3123
 //   The shots named "mock-..." need the frontend alone in its own mock mode (pill reads "mock"):
 //     cd frontend && NEXT_PUBLIC_MOCK=1 npm run dev -- --port 3123
-//   The shots named "demo-..." need the static demo build (pill reads "demo: runs in your browser"),
+//   The shots named "demo-..." need the static demo build (pill reads "demo: runs in your browser",
+//   or just "demo" on a phone),
 //   served from a folder that matches the base path it was built for (see frontend/README.md):
 //     cd frontend && npm run build:demo
 //     python3 -m http.server 3199 --directory <folder that holds a copy of out/>
@@ -44,12 +45,22 @@
 //   - "Loading" and "Enhancing": the backend's reply is held back until the picture is taken.
 //   - Status "online" (green): the real /health reply is passed on with mock_mode changed to false.
 //     The backend itself is never run with MOCK_MODE=0, so no paid API is called.
-//   - "No WebGL2": canvas.getContext("webgl2") is made to return null, as an old browser would.
+//   - A weaker device: a script that runs before the page's own code takes one ability away from
+//     the browser, the way the developers do when they check each fallback (see "A weaker device" below):
+//       no WebGL2 at all          canvas.getContext("webgl2") returns null         -> the processor shades
+//       no float colour buffers   the two colour-buffer extensions are not offered -> "compatibility mode"
+//       no float filtering        OES_texture_float_linear is not offered          -> nothing changes
+//       no Workers                new Worker(...) throws                           -> the processor, on the page's own thread
+//       a broken shader compiler  every shader reports that it did not compile     -> the processor shades
+//       no 2D canvas either       canvas.getContext("2d") returns null as well     -> nothing here can shade: the red bar
+//     A slow processor is made with Chrome's own CPU throttle, and a graphics chip that stops
+//     responding with WebGL's own "lose context" test hook.
 //   - A tooltip (the text that appears when the mouse rests on a control) cannot be photographed
 //     headless. Where one matters, its text is read from the page into manifest.json instead.
 //
 // It also writes <out>/manifest.json: for each shot the file, what it shows, the
-// light position read from the page and whether live (WebGL) shading was on screen.
+// light position read from the page and how the photo was being shaded when it was taken
+// ("shading": webgl, cpu, server or none; "shadingPath": the exact path, such as gpu-packed).
 
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -61,6 +72,16 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DESKTOP = { width: 1440, height: 900, scale: 1, mobile: false };
 const PHONE = { width: 390, height: 844, scale: 2, mobile: true };
 const JPEG_QUALITY = 88;
+/**
+ * Processor shading: how long the canvas must have held its full-quality picture
+ * before it is photographed, in milliseconds. The page starts that picture 180 ms
+ * after the light stops (SETTLE_MS in frontend/lib/relightCPU.ts); this has to be
+ * longer, or a picture of the light before could pass for the finished one.
+ * Longer only makes each of those shots slower.
+ */
+const CPU_SHARP_WATCH_MS = 400;
+/** Where the mouse is parked for a picture, in CSS pixels from the left: the top bar's own padding, left of the "Relight" name, where nothing reacts to it at any width. */
+const MOUSE_PARK_X = 4;
 
 // ---------------------------------------------------------------------------------
 // Arguments
@@ -213,10 +234,13 @@ const IN_PAGE = `
   const lightHandle = () => document.querySelector('button[aria-label^="Light position"]');
   const statusPill = () => document.querySelector("header div[title]");
   const ACCENT = "rgb(251, 209, 61)"; // --color-accent in globals.css, as getComputedStyle reports it
+  const shadingNote = () => [...document.querySelectorAll('p[role="status"]')].map((e) => e.textContent.trim()).find((x) => x.startsWith("Shading on this device") || x.startsWith("This device's processor")) ?? null;
+  const shadingLine = () => document.querySelector("aside p.font-mono span[title]");
+  const howPanel = () => document.querySelector("header dialog");
   const alerts = () => [...document.querySelectorAll('[role="alert"]')].filter((e) => e.offsetParent !== null).map((e) => e.querySelector("p")?.textContent.trim() ?? e.textContent.trim());
 `;
 
-const KEYS = { Home: 36, End: 35, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 };
+const KEYS = { Escape: 27, Home: 36, End: 35, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 };
 
 class Page {
   constructor(browser, targetId, sessionId) {
@@ -226,6 +250,7 @@ class Page {
     this.console = []; // errors and warnings the page logged
     this.rules = []; // network rules, see route()
     this.held = [];
+    this.seen = []; // every request made while a rule was in force, for "nothing was asked of the backend"
     this.viewport = DESKTOP;
     this.listener = (message) => {
       if (message.sessionId !== this.sessionId) return;
@@ -271,6 +296,7 @@ class Page {
    *   "fail"        refuse the connection (the backend looks stopped)
    *   "hold"        keep the request waiting until release() is called
    *   "health-live" pass /health on with mock_mode set to false
+   *   "watch"       let it through; it is only written down in this.seen
    */
   async route(fragment, action) {
     this.rules.push({ fragment, action });
@@ -279,10 +305,12 @@ class Page {
 
   async onPaused({ requestId, request }) {
     const rule = this.rules.find((r) => request.url.includes(r.fragment));
+    this.seen.push(`${request.method} ${request.url}`);
     // CORS preflights are let through so that only the real request is affected.
     if (!rule || request.method === "OPTIONS") return void (await this.send("Fetch.continueRequest", { requestId }));
     if (rule.action === "fail") return void (await this.send("Fetch.failRequest", { requestId, errorReason: "ConnectionRefused" }));
     if (rule.action === "hold") return void this.held.push(requestId);
+    if (rule.action === "watch") return void (await this.send("Fetch.continueRequest", { requestId }));
     if (rule.action === "health-live") {
       const real = await (await fetch(request.url)).json();
       const body = Buffer.from(JSON.stringify({ ...real, mock_mode: false })).toString("base64");
@@ -407,9 +435,10 @@ class Page {
   }
 
   /**
-   * Wait until the photo is analysed and shaded. Returns "webgl" when the live
-   * canvas is on screen, or "server" when the page fell back to server renders.
-   * Fails if the WebGL canvas is blank.
+   * Wait until the photo is analysed and shaded. Returns "webgl" when the
+   * graphics chip is drawing the live canvas, "cpu" when the processor is (and
+   * its full-quality picture is up), or "server" when the picture is a render
+   * from the server. Fails if the canvas is blank.
    */
   async sceneReady(timeout = 240_000) {
     const mode = await this.waitFor(
@@ -417,25 +446,50 @@ class Page {
         const text = document.body.innerText;
         if (text.includes("Estimating depth") || text.includes("Preparing the shader")) return false;
         if (!photoBox()) return false;
-        if (alerts().length && !text.includes("Live shading is unavailable")) return "error";
-        if (text.includes("Live shading is unavailable")) return document.querySelector('img[alt="Relit photo"]')?.complete ? "server" : false;
+        const unavailable = text.includes("Live shading is unavailable");
+        if (alerts().length && !unavailable) return "error";
+        if (unavailable || text.includes("so the server draws the photo instead")) return document.querySelector('img[alt="Relit photo"]')?.complete ? "server" : false;
         const canvas = document.querySelector("canvas");
         if (!canvas || canvas.classList.contains("opacity-0") || !lightHandle()) return false;
-        return [...document.querySelectorAll('img[alt$=" map"]')].every((i) => i.complete && i.naturalWidth > 0) ? "webgl" : false;
+        if (![...document.querySelectorAll('img[alt$=" map"]')].every((i) => i.complete && i.naturalWidth > 0)) return false;
+        const path = canvas.dataset.shading ?? "";
+        if (path.startsWith("cpu")) return canvas.dataset.quality === "full" ? "cpu" : false;
+        return path.startsWith("gpu") ? "webgl" : false;
       })()`,
       "the photo to be analysed and shaded",
       timeout,
     );
     if (mode === "error") throw new Error(`The page shows an error instead of the scene: ${JSON.stringify(await this.js("alerts()"))}`);
-    if (mode === "webgl") {
+    if (mode === "webgl" || mode === "cpu") {
       const check = await this.canvasCheck();
-      if (!check.ok) throw new Error(`The WebGL canvas is blank (${JSON.stringify(check)}). Chrome flags: ${this.browser.flags.join(" ") || "(none)"}`);
+      if (!check.ok) throw new Error(`The live canvas is blank (${JSON.stringify(check)}). Chrome flags: ${this.browser.flags.join(" ") || "(none)"}`);
     }
     await this.painted();
     return mode;
   }
 
-  /** Read the WebGL canvas back: is it drawn at all, and does it differ from the plain photo? */
+  /**
+   * On the processor the picture is a soft preview while the light moves and the
+   * full one follows once it has been still for a moment. Wait for the full one:
+   * the canvas has to say "full" for CPU_SHARP_WATCH_MS without a break, because
+   * straight after a click it still says so about the light before.
+   */
+  async sharp() {
+    await this.js(`new Promise((done) => {
+      let since = null;
+      const tick = () => {
+        const canvas = document.querySelector("canvas");
+        if (!canvas || !(canvas.dataset.shading ?? "").startsWith("cpu")) return done(true);
+        if (canvas.dataset.quality !== "full") since = null;
+        else if (since === null) since = performance.now();
+        else if (performance.now() - since > ${CPU_SHARP_WATCH_MS}) return done(true);
+        setTimeout(tick, 30);
+      };
+      tick();
+    })`);
+  }
+
+  /** Read the live canvas back: is it drawn at all, and does it differ from the plain photo? */
   canvasCheck() {
     return this.js(`(() => {
       const canvas = document.querySelector("canvas");
@@ -502,7 +556,7 @@ class Page {
   // --- pictures ------------------------------------------------------------------------
 
   /**
-   * Take the picture. By default the mouse is parked on the empty middle of the
+   * Take the picture. By default the mouse is parked at the empty left end of the
    * top bar and keyboard focus is dropped, so no hover or focus ring is in it.
    *   clip      { x, y, width, height, scale } in CSS pixels, to photograph part of the page
    *   fullPage  photograph the whole scrolling page, not just the viewport
@@ -512,7 +566,7 @@ class Page {
    */
   async capture(file, { clip, fullPage = false, asIs = false, quick = false } = {}) {
     if (!asIs) {
-      await this.mouse("mouseMoved", Math.round(this.viewport.width / 2), 28);
+      await this.mouse("mouseMoved", MOUSE_PARK_X, 28);
       await this.js(`(document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement.blur() : 0, true)`);
     }
     // Let one-off animations (an error banner sliding in) finish; endless ones (spinners, the pulsing dot) are left alone.
@@ -647,12 +701,146 @@ async function openGeometry(t) {
   await sleep(450); // the sidebar scrolls the panel into view smoothly
 }
 
-/** Make canvas.getContext("webgl2") return null on every page loaded from now on, as an old browser would. */
-async function withoutWebGL2(t) {
-  await t.page.send("Page.addScriptToEvaluateOnNewDocument", {
-    source: `(() => { const real = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (kind, ...rest) { return kind === "webgl2" ? null : real.call(this, kind, ...rest); }; })();`,
-  });
+// ----- A weaker device. Each of these runs a script before the page's own code on every page loaded from now on. -----
+
+/** Run `source` in the page before anything of its own, on every page loaded from now on. */
+const beforeLoad = (t, source) => t.page.send("Page.addScriptToEvaluateOnNewDocument", { source: `(() => { ${source} })();` });
+
+/** No WebGL2: canvas.getContext("webgl2") returns null, as in an old browser or with the graphics chip switched off. The processor shades instead. */
+const withoutWebGL2 = (t) =>
+  beforeLoad(t, `const real = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (kind, ...rest) { return kind === "webgl2" ? null : real.call(this, kind, ...rest); };`);
+
+/** WebGL2 without the named extensions, as on a graphics chip that does not offer them. */
+const withoutExtensions = (t, names) =>
+  beforeLoad(
+    t,
+    `const gone = ${JSON.stringify(names)}; const proto = WebGL2RenderingContext.prototype; const get = proto.getExtension, list = proto.getSupportedExtensions;
+     proto.getExtension = function (name) { return gone.includes(name) ? null : get.call(this, name); };
+     proto.getSupportedExtensions = function () { return (list.call(this) ?? []).filter((name) => !gone.includes(name)); };`,
+  );
+/** The two extensions that let a shader draw into a floating-point buffer. Without both, the page keeps its shadows in 8-bit buffers ("compatibility mode"). */
+const FLOAT_COLOUR_BUFFERS = ["EXT_color_buffer_float", "EXT_color_buffer_half_float"];
+/** Smooth sampling of float textures. The shader is written not to need it. */
+const FLOAT_FILTERING = ["OES_texture_float_linear"];
+
+/** A graphics chip whose driver rejects every shader. The processor shades instead. */
+const withBrokenShaders = (t) =>
+  beforeLoad(t, `const proto = WebGL2RenderingContext.prototype; const real = proto.getShaderParameter; proto.getShaderParameter = function (shader, what) { return what === this.COMPILE_STATUS ? false : real.call(this, shader, what); };`);
+
+/** No Workers (some hosts block the script): the processor shades on the page's own thread. */
+const withoutWorkers = (t) => beforeLoad(t, `window.Worker = function () { throw new Error("blocked for this test"); };`);
+
+/** No 2D canvas either, so the processor cannot shade. With withoutWebGL2 this leaves nothing in the browser that can. Use a sample: an upload needs a 2D canvas to be read at all. */
+const withoutCanvas2D = (t) =>
+  beforeLoad(t, `const real = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (kind, ...rest) { return kind === "2d" ? null : real.call(this, kind, ...rest); };`);
+
+/**
+ * How many times slower the page's own thread is made for the slow-processor
+ * shots (Chrome's CPU throttle). The page calls a processor slow when one full
+ * picture takes over 1.2 s (CPU_SLOW_MS in frontend/app/relight/page.tsx); on
+ * the computer these were taken on a picture takes about a tenth of a second, so
+ * this has to be well over 12. Higher only makes the shot take longer.
+ */
+const SLOW_CPU_RATE = 40;
+
+/**
+ * Open the "Portrait" sample on a slow device and wait until the page has
+ * timed a full picture, found it too slow and put a server render in its place.
+ * The throttle goes on after the first page has loaded and comes off again here.
+ */
+async function slowProcessorScene(t) {
+  await withoutWebGL2(t);
+  await withoutWorkers(t);
+  await t.page.route(t.api, "watch");
+  await t.page.goto(t.url + "/");
+  await t.page.send("Emulation.setCPUThrottlingRate", { rate: SLOW_CPU_RATE });
+  try {
+    await clickSample(t, "Portrait");
+    await t.page.waitFor(`(shadingNote() ?? "").startsWith("This device's processor is slow") && document.querySelector('img[alt="Relit photo"]')?.complete === true`, "the page to hand a slow processor's work to the server", 180_000);
+  } finally {
+    await t.page.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  }
+  t.note.shading = "server";
+  t.note.sample = "Portrait";
+  t.note.slowNote = await t.page.js(`shadingNote()`);
+  t.note.how = `No WebGL2, no Workers, and the page's own thread slowed ${SLOW_CPU_RATE} times with Chrome's CPU throttle until the page noticed.`;
 }
+
+/** Make the graphics chip stop responding for the photo on screen, with WebGL's own test hook. It does not come back by itself. */
+const loseGraphicsChip = (t) => t.page.js(`(document.querySelector("canvas").getContext("webgl2").getExtension("WEBGL_lose_context").loseContext(), true)`);
+
+/** Read the "shading:" line at the bottom of the GEOMETRY panel and its tooltip, and the grey note above the stage, into the manifest. */
+async function readShading(t) {
+  t.note.shadingLine = await t.page.js(`shadingLine()?.textContent.trim() ?? null`);
+  t.note.shadingTooltip = await t.page.js(`shadingLine()?.title ?? null`);
+  t.note.greyNote = await t.page.js(`shadingNote()`);
+  t.note.redBars = await t.page.js(`alerts()`);
+}
+
+/** A close-up of the open GEOMETRY panel. */
+const geometryClip = (t) => t.page.clipOf(`shadingLine().closest("section")`, "the GEOMETRY panel", { pad: 10, scale: 2, block: "end" });
+
+/** Drop a rule set with page.route() but keep the others. */
+const unroute = (t, fragment) => void (t.page.rules = t.page.rules.filter((r) => r.fragment !== fragment));
+
+/** The requests made to the backend while a rule was in force, without the status pill's own /health checks. */
+const backendRequests = (t) => t.page.seen.filter((line) => line.includes(t.api) && !line.includes("/health")).map((line) => line.replace(t.api, ""));
+
+// ----- The "How it works" panel -----
+
+/** Click "How it works" in the top bar and wait for the panel and the pictures in view. */
+async function openHowItWorks(t) {
+  await t.page.clickButton("How it works");
+  await t.page.waitFor(`howPanel()?.open === true`, "the How it works panel to open");
+  await panelPictures(t);
+}
+
+/** The panel's pictures are only fetched as they come into view: wait for the ones that have. */
+async function panelPictures(t) {
+  await t.page.painted();
+  await t.page.waitFor(
+    `(() => { const box = howPanel().getBoundingClientRect(); return [...howPanel().querySelectorAll("img")].filter((i) => { const r = i.getBoundingClientRect(); return r.bottom > box.top && r.top < box.bottom; }).every((i) => i.complete && i.naturalWidth > 0); })()`,
+    "the panel's pictures",
+  );
+}
+
+/** Scroll the panel so that a numbered step is at the top (with its section heading, if it is the first under one), or to the very end. */
+async function scrollPanelTo(t, step) {
+  const found = await t.page.js(`(() => {
+    const scroller = howPanel().querySelector(".thin-scroll");
+    if (${JSON.stringify(step)} === "end") { scroller.scrollTo({ top: scroller.scrollHeight, behavior: "instant" }); return true; }
+    const article = [...howPanel().querySelectorAll("article")].find((a) => a.querySelector("h4 .sr-only")?.textContent.trim() === "Step ${step}:");
+    if (!article) return false;
+    const target = article.previousElementSibling ? article : article.closest("section");
+    scroller.scrollTo({ top: scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 12, behavior: "instant" });
+    return true;
+  })()`);
+  if (!found) throw new Error(`The panel has no step ${step}.`);
+  await panelPictures(t);
+}
+
+/** What the panel says, for the manifest: its headings, the chip beside each step and the picture captions. */
+const panelText = (t) =>
+  t.page.js(`({
+    title: howPanel().querySelector("h2").textContent.trim(),
+    sections: [...howPanel().querySelectorAll("h3")].map((h) => h.textContent.trim() + " | " + (h.nextElementSibling?.tagName === "P" ? h.nextElementSibling.textContent.trim() : "")),
+    steps: [...howPanel().querySelectorAll("article")].map((a) => a.querySelector("h4").textContent.trim() + " | " + a.querySelector("h4 + span").textContent.trim()),
+    captions: [...howPanel().querySelectorAll("figcaption")].map((c) => c.textContent.trim()),
+  })`);
+
+/** A close-up of the panel alone (it is a card in the middle of a desktop window). */
+const panelClip = (t) => t.page.clipOf(`howPanel()`, "the How it works panel", { pad: 0, scale: 1.5, block: "nearest" });
+
+/** A magnified picture of the whole top bar of a phone-sized window. */
+const phoneBarClip = (t) => ({ clip: { x: 0, y: 0, width: t.page.viewport.width, height: 56, scale: 2 } });
+
+/** The top bar's three parts as the page lays them out: used to check that nothing is pushed off a narrow screen. */
+const topBar = (t) =>
+  t.page.js(`(() => {
+    const header = document.querySelector("header"); const pill = statusPill(); const button = byText("header button", "How it works");
+    const shown = [...pill.querySelectorAll("span.font-medium")].find((e) => e.offsetParent !== null);
+    return { button: button.textContent.trim(), pill: pill.innerText.replace(/\\s+/g, " ").trim(), pillTextCutOff: shown.scrollWidth > shown.clientWidth, barOverflows: header.scrollWidth > header.clientWidth, pageScrollsSideways: document.documentElement.scrollWidth > window.innerWidth + 1, buttonRightPx: Math.round(button.getBoundingClientRect().right), pillLeftPx: Math.round(pill.getBoundingClientRect().left) };
+  })()`);
 
 const enhancedReady = `document.querySelector('button[role="tab"][aria-selected="true"]')?.textContent.trim() === "Enhanced" && [...document.querySelectorAll('img[alt="Enhanced"], img[alt="Live preview"]')].length === 2 && [...document.querySelectorAll('img[alt="Enhanced"], img[alt="Live preview"]')].every((i) => i.complete && i.naturalWidth > 0)`;
 
@@ -712,8 +900,9 @@ const SHOTS = [
     name: "scene-loading",
     about: "Just after choosing a photo, while the backend is still working out depth and normals.",
     async run(t) {
-      await t.page.goto(t.url + "/");
+      // Set before the page loads: a rule switched on afterwards lets this upload's CORS preflight through and then Chrome fails the upload itself.
       await t.page.route("/relight/scene", "hold");
+      await t.page.goto(t.url + "/");
       await t.page.upload(join(t.photos, PHOTO.portrait));
       await t.page.waitFor(`document.body.innerText.includes("Estimating depth and surface normals") && !!document.querySelector(".skeleton")`, "the loading overlay");
       await t.snap();
@@ -1052,7 +1241,7 @@ const SHOTS = [
   {
     name: "status-checking",
     needs: "backend",
-    about: "Close-up of the status pill in the top right during the first moment after the page opens: grey dot, \"checking\".",
+    about: "Close-up of the right end of the top bar during the first moment after the page opens: grey dot, \"checking\".",
     async run(t) {
       await t.page.route("/health", "hold");
       await t.page.goto(t.url + "/", { settleStatus: false });
@@ -1100,12 +1289,15 @@ const SHOTS = [
   {
     name: "no-webgl-fallback",
     needs: "backend",
-    about: "A browser without WebGL2: a red notice above the stage, and the picture comes from the server instead.",
+    about: "A browser without WebGL2, an uploaded photo, \"Left\" preset: a grey note above the stage says the processor is shading, and the photo is lit in the browser as usual. No render is asked of the server.",
     async run(t) {
       await withoutWebGL2(t);
+      await t.page.route(t.api, "watch");
       await openScene(t);
       await t.page.clickButton("Left");
-      await t.page.waitFor(`new Promise((r) => setTimeout(() => r(document.querySelector('img[alt="Relit photo"]')?.complete === true), 900))`, "the server render for the new light");
+      await readShading(t);
+      t.note.askedOfBackend = backendRequests(t);
+      if (t.note.shading !== "cpu" || t.note.askedOfBackend.some((r) => r.includes("/render"))) throw new Error(`Expected processor shading with no server render: ${JSON.stringify(t.note)}`);
       await t.snap();
     },
   },
@@ -1292,7 +1484,8 @@ const SHOTS = [
     async run(t) {
       await openSample(t, "Coffee cup");
       await openGeometry(t);
-      t.note.sizeLine = await t.page.js(`[...document.querySelectorAll("aside p.font-mono")].map((p) => p.textContent.trim())[0] ?? null`);
+      t.note.sizeLine = await t.page.js(`(() => { const p = document.querySelector("aside p.font-mono")?.cloneNode(true); p?.querySelector("span")?.remove(); return p?.textContent.trim() ?? null; })()`);
+      await readShading(t);
       await t.snap({ sidebar: "bottom" });
     },
   },
@@ -1443,17 +1636,19 @@ const SHOTS = [
     name: "no-webgl-backend-stopped-sample",
     needs: "backend",
     stopped: true,
-    about: "A browser without WebGL2, a sample, and the backend not running: one red bar with a \"Retry\" link above the plain photo, no sun, and the light controls, Sweep, Enhance, \"Hold to see original\" and \"Export PNG\" all greyed out.",
+    about: "A browser without WebGL2, a sample, and the backend not running, \"Right\" preset: the processor lights the photo all the same. A grey note, no red bar, and every light control works.",
     async run(t) {
       await withoutWebGL2(t);
       await t.page.route(t.api, "fail");
       await t.page.goto(t.url + "/", { settleStatus: false });
       await clickSample(t, "Portrait");
-      await t.page.waitFor(`alerts().some((a) => a.includes("the server render that would replace it failed"))`, "the red bar that says the server render failed");
-      t.note.errors = await t.page.js("alerts()");
-      t.note.retryLink = await t.page.js(`!!byText('[role="alert"] button', "Retry")`);
+      t.note.shading = await t.page.sceneReady();
+      await t.page.clickButton("Right");
+      await readShading(t);
       t.note.sunShown = await t.page.js(`!!lightHandle()`);
-      t.note.greyedOut = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "ENABLED"))`);
+      t.note.buttons = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "DISABLED" : "enabled"))`);
+      t.note.askedOfBackend = backendRequests(t);
+      if (t.note.shading !== "cpu" || t.note.redBars.length || !t.note.sunShown) throw new Error(`Expected processor shading and no red bar: ${JSON.stringify(t.note)}`);
       await t.snap();
     },
   },
@@ -1609,18 +1804,21 @@ const SHOTS = [
   {
     name: "no-webgl-render-lost",
     needs: "backend",
-    about: "A browser without WebGL2, an uploaded photo already shown by the server with the \"Left\" preset, then the backend stops and \"Right\" is clicked: the one red bar now says the render failed and offers \"Retry\".",
+    about: "A browser in which neither the graphics chip nor the processor can shade (no WebGL2 and no 2D canvas), a sample already shown by the server with the \"Left\" preset, then the backend stops and \"Right\" is clicked: the red bar now says the render failed and offers \"Retry\".",
     async run(t) {
       await withoutWebGL2(t);
-      await openScene(t);
+      await withoutCanvas2D(t);
+      await openSample(t, "Portrait");
       await t.page.clickButton("Left");
       await t.page.waitFor(`new Promise((r) => setTimeout(() => r(document.querySelector('img[alt="Relit photo"]')?.complete === true), 900))`, "the server render for the Left preset");
       await t.page.route(t.api, "fail");
       await t.page.clickButton("Right");
       await t.page.waitFor(`alerts().some((a) => a.includes("the server render that would replace it failed"))`, "the red bar that says the server render failed");
       t.note.errors = await t.page.js("alerts()");
+      t.note.retryLink = await t.page.js(`!!byText('[role="alert"] button', "Retry")`);
       t.note.sunShown = await t.page.js(`!!lightHandle()`);
       t.note.buttons = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "enabled"))`);
+      t.note.how = "Both ways of shading in the browser were taken away before the page loaded. In normal use this needs a browser with no WebGL2 in which the processor fallback also breaks.";
       await t.snap();
     },
   },
@@ -1697,7 +1895,7 @@ const SHOTS = [
     name: "demo-phone-landing",
     needs: "demo",
     viewport: PHONE,
-    about: "The static demo build: the first page in a phone-sized window. The pill is shortened to \"runs in your browser\".",
+    about: "The static demo build: the first page in a phone-sized window. The pill is shortened to \"demo\".",
     async run(t) {
       await t.page.goto(t.url + "/");
       await t.page.waitFor(`[...document.querySelectorAll('button[aria-label^="Sample photo"] img')].every((i) => i.complete && i.naturalWidth > 0)`, "the four thumbnails");
@@ -1719,16 +1917,620 @@ const SHOTS = [
   {
     name: "demo-no-webgl",
     needs: "demo",
-    about: "The static demo build in a browser without WebGL2: one red bar above the plain photo, no sun, and everything that would change the light greyed out.",
+    about: "The static demo build in a browser without WebGL2, \"Portrait\" sample, \"Left\" preset: a grey note above the stage, and the processor lights the photo. Nothing is greyed out but Enhance, which the demo never has.",
     async run(t) {
       await withoutWebGL2(t);
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await readShading(t);
+      t.note.sunShown = await t.page.js(`!!lightHandle()`);
+      t.note.buttons = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "enabled"))`);
+      if (t.note.shading !== "cpu" || t.note.redBars.length) throw new Error(`Expected processor shading and no red bar: ${JSON.stringify(t.note)}`);
+      await t.snap();
+    },
+  },
+  // ----- Added for the third round: the "How it works" button and panel, the line that says how the photo
+  // ----- is being shaded, and each fallback a weaker device takes. At the end again, so no older number changes.
+  {
+    name: "how-it-works-button",
+    about: "Close-up of the right end of the top bar: the \"How it works\" button sits just left of the status pill, on every page.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      t.note.bar = await topBar(t);
+      await t.snap(statusClip(t));
+    },
+  },
+  {
+    name: "how-it-works-open",
+    about: "The first page straight after clicking \"How it works\": a card in the middle of the window over the dimmed page.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openHowItWorks(t);
+      t.note.panel = await panelText(t);
+      t.note.card = await t.page.js(`(() => { const r = howPanel().getBoundingClientRect(); return { widthPx: Math.round(r.width), heightPx: Math.round(r.height), shareOfWindowHeight: Number((r.height / window.innerHeight).toFixed(2)) }; })()`);
+      t.note.focusIsOn = await t.page.js(`document.activeElement.textContent.trim()`);
+      await t.snap();
+    },
+  },
+  ...[1, 2, 3, 4].map((step) => ({
+    name: `how-it-works-step-${step}`,
+    about: `The "How it works" panel alone, enlarged, scrolled to step ${step}.`,
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openHowItWorks(t);
+      await scrollPanelTo(t, step);
+      await t.snap(await panelClip(t));
+    },
+  })),
+  {
+    name: "how-it-works-step-5-and-limits",
+    about: "The \"How it works\" panel alone, enlarged, scrolled to the very end: the card about moving the light, step 5 and \"Honest limits\".",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openHowItWorks(t);
+      await scrollPanelTo(t, "end");
+      await t.snap(await panelClip(t));
+    },
+  },
+  {
+    name: "how-it-works-over-photo",
+    about: "\"How it works\" opened while a photo is being lit (\"Portrait\" sample, \"Left\" preset): the page behind is dimmed and cannot be used until the panel is closed.",
+    async run(t) {
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      const open = `howPanel().open === true`;
+      // The three ways out, each tried before the picture is taken.
+      await openHowItWorks(t);
+      // Without this, headless Chrome treats the tab as unfocused and hides it when Escape is pressed, and a hidden tab stops painting.
+      await t.page.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+      await t.page.key("Escape");
+      await t.page.waitFor(`!(${open})`, "the Escape key to close the panel", 5000);
+      if ((await t.page.js(`document.visibilityState`)) !== "visible") throw new Error("Chrome hid the tab when Escape was pressed; the picture would be stale.");
+      t.note.escapeCloses = true;
+      t.note.focusAfterClosing = await t.page.js(`document.activeElement.textContent.trim()`);
+      await openHowItWorks(t);
+      await t.page.click(20, Math.round(t.page.viewport.height / 2));
+      await t.page.waitFor(`!(${open})`, "a click on the dimmed page to close the panel", 5000);
+      t.note.clickOutsideCloses = true;
+      await openHowItWorks(t);
+      await scrollPanelTo(t, 4);
+      const scrolledTo = await t.page.js(`Math.round(howPanel().querySelector(".thin-scroll").scrollTop)`);
+      await t.page.clickButton("Close");
+      await t.page.waitFor(`!(${open})`, "the Close button to close the panel", 5000);
+      t.note.closeButtonCloses = true;
+      await openHowItWorks(t);
+      t.note.reopensWhereItWasLeft = (await t.page.js(`Math.round(howPanel().querySelector(".thin-scroll").scrollTop)`)) === scrolledTo && scrolledTo > 0;
+      await t.page.js(`(howPanel().querySelector(".thin-scroll").scrollTo({ top: 0, behavior: "instant" }), true)`);
+      await panelPictures(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "tablet-768x1024-how-it-works",
+    viewport: { width: 768, height: 1024, scale: 1, mobile: true },
+    about: "A tablet-sized window (768 x 1024), \"How it works\" open: from 640 px wide the panel is a card with the page showing round it.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openHowItWorks(t);
+      t.note.card = await t.page.js(`(() => { const r = howPanel().getBoundingClientRect(); return { widthPx: Math.round(r.width), heightPx: Math.round(r.height) }; })()`);
+      await t.snap();
+    },
+  },
+  {
+    name: "phone-top-bar",
+    viewport: PHONE,
+    about: "The top bar of a phone-sized window (390 px wide), enlarged: \"Relight\", the \"How it works\" button and a one-word status pill.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      t.note.bar = await topBar(t);
+      t.note.tooltip = (await t.page.status()).title;
+      await t.snap(phoneBarClip(t));
+    },
+  },
+  {
+    name: "phone-320-top-bar",
+    viewport: { width: 320, height: 740, scale: 2, mobile: true },
+    about: "The top bar of the narrowest phone (320 px wide), enlarged: the three parts still fit on one line.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      t.note.bar = await topBar(t);
+      if (t.note.bar.barOverflows || t.note.bar.pageScrollsSideways) throw new Error(`The top bar does not fit at 320 px: ${JSON.stringify(t.note.bar)}`);
+      await t.snap(phoneBarClip(t));
+    },
+  },
+  {
+    name: "phone-how-it-works-open",
+    viewport: PHONE,
+    about: "A phone-sized window straight after tapping \"How it works\": the panel fills the whole screen.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openHowItWorks(t);
+      t.note.fillsTheScreen = await t.page.js(`(() => { const r = howPanel().getBoundingClientRect(); return Math.round(r.width) === window.innerWidth && Math.round(r.height) === window.innerHeight; })()`);
+      await t.snap();
+    },
+  },
+  ...[1, 2, 3, 4].map((step) => ({
+    name: `phone-how-it-works-step-${step}`,
+    viewport: PHONE,
+    about: `A phone-sized window, the "How it works" panel scrolled to step ${step}.`,
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openHowItWorks(t);
+      await scrollPanelTo(t, step);
+      t.note.sideNoteShown = await t.page.js(`[...howPanel().querySelectorAll("article div.text-zinc-500")].some((e) => e.offsetParent !== null)`);
+      await t.snap();
+    },
+  })),
+  {
+    name: "phone-how-it-works-step-5-and-limits",
+    viewport: PHONE,
+    about: "A phone-sized window, the \"How it works\" panel scrolled to the very end: step 5 and \"Honest limits\".",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openHowItWorks(t);
+      await scrollPanelTo(t, "end");
+      await t.snap();
+    },
+  },
+  {
+    name: "shading-line-full-quality",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "Close-up of the open GEOMETRY panel on a computer where everything works: the new last line reads \"shading: graphics chip, full quality\". The mouse rests on it.",
+    async run(t) {
+      await openSample(t, "Portrait");
+      await openGeometry(t);
+      await readShading(t);
+      const c = await t.page.centre(`shadingLine()`, "the shading line");
+      await t.page.mouse("mouseMoved", c.x, c.y);
+      await t.snap({ asIs: true, sidebar: "bottom", ...(await geometryClip(t)) });
+    },
+  },
+  {
+    name: "no-float-filtering",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "A graphics chip that cannot smooth floating-point textures, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: nothing changes. Still \"graphics chip, full quality\" and no note.",
+    async run(t) {
+      await withoutExtensions(t, FLOAT_FILTERING);
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await openGeometry(t);
+      await readShading(t);
+      t.note.taken = FLOAT_FILTERING;
+      if (t.note.shadingLine !== "shading: graphics chip, full quality" || t.note.greyNote) throw new Error(`Expected full quality and no note: ${JSON.stringify(t.note)}`);
+      await t.snap();
+    },
+  },
+  {
+    name: "no-float-colour-buffers",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "A graphics chip that cannot draw into floating-point buffers, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: the picture looks the same, there is no note, and the last line of GEOMETRY reads \"graphics chip, compatibility mode\".",
+    async run(t) {
+      await withoutExtensions(t, FLOAT_COLOUR_BUFFERS);
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await openGeometry(t);
+      await readShading(t);
+      t.note.taken = FLOAT_COLOUR_BUFFERS;
+      if (t.note.shadingLine !== "shading: graphics chip, compatibility mode" || t.note.greyNote) throw new Error(`Expected compatibility mode and no note: ${JSON.stringify(t.note)}`);
+      await t.snap();
+    },
+  },
+  {
+    name: "shading-line-compatibility-mode",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "Close-up of the open GEOMETRY panel on a graphics chip that cannot draw into floating-point buffers: \"shading: graphics chip, compatibility mode\".",
+    async run(t) {
+      await withoutExtensions(t, FLOAT_COLOUR_BUFFERS);
+      await openSample(t, "Portrait");
+      await openGeometry(t);
+      await readShading(t);
+      await t.snap({ sidebar: "bottom", ...(await geometryClip(t)) });
+    },
+  },
+  {
+    name: "no-webgl-all-panels",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "A browser without WebGL2 in a taller window (1440 x 1300), \"Coffee cup\" sample, \"Right\" preset, GEOMETRY open: the grey note, the lit photo and the whole sidebar at once.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Coffee cup");
+      await t.page.clickButton("Right");
+      await openGeometry(t);
+      await readShading(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "processor-note",
+    about: "Close-up of the grey note above the stage when the processor is shading (a browser without WebGL2).",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Portrait");
+      await readShading(t);
+      t.note.noteHas = await t.page.js(`(() => { const e = [...document.querySelectorAll('p[role="status"]')].find((p) => p.textContent.trim() === shadingNote()); const c = getComputedStyle(e); return { closeButton: !!e.querySelector("button"), retry: e.textContent.includes("Retry"), textColour: c.color, borderColour: c.borderColor, heightPx: Math.round(e.getBoundingClientRect().height) }; })()`);
+      await t.snap(await t.page.clipOf(`[...document.querySelectorAll('p[role="status"]')].find((p) => p.textContent.trim() === shadingNote())`, "the grey note", { pad: 16, scale: 2 }));
+    },
+  },
+  {
+    name: "shading-line-processor-in-background",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "Close-up of the open GEOMETRY panel in a browser without WebGL2: \"shading: processor, in the background\".",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Portrait");
+      await openGeometry(t);
+      await readShading(t);
+      if (t.note.shadingLine !== "shading: processor, in the background") throw new Error(`Expected the background processor path: ${JSON.stringify(t.note)}`);
+      await t.snap({ sidebar: "bottom", ...(await geometryClip(t)) });
+    },
+  },
+  {
+    name: "no-webgl-no-workers",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "A browser without WebGL2 that also blocks background threads (Workers), \"Portrait\" sample, \"Left\" preset, GEOMETRY open: the same grey note, and the last line of GEOMETRY reads \"shading: processor\".",
+    async run(t) {
+      await withoutWebGL2(t);
+      await withoutWorkers(t);
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await openGeometry(t);
+      await readShading(t);
+      t.note.timings = await t.page.js(`({ fullPictureMs: Number(document.querySelector("canvas").dataset.fullMs), previewMs: Number(document.querySelector("canvas").dataset.previewMs) })`);
+      if (t.note.shadingLine !== "shading: processor") throw new Error(`Expected the page's own thread: ${JSON.stringify(t.note)}`);
+      await t.snap();
+    },
+  },
+  {
+    name: "shading-line-processor",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "Close-up of the open GEOMETRY panel in a browser without WebGL2 and without Workers: \"shading: processor\".",
+    async run(t) {
+      await withoutWebGL2(t);
+      await withoutWorkers(t);
+      await openSample(t, "Portrait");
+      await openGeometry(t);
+      await readShading(t);
+      await t.snap({ sidebar: "bottom", ...(await geometryClip(t)) });
+    },
+  },
+  {
+    name: "processor-preview-while-dragging",
+    about: "A browser without WebGL2, \"Portrait\" sample, photographed while the sun is being dragged across the photo: the picture is the quick, softer preview.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Portrait");
+      const from = await t.page.centre("lightHandle()", "the light handle");
+      const box = await t.page.js("rectOf(photoBox())");
+      const to = { x: box.x + 0.9 * box.w, y: box.y + 0.3 * box.h };
+      await t.page.mouse("mouseMoved", from.x, from.y);
+      await t.page.mouse("mousePressed", from.x, from.y, 1);
+      // The mouse keeps moving while the picture is taken: the full picture arrives a fifth of a second after it stops.
+      let i = 0;
+      const steps = 240;
+      let stop = false;
+      const moving = (async () => {
+        for (; i < steps && !stop; i++) {
+          await t.page.mouse("mouseMoved", from.x + ((to.x - from.x) * i) / steps, from.y + ((to.y - from.y) * i) / steps, 1);
+          await sleep(12);
+        }
+      })();
+      await t.page.waitFor(`document.querySelector("canvas").dataset.quality === "preview" && Number(lightHandle().getAttribute("aria-label").match(/x (-?\\d+\\.\\d+)/)[1]) > 0.5`, "the light to be half way across", 10_000);
+      await t.snap({ asIs: true, quick: true });
+      t.note.pictureAfterTheShot = await t.page.js(`document.querySelector("canvas").dataset.quality`);
+      stop = true;
+      await moving;
+      await t.page.mouse("mouseReleased", from.x + ((to.x - from.x) * i) / steps, from.y + ((to.y - from.y) * i) / steps, 0);
+      t.note.light = { ...t.note.light, moving: true };
+      t.note.previewSize = await t.page.js(`(() => { const c = document.querySelector("canvas"); return { canvasPx: c.width + " x " + c.height, previewMs: Number(c.dataset.previewMs) }; })()`);
+      if (t.note.picture !== "quick preview (the light was moving)" || t.note.pictureAfterTheShot !== "preview") throw new Error(`The picture was not the preview: ${JSON.stringify(t.note)}`);
+    },
+  },
+  {
+    name: "processor-sharp-after-drag",
+    about: "The same drag, a moment after the mouse was let go at the right of the photo: the picture has sharpened to full quality.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Portrait");
+      await t.page.dragLight(0.9, 0.3);
+      await t.page.sharp();
+      t.note.timings = await t.page.js(`({ fullPictureMs: Number(document.querySelector("canvas").dataset.fullMs), previewMs: Number(document.querySelector("canvas").dataset.previewMs) })`);
+      await t.snap();
+    },
+  },
+  {
+    name: "processor-sweep-during",
+    about: "A browser without WebGL2, about two and a half seconds into a Sweep: the picture stays the quick, softer preview until the sweep ends.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Sweep");
+      await t.page.waitFor(`!!byText("button", "Stop sweep") && (() => { const m = lightHandle()?.getAttribute("aria-label").match(/x (-?\\d+\\.\\d+), y (-?\\d+\\.\\d+)/); return !!m && Number(m[1]) > 0.9 && Number(m[2]) < 0.5; })()`, "the light to reach the right edge during the sweep", 8000);
+      await t.snap({ quick: true });
+      t.note.light = { ...t.note.light, moving: true };
+      if (t.note.picture !== "quick preview (the light was moving)") throw new Error(`The picture was not the preview: ${JSON.stringify(t.note)}`);
+      if (!(await t.page.js(`!!byText("button", "Stop sweep")`))) throw new Error("The sweep had ended before the picture was taken.");
+      await t.page.waitFor(`!!byText("button", "Sweep")`, "the sweep to finish", 10_000);
+      await t.page.sharp();
+      t.note.pictureAfterTheSweep = await t.page.js(`document.querySelector("canvas").dataset.quality`);
+    },
+  },
+  {
+    name: "processor-enhance-done",
+    needs: "backend",
+    about: "A browser without WebGL2, Enhance finished on the \"Portrait\" sample (\"Left\" preset): the Enhanced tab, with the grey note still above the stage.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await t.page.clickButton("Enhance");
+      await t.page.waitFor(enhancedReady, "the Enhanced tab with both pictures", 120_000);
+      await readShading(t);
+      await t.snap({ sidebar: "bottom" });
+    },
+  },
+  {
+    name: "phone-processor-note",
+    viewport: PHONE,
+    about: "A phone-sized window without WebGL2, \"Coffee cup\" sample: the grey note takes four lines and pushes the photo down by its height.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Coffee cup");
+      await readShading(t);
+      t.note.noteLines = await t.page.js(`(() => { const e = [...document.querySelectorAll('p[role="status"]')].find((p) => p.textContent.trim() === shadingNote()); return Math.round((e.getBoundingClientRect().height - 16) / parseFloat(getComputedStyle(e).lineHeight)); })()`);
+      await t.snap();
+    },
+  },
+  {
+    name: "phone-processor-full-page",
+    viewport: PHONE,
+    about: "The same phone-sized page without WebGL2, photographed from top to bottom with GEOMETRY opened.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Coffee cup");
+      await openGeometry(t);
+      await readShading(t);
+      await t.page.js(`(window.scrollTo(0, 0), true)`);
+      await t.snap({ fullPage: true });
+    },
+  },
+  {
+    name: "shader-compile-failed",
+    about: "A graphics chip whose driver rejects the shader, \"Portrait\" sample, \"Left\" preset: the processor shades, and the grey note gives that reason in its brackets.",
+    async run(t) {
+      await withBrokenShaders(t);
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await readShading(t);
+      if (!t.note.greyNote?.includes("the shader did not compile on this graphics chip")) throw new Error(`Expected the compile reason: ${JSON.stringify(t.note)}`);
+      await t.snap();
+    },
+  },
+  {
+    name: "graphics-chip-stopped-waiting",
+    about: "\"Portrait\" sample, \"Left\" preset, in the two and a half seconds after the graphics chip stops responding: the page is waiting for it to come back.",
+    async run(t) {
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await t.page.painted();
+      await loseGraphicsChip(t);
+      await sleep(600); // inside the 2.5 s the page gives the chip to come back (CONTEXT_RESTORE_WAIT_MS)
+      t.note.greyNote = await t.page.js(`shadingNote()`);
+      t.note.busyText = await t.page.js(`document.body.innerText.includes("Preparing the shader")`);
+      await t.snap({ quick: true });
+      if (t.note.greyNote) throw new Error("The page had already switched to the processor.");
+    },
+  },
+  {
+    name: "graphics-chip-stopped",
+    about: "The same a few seconds later: the chip did not come back, so the processor has taken over, with the grey note saying why.",
+    async run(t) {
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await t.page.painted();
+      const started = Date.now();
+      await loseGraphicsChip(t);
+      await t.page.waitFor(`(shadingNote() ?? "").includes("the graphics chip stopped responding")`, "the processor to take over", 15_000);
+      t.note.secondsUntilTheNote = Number(((Date.now() - started) / 1000).toFixed(1));
+      t.note.shading = await t.page.sceneReady();
+      await readShading(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "slow-processor-server-renders",
+    needs: "backend",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "A device with no WebGL2 and a slow processor, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: a grey note says the server draws the photo instead, and the last line of GEOMETRY reads \"shading: server renders\".",
+    async run(t) {
+      await slowProcessorScene(t);
+      await t.page.clickButton("Left");
+      await t.page.waitFor(`new Promise((r) => setTimeout(() => r(document.querySelector('img[alt="Relit photo"]')?.complete === true), 900))`, "the server render for the Left preset");
+      await openGeometry(t);
+      await readShading(t);
+      t.note.buttons = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "enabled"))`);
+      if (t.note.shadingLine !== "shading: server renders") throw new Error(`Expected server renders: ${JSON.stringify(t.note)}`);
+      await t.snap();
+    },
+  },
+  {
+    name: "slow-processor-server-lost",
+    needs: "backend",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "The same device after the backend stops and \"Right\" is clicked: no red bar. The page has gone back to shading on the processor, with the usual grey note.",
+    async run(t) {
+      await slowProcessorScene(t);
+      await t.page.clickButton("Left");
+      await t.page.waitFor(`new Promise((r) => setTimeout(() => r(document.querySelector('img[alt="Relit photo"]')?.complete === true), 900))`, "the server render for the Left preset");
+      unroute(t, t.api);
+      await t.page.route(t.api, "fail");
+      await t.page.clickButton("Right");
+      await t.page.waitFor(`(shadingNote() ?? "").startsWith("Shading on this device") && !document.querySelector('img[alt="Relit photo"]')`, "the page to go back to the processor", 60_000);
+      t.note.shading = await t.page.sceneReady();
+      await openGeometry(t);
+      await readShading(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "no-shading-at-all-server-renders",
+    needs: "backend",
+    about: "A browser in which neither the graphics chip nor the processor can shade, \"Portrait\" sample, \"Left\" preset: only now does the red bar appear, and the picture comes from the server.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await withoutCanvas2D(t);
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await t.page.waitFor(`new Promise((r) => setTimeout(() => r(document.querySelector('img[alt="Relit photo"]')?.complete === true), 900))`, "the server render for the Left preset");
+      await readShading(t);
+      t.note.sunShown = await t.page.js(`!!lightHandle()`);
+      t.note.buttons = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "enabled"))`);
+      await t.snap();
+    },
+  },
+  {
+    name: "no-shading-at-all-backend-stopped",
+    needs: "backend",
+    stopped: true,
+    about: "The same browser with the backend not running: the red bar with \"Retry\" above the plain photo, no sun, and the light controls greyed out.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await withoutCanvas2D(t);
+      await t.page.route(t.api, "fail");
+      await t.page.goto(t.url + "/", { settleStatus: false });
+      await clickSample(t, "Portrait");
+      await t.page.waitFor(`alerts().some((a) => a.includes("the server render that would replace it failed"))`, "the red bar that says the server render failed");
+      await readShading(t);
+      t.note.retryLink = await t.page.js(`!!byText('[role="alert"] button', "Retry")`);
+      t.note.sunShown = await t.page.js(`!!lightHandle()`);
+      t.note.buttons = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "enabled"))`);
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-top-bar",
+    needs: "demo",
+    about: "The static demo build: close-up of the right end of the top bar, with the \"How it works\" button beside the pill.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      t.note.bar = await topBar(t);
+      await t.snap(statusClip(t));
+    },
+  },
+  {
+    name: "demo-phone-top-bar",
+    needs: "demo",
+    viewport: PHONE,
+    about: "The static demo build: the top bar of a phone-sized window, enlarged. The pill reads only \"demo\".",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      t.note.bar = await topBar(t);
+      t.note.tooltip = (await t.page.status()).title;
+      await t.snap(phoneBarClip(t));
+    },
+  },
+  {
+    name: "demo-how-it-works-open",
+    needs: "demo",
+    about: "The static demo build straight after clicking \"How it works\": the same panel, with the demo's own grey line under \"Once per photo\".",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openHowItWorks(t);
+      t.note.panel = await panelText(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-how-it-works-step-5-and-limits",
+    needs: "demo",
+    about: "The static demo build: the \"How it works\" panel alone, enlarged, scrolled to the very end. The line under \"Only if you press Enhance\" says it is switched off here.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openHowItWorks(t);
+      await scrollPanelTo(t, "end");
+      await t.snap(await panelClip(t));
+    },
+  },
+  {
+    name: "demo-phone-how-it-works-open",
+    needs: "demo",
+    viewport: PHONE,
+    about: "The static demo build on a phone straight after tapping \"How it works\": the panel fills the whole screen.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openHowItWorks(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-no-float-colour-buffers",
+    needs: "demo",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "The static demo build on a graphics chip that cannot draw into floating-point buffers, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: no note, and the last line of GEOMETRY reads \"graphics chip, compatibility mode\".",
+    async run(t) {
+      await withoutExtensions(t, FLOAT_COLOUR_BUFFERS);
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await openGeometry(t);
+      await readShading(t);
+      if (t.note.shadingLine !== "shading: graphics chip, compatibility mode" || t.note.greyNote) throw new Error(`Expected compatibility mode and no note: ${JSON.stringify(t.note)}`);
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-no-float-filtering",
+    needs: "demo",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "The static demo build on a graphics chip that cannot smooth floating-point textures, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: nothing changes.",
+    async run(t) {
+      await withoutExtensions(t, FLOAT_FILTERING);
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await openGeometry(t);
+      await readShading(t);
+      if (t.note.shadingLine !== "shading: graphics chip, full quality" || t.note.greyNote) throw new Error(`Expected full quality and no note: ${JSON.stringify(t.note)}`);
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-no-webgl-all-panels",
+    needs: "demo",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "The static demo build without WebGL2 in a taller window, \"Coffee cup\" sample, \"Right\" preset, GEOMETRY open: the last line of GEOMETRY reads \"shading: processor, in the background\".",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Coffee cup");
+      await t.page.clickButton("Right");
+      await openGeometry(t);
+      await readShading(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-phone-no-webgl",
+    needs: "demo",
+    viewport: PHONE,
+    about: "The static demo build on a phone without WebGL2, \"Cat\" sample: the four-line grey note above the photo, and the photo lit by the processor.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await openSample(t, "Cat");
+      await readShading(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-no-shading-at-all",
+    needs: "demo",
+    about: "The static demo build in a browser in which neither the graphics chip nor the processor can shade: the red bar above the plain photo, no sun, and everything that would change the light greyed out.",
+    async run(t) {
+      await withoutWebGL2(t);
+      await withoutCanvas2D(t);
       await t.page.goto(t.url + "/");
       await clickSample(t, "Portrait");
       await t.page.waitFor(`alerts().some((a) => a.includes("this demo has no server to shade the photo"))`, "the red bar");
-      t.note.errors = await t.page.js("alerts()");
+      await readShading(t);
       t.note.retryLink = await t.page.js(`!!byText('[role="alert"] button', "Retry")`);
       t.note.sunShown = await t.page.js(`!!lightHandle()`);
-      t.note.greyedOut = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "ENABLED"))`);
+      t.note.buttons = await t.page.js(`["Sweep", "Enhance", "Hold to see original", "Export PNG"].map((x) => x + ": " + (byText("button", x).disabled ? "disabled" : "enabled"))`);
       await t.snap();
     },
   },
@@ -1737,7 +2539,7 @@ const SHOTS = [
 // What a tester should see in each picture, written after looking at it: where the light is,
 // which side is bright, what the readouts say. Goes into manifest.json as "see".
 const SEE = {
-  "landing": "Yellow word \"MOVE THE LIGHT\", the heading \"Relight a photo by dragging the light.\", a dashed box \"Drop a photo here\", then \"Or try a sample photo:\" and four thumbnails: Portrait, Coffee cup, Cat, Rocket. Top right pill: amber dot, \"backend: online, mock providers\".",
+  "landing": "Top bar: \"Relight  Banana Hacks 2026\" on the left; on the right the text button \"How it works\" and then the pill: amber dot, \"backend: online, mock providers\". Below: the yellow words \"MOVE THE LIGHT\", the heading \"Relight a photo by dragging the light.\", a dashed box \"Drop a photo here\", then \"Or try a sample photo:\" and four thumbnails: Portrait, Coffee cup, Cat, Rocket.",
   "upload-empty": "The same page at the address /relight. The dashed drop box is a little lighter because the mouse is on it.",
   "scene-loading": "The photo is dimmed with a pill \"Estimating depth and surface normals…\" in the middle. The whole sidebar is faded, the \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" buttons are greyed out, and the GEOMETRY row has no thumbnails yet. There is no sun on the photo.",
   "scene-default-light": "The round white sun is on the flag at the left edge, about a third of the way down. Readouts: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, Cast shadows on. The left side of the face (your left) is bright and the right cheek is in shadow; the right of the picture is darker than the left.",
@@ -1761,8 +2563,8 @@ const SEE = {
   "colour-cool": "Left preset with Colour \"cool 100\" (slider fully left). The sun handle and the colour dot are pale blue and the whole picture has a blue tint.",
   "shadows-on": "Coffee cup, Left preset: readouts x -0.10, y 0.40, Height 0.10, Cast shadows on. The sun is drawn at the left edge of the stage (the true point is a little further left than the stage reaches). The cup throws a dark, soft-edged shadow to the right across the saucer and the spoon.",
   "shadows-off": "The same light with the Cast shadows switch off (grey, knob on the left). The dark shadow to the right of the cup is gone; the saucer and spoon on the right are lit.",
-  "detailed-normals-on": "The sidebar is scrolled to the bottom. GEOMETRY is open (\"Hide\", arrow up): a grey Depth picture (\"white = near\"), a rainbow-coloured Normals picture (\"surface direction\") with fine detail, the Detailed normals switch on (yellow), and \"512 x 512 px, relief 0.3\".",
-  "detailed-normals-off": "The same with the Detailed normals switch off (grey). The Normals picture is now smooth lilac with no fine detail, and the shading on the photo is flatter with a thin light outline around the head and shoulders.",
+  "detailed-normals-on": "The sidebar is scrolled to the bottom. GEOMETRY is open (\"Hide\", arrow up): a grey Depth picture (\"white = near\"), a rainbow-coloured Normals picture (\"surface direction\") with fine detail, the Detailed normals switch on (yellow), then two small grey lines: \"512 x 512 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
+  "detailed-normals-off": "The same with the Detailed normals switch off (grey). The Normals picture is now smooth lilac with no fine detail, and the shading on the photo is flatter with a thin light outline around the head and shoulders. The two grey lines under the switch are unchanged.",
   "hold-original": "While the \"Hold to see original\" button is held: the untouched photo, evenly lit, with a small tag \"Original\" in its top left corner. The held button has yellow letters and a yellow outline. The sun and the readouts (x -0.10, y 0.40) do not change.",
   "enhance-before": "Left preset. The ENHANCE box holds the typed words \"golden hour\". The yellow button reads \"Enhance\".",
   "enhance-running": "Top left of the stage: two tabs, \"Live preview\" (selected) and \"Enhancing…\" (greyed out). Bottom left: a pill \"Enhancing in the background, keep dragging\". The yellow button is dimmed and reads \"Enhancing…\" with a spinner. The sun can still be dragged.",
@@ -1781,17 +2583,17 @@ const SEE = {
   "backend-offline": "The first page. Top right pill: red dot, \"backend: offline\". The four sample thumbnails are still there and still work.",
   "backend-offline-upload": "The photo is grey and dim. A red-bordered card in the middle reads \"This photo could not be analysed\", then \"Cannot reach the backend at http://localhost:8123. Is it running?\", with a yellow \"Retry\" button and a \"Choose another photo\" button. The sidebar is faded, \"Hold to see original\" and \"Export PNG\" are greyed out, and the pill reads \"offline\".",
   "enhance-error": "The live preview is still there (Left preset). Above the photo, across the top of the stage column, a red bar reads \"Cannot reach the backend at http://localhost:8123. Is it running?\" with an x to close it. Nothing red is in the ENHANCE panel, the yellow button reads \"Enhance\" again, and the pill reads \"offline\".",
-  "phone-scene": "One column. The photo with the sun on the flag, then \"Hold to see original\" and \"Export PNG\", then the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The helper lines under Height and Ambient show. The pill has no word \"backend:\", only \"online, mock providers\".",
+  "phone-scene": "One column. Top bar: \"Relight\", \"How it works\" and a short pill that reads only \"online\" (amber dot; no word \"backend:\" and no \"mock providers\" at this width). Then the photo with the sun on the flag, \"Hold to see original\" and \"Export PNG\", and the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The helper lines under Height and Ambient show.",
   "phone-full-page": "The whole phone page: stage, LIGHT (the five buttons Left, Right, Top, Low and warm, Reset light on one line), ENHANCE with its helper line and a two-row box that reads \"Optional: a mood, such as golden hour\", and the one-row GEOMETRY panel at the bottom.",
-  "phone-landing": "The first page in one column: heading on two lines, the dashed drop box, \"Or try a sample photo:\" and the four thumbnails in one row.",
-  "status-checking": "Grey dot, \"backend: checking\". It shows for a moment after the page opens.",
-  "status-online-mock-providers": "Amber dot, \"backend: online, mock providers\".",
-  "status-online": "Green dot, \"backend: online\".",
-  "status-offline": "Red dot, \"backend: offline\".",
-  "no-webgl-fallback": "A red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser). Showing server renders instead, which lag slightly behind the light.\" The photo is lit by the server for the Left preset (x -0.10, y 0.40) and looks softer and more even than the live shading. \"Hold to see original\" and \"Export PNG\" are available.",
-  "not-found-page": "A black page with \"404\" and \"This page could not be found.\" in the middle, under the normal top bar.",
-  "mock-landing": "The first page with a yellow dot and \"backend: mock\" in the pill. Everything else is the same as 01-landing.",
-  "mock-status": "Yellow dot, \"backend: mock\".",
+  "phone-landing": "The first page in one column: the top bar with \"Relight\", \"How it works\" and the pill \"online\"; the heading on two lines, the dashed drop box, \"Or try a sample photo:\" and the four thumbnails in one row.",
+  "status-checking": "The right end of the top bar, enlarged: \"How it works\", then the pill with a grey dot and \"backend: checking\". It shows for a moment after the page opens.",
+  "status-online-mock-providers": "The right end of the top bar, enlarged: \"How it works\", then the pill with an amber dot and \"backend: online, mock providers\".",
+  "status-online": "The right end of the top bar, enlarged: \"How it works\", then the pill with a green dot and \"backend: online\".",
+  "status-offline": "The right end of the top bar, enlarged: \"How it works\", then the pill with a red dot and \"backend: offline\".",
+  "no-webgl-fallback": "No red bar. Above the stage a grey note with a thin grey outline, no x and no \"Retry\": \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The photo is lit for the Left preset (x -0.10, y 0.40) exactly as in 06-preset-left, a little smaller because the note takes two lines. The sun, the sliders, \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. The page asked the backend for nothing but the photo's analysis.",
+  "not-found-page": "A black page with \"404\" and \"This page could not be found.\" in the middle, under the normal top bar, which has \"How it works\" and the status pill here too.",
+  "mock-landing": "The first page with a yellow dot and \"backend: mock\" in the pill, and \"How it works\" to its left. Everything else is the same as 01-landing.",
+  "mock-status": "The right end of the top bar, enlarged: \"How it works\", then the pill with a yellow dot and \"backend: mock\".",
   "mock-scene": "An uploaded portrait in frontend mock mode with the Left preset (x -0.10, y 0.40). The shading is one big round dome over the middle of the picture, bright on its left and dark on its right. It does not follow the face.",
   "mock-enhance-running": "Frontend mock mode: tabs \"Live preview\" and \"Enhancing…\", the pill \"Enhancing in the background, keep dragging\" at the bottom left, and the dimmed \"Enhancing…\" button.",
   "mock-enhance-done": "Frontend mock mode: the Enhanced tab with the divider in the middle. The right half (\"Enhanced\") has more contrast and a soft glow; the left half is the live preview.",
@@ -1806,20 +2608,20 @@ const SEE = {
   "sweep-during": "The button reads \"Stop sweep\" in yellow letters with a yellow outline. The sun has moved to the right edge of the photo, about a quarter of the way down (x about 0.93, y about 0.24, changing as you watch). The right side of the face is bright and the left half is dark. The sliders have not moved.",
   "sweep-after": "The button reads \"Sweep\" again and the sun is back on the flag: x 0.12, y 0.35. The picture is the same as before the sweep.",
   "geometry-collapsed": "The sidebar only, enlarged: LIGHT (with \"Sweep\"), ENHANCE, and at the bottom the single row \"GEOMETRY\" with two tiny thumbnails (grey depth, purple normals), the word \"Show\" and a down arrow.",
-  "geometry-expanded": "The sidebar is scrolled to the bottom. GEOMETRY is open: \"Hide\" and an up arrow, the sentence \"What the models recovered from the photo. The shader lights these.\", a grey Depth picture of the cup, a purple and green Normals picture, the Detailed normals switch on, and \"600 x 400 px, relief 0.3\".",
+  "geometry-expanded": "The sidebar is scrolled to the bottom. GEOMETRY is open: \"Hide\" and an up arrow, the sentence \"What the models recovered from the photo. The shader lights these.\", a grey Depth picture of the cup, a purple and green Normals picture, the Detailed normals switch on, then \"600 x 400 px, relief 0.3\" and under it \"shading: graphics chip, full quality\".",
   "sample-enhance-done": "The Enhanced tab on the coffee cup sample: divider in the middle, \"Live preview\" on the left, \"Enhanced\" on the right, \"Download enhanced\" below. Sidebar: x 1.10, y 0.40, the button reads \"Enhance again\" and \"Sweep\" is greyed out. Pill: \"online, mock providers\".",
   "sample-enhance-backend-stopped": "The coffee cup is still lit live with the Right preset (x 1.10, y 0.40). Above the photo a red bar reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. Pill: \"offline\".",
   "sample-rocket-left": "Rocket sample, Left preset: the sun is at the left edge of the stage, x -0.10, y 0.40, Height 0.35, Intensity 1.30. To the right of the rocket and of each thin mast there is a faint, blurred darker patch on the sky. There are no hard-edged black stripes.",
-  "sample-detailed-normals-backend-stopped": "A red bar above the stage: \"Cannot reach the backend at http://localhost:8123. Is it running? The sample keeps the geometry it came with.\" The portrait is still lit (x 0.12, y 0.35), GEOMETRY is open and the Detailed normals switch is back on (yellow). Pill: \"offline\".",
+  "sample-detailed-normals-backend-stopped": "A red bar above the stage: \"Cannot reach the backend at http://localhost:8123. Is it running? The sample keeps the geometry it came with.\" The portrait is still lit (x 0.12, y 0.35), GEOMETRY is open, the Detailed normals switch is back on (yellow) and the last line still reads \"shading: graphics chip, full quality\". Pill: \"offline\".",
   "laptop-1280x720-scene": "Everything fits with no scrolling: the photo, and in the sidebar LIGHT, ENHANCE and the GEOMETRY row. There are no grey helper lines under Height, Ambient or Cast shadows and no line under ENHANCE. The Enhance box is one row and shows \"Optional: a mood, such as golden hour\" in full. The five preset buttons fill one line. Readouts x 0.12, y 0.35.",
   "laptop-1280x720-landing": "The first page fits with no scrolling: heading, a lower drop box, \"Or try a sample photo:\" and the four thumbnails, with a little space left under them.",
   "laptop-1366x768-scene": "The uploaded coffee cup with the Right preset (x 1.10, y 0.40; the sun is drawn at the right edge of the stage). The sidebar fits without scrolling, in the same compact form as at 1280 x 720: no helper lines, a one-row Enhance box.",
   "window-1440x820-scene": "The sidebar fits without scrolling. There are no grey helper lines under Height, Ambient or Cast shadows, but the line \"A photoreal pass over this lighting. Takes a few seconds.\" under ENHANCE is there and the Enhance box has two rows.",
-  "phone-sample": "The coffee cup sample on a phone: a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35 and the helper lines showing.",
-  "phone-sample-full-page": "The whole phone page with GEOMETRY opened at the bottom: Depth and Normals pictures side by side, the Detailed normals switch on, \"600 x 400 px, relief 0.3\".",
+  "phone-sample": "The coffee cup sample on a phone: the top bar with \"How it works\" and the pill \"online\", a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35 and the helper lines showing.",
+  "phone-sample-full-page": "The whole phone page with GEOMETRY opened at the bottom: Depth and Normals pictures side by side, the Detailed normals switch on, \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
   "phone-load-failed-wide": "On a phone: the stage is short and holds only the grey, dimmed photo with \"New photo\" above it and the two greyed-out buttons below it. Under the stage, in its own red-bordered card: \"This photo could not be analysed\", \"Cannot reach the backend at http://localhost:8123. Is it running?\", a yellow \"Retry\" and \"Choose another photo\". The LIGHT panel under the card is faded. Pill: \"offline\".",
   "tablet-768x1024-sample": "One column, wider: the cat sample in a stage across the top, then the LIGHT panel at full width with long sliders. Readouts x 0.12, y 0.35. The helper lines show.",
-  "no-webgl-backend-stopped-sample": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with the word \"Retry\" at its right end and no x. The photo is the plain original with no sun on it. The LIGHT panel is faded, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. Pill: \"offline\".",
+  "no-webgl-backend-stopped-sample": "Pill: red dot, \"backend: offline\". No red bar: only the grey note \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit with the Right preset (sun right of the photo, x 1.10, y 0.40, right side of the face bright). The LIGHT panel is at full brightness and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. The page asked the backend for nothing.",
   "mock-sample": "Frontend mock mode (pill \"mock\") with the Cat sample and the Left preset (x -0.10, y 0.40). The shading follows the cat's face, as in 35-cat-side-light: left side bright, right side in shade.",
   "sweep-stop-button": "Enlarged: the word LIGHT, \"Drag the sun on the photo.\", and at the right the button \"Stop sweep\" in yellow letters with a thin yellow outline. Under them the readout row (x, y, colour dot); its numbers change while the sweep runs.",
   "hold-original-button": "Enlarged: \"Hold to see original\" with yellow letters, a yellow eye icon and a yellow outline while it is held down. \"Export PNG\" to its right keeps white letters and a grey outline.",
@@ -1827,19 +2629,68 @@ const SEE = {
   "phone-360-preset-row": "The LIGHT panel on a 360 px wide phone. Left, Right, Top, Low and warm and Reset light are on one line and reach from edge to edge of the panel, with less space inside each button than on a wider screen. Nothing is cut off.",
   "phone-320-preset-row": "The LIGHT panel on a 320 px wide phone. Left, Right, Top and Low and warm fill one line; \"Reset light\" is alone on a second line, centred, as wide as the panel. The helper lines under Height and Ambient wrap onto two lines.",
   "laptop-1280x720-preset-top": "Readouts x 0.50, y -0.15, Height 0.35, Intensity 1.30: the same numbers as in 08-preset-top. The sun is at the very top edge of the stage, just under the top bar, above the middle of the photo. The hair and forehead are bright.",
-  "new-photo-starts-clean": "The coffee cup, freshly loaded. Sun on the table at the left, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, colour dot white, Cast shadows on (yellow). The Enhance box is empty and shows its grey \"Optional: a mood, such as golden hour\". GEOMETRY is open and Detailed normals is on (yellow).",
+  "new-photo-starts-clean": "The coffee cup, freshly loaded. Sun on the table at the left, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, colour dot white, Cast shadows on (yellow). The Enhance box is empty and shows its grey \"Optional: a mood, such as golden hour\". GEOMETRY is open, Detailed normals is on (yellow), and the last two lines read \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
   "laptop-1280x720-enhance-error": "Above the photo a two-line red bar: \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. The photo is a little smaller to make room. The sidebar is exactly as without the error (LIGHT, ENHANCE, the GEOMETRY row) and does not scroll. Pill: \"offline\".",
   "phone-enhance-error": "The page is scrolled down to the ENHANCE panel. Under the yellow \"Enhance\" button a red box reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. There is no red bar above the photo on a phone. Pill: \"offline\".",
-  "no-webgl-render-lost": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with \"Retry\" at its right end. The photo still shows the last picture the server sent (the Left preset), with no sun. The readout already says x 1.10, y 0.40. The LIGHT panel is faded and \"Sweep\" and \"Enhance\" are greyed out; \"Hold to see original\" and \"Export PNG\" still work on that last picture.",
-  "mock-sample-detailed-normals": "The light has not been moved: the sun is at the left of the photo, where it starts. The sidebar is scrolled to the bottom, GEOMETRY open: grey Depth and purple Normals pictures of the cat, then \"Detailed normals\" with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\" Its switch is on but dull (dark yellow) and does nothing when clicked. \"451 x 300 px, relief 0.3\". Pill: \"mock\".",
-  "demo-landing": "Pill: green dot, \"demo: runs in your browser\". The text under the heading starts \"Pick a sample photo. Its depth and surface normals were estimated ahead of time\". There is no dashed drop box: in its place a card \"This is the in-browser demo.\" with a yellow link. Then \"Pick a sample photo:\" and the four thumbnails.",
+  "no-webgl-render-lost": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with \"Retry\" at its right end and no x. The photo still shows the last picture the server sent (the Left preset), with no sun. The readout already says x 1.10, y 0.40. The LIGHT panel is faded and \"Sweep\" and \"Enhance\" are greyed out; \"Hold to see original\" and \"Export PNG\" still work on that last picture. Pill: \"offline\". You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
+  "mock-sample-detailed-normals": "The light has not been moved: the sun is at the left of the photo, where it starts. The sidebar is scrolled to the bottom, GEOMETRY open: grey Depth and purple Normals pictures of the cat, then \"Detailed normals\" with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\" Its switch is on but dull (dark yellow) and does nothing when clicked. Then \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\". Pill: \"mock\".",
+  "demo-landing": "Top right: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". The text under the heading starts \"Pick a sample photo. Its depth and surface normals were estimated ahead of time\". There is no dashed drop box: in its place a card \"This is the in-browser demo.\" with a yellow link. Then \"Pick a sample photo:\" and the four thumbnails.",
   "demo-upload-note": "The card, enlarged: \"This is the in-browser demo.\" in white, then in grey \"Uploading your own photo needs the Relight server, which this demo runs without. To try your own photos, run it on your computer:\" and the yellow link \"github.com/aarooshpravici/BanannaHacksSubmission\".",
-  "demo-status": "Green dot, \"demo: runs in your browser\". It never reads \"checking\" or \"offline\".",
+  "demo-status": "The right end of the top bar, enlarged: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". It never reads \"checking\" or \"offline\".",
   "demo-sample": "The portrait lit live, sun on the flag, x 0.12, y 0.35. The top-right stage button reads \"Other samples\" and has no icon. ENHANCE holds only the line \"Enhance needs the Relight server, which this demo runs without.\" and a dull, greyed-out \"Enhance\" button; there is no text box. LIGHT, \"Sweep\", \"Hold to see original\" and \"Export PNG\" are all available.",
-  "demo-all-panels": "Coffee cup, Right preset (x 1.10, y 0.40; the sun is at the right edge of the stage). The whole sidebar shows: LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open with Depth and Normals pictures, a dull Detailed normals switch with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\", and \"600 x 400 px, relief 0.3\".",
-  "demo-phone-landing": "One column. The pill reads only \"runs in your browser\" with a green dot. Heading, the \"Pick a sample photo. Its depth...\" text, the demo card (the yellow link breaks onto a second line), \"Pick a sample photo:\" and the four thumbnails in one row.",
-  "demo-phone-sample-full-page": "The whole phone page with the cat: a short stage with \"Other samples\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch and \"451 x 300 px, relief 0.3\".",
-  "demo-no-webgl": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.\" It has no \"Retry\" and no x. The photo is the plain original with no sun. The LIGHT panel is faded and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. \"Other samples\" still works.",
+  "demo-all-panels": "Coffee cup, Right preset (x 1.10, y 0.40; the sun is at the right edge of the stage). The whole sidebar shows: LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open with Depth and Normals pictures, a dull Detailed normals switch with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\", then \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
+  "demo-phone-landing": "One column. Top bar: \"Relight\", \"How it works\" and a pill that reads only \"demo\" with a green dot. Heading, the \"Pick a sample photo. Its depth...\" text, the demo card (the yellow link breaks onto a second line), \"Pick a sample photo:\" and the four thumbnails in one row.",
+  "demo-phone-sample-full-page": "The whole phone page with the cat: the top bar with the pill \"demo\", a short stage with \"Other samples\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch, \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
+  "demo-no-webgl": "No red bar. Above the stage the grey note \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" It has no x and no \"Retry\". The portrait is lit for the Left preset (sun left of the photo, x -0.10, y 0.40, left of the face bright). The LIGHT panel is at full brightness and \"Sweep\", \"Hold to see original\" and \"Export PNG\" are available. \"Enhance\" is greyed out as it always is in the demo.",
+  "how-it-works-button": "Enlarged: the words \"How it works\" in light grey with no box round them (a faint box appears when the mouse is on them), and right of them the status pill, here \"backend: online, mock providers\" with an amber dot.",
+  "how-it-works-open": "The first page is dimmed almost to black. In the middle of the window a dark card about half the window wide and most of its height, with a thin border and rounded corners. Top row: \"How Relight works\" and a \"Close\" button with an x. Then three lines that start \"Two pretrained vision models measure the photo once.\", three small chips (\"Pretrained model\" in blue, \"Our code\" in yellow, \"Hosted model, optional\" in grey), the heading \"ONCE PER PHOTO\" with a grey line that starts \"Done by the Relight server when you upload a photo.\", and step 1 \"Estimate depth\" with the blue chip \"Pretrained model: Depth Anything V2\" and two pictures: \"The photo\" and \"Depth map: lighter is nearer\". The top of step 2 shows at the bottom edge; the card scrolls.",
+  "how-it-works-step-1": "The card alone. \"ONCE PER PHOTO\" and its grey line, then step 1: a round \"1\", \"Estimate depth\", the blue chip \"Pretrained model: Depth Anything V2\", two lines that start \"A pretrained model estimates how near every pixel is to the camera.\", and two square pictures side by side: the astronaut photo (\"The photo\") and the same in greys with the helmet in front nearly white (\"Depth map: lighter is nearer\"). Step 2 starts below.",
+  "how-it-works-step-2": "Step 2: \"Estimate surface direction\", the blue chip \"Pretrained model: Marigold\", two lines that start \"A second pretrained model estimates which way every surface faces.\", then one picture in purple, pink and green (\"Normal map: colour is the way a surface faces\") and, to its right, the grey note \"A depth map is too smooth to shade a face: tilts worked out from it left faces almost flat. That is why there is a second model.\" Under it the heading \"EVERY FRAME, IN YOUR BROWSER\" with the grey line \"A WebGL2 shader we wrote runs steps 3 and 4 again each time the light moves. No server and no AI model is involved in the dragging.\", and the start of step 3.",
+  "how-it-works-step-3": "\"EVERY FRAME, IN YOUR BROWSER\" and its grey line, then step 3: \"Shade each pixel from the light\" with the yellow chip \"Our code\", three lines that start \"Diffuse shading: a pixel is bright when its surface faces the light.\", one grey picture of the astronaut like a plaster cast lit from the left (\"Our shading alone, light at the left\") and, to its right, the grey note \"A surface also goes dark gradually as it turns away from the light, not at a hard line, because estimated normals are too noisy for a hard cut.\" Step 4 starts below.",
+  "how-it-works-step-4": "Step 4: \"Trace cast shadows in three layers\" with the yellow chip \"Our code\", three lines that start \"Each pixel walks toward the light across the height field\", and two pictures: a white square with a soft grey shadow shape (\"Our shadow map for the same light\") and the astronaut lit from the left (\"Steps 3 and 4 multiplied into the photo\"). Under it a card with no number: the astronaut lit from the right and the note \"Moving the light only reruns steps 3 and 4. The stills in this panel were rendered with our Python version of the same maths; the shader is a port of it and the two are kept in agreement.\"",
+  "how-it-works-step-5-and-limits": "The end of the card. The un-numbered card (picture \"The same maps, light moved to the right\" and its note), the heading \"ONLY IF YOU PRESS ENHANCE\" with the grey line \"Off until you ask for it. The app is complete without it.\", step 5 \"A photoreal pass\" with the grey chip \"Hosted model, optional\" and no picture (its text names \"the Gemini image model, or IC-Light v2 on fal.ai\"), then \"HONEST LIMITS\" with two bullets: the first starts \"One photo gives a height field, not real 3D\", the second \"Shading is diffuse only (no shine)\" and ends \"The live shader has been tested in one browser on one computer.\"",
+  "how-it-works-over-photo": "The same card over a photo that is being lit: the portrait, its sun, the sidebar and the top bar are all still there behind it but dimmed, and none of them reacts until the card is closed. Before this picture was taken the card was closed three ways (the Escape key, a click on the dimmed page, the \"Close\" button); after the Escape key the keyboard focus was back on \"How it works\". Opened again after being scrolled, the card comes back where it was left, not at the top; it was scrolled back up for this picture.",
+  "tablet-768x1024-how-it-works": "At 768 px wide the card is 672 px wide, so only a narrow dimmed strip of the page shows on each side, and more above and below. The content is the same as on a desktop, including the pictures two to a row.",
+  "phone-top-bar": "Enlarged, the whole width of a 390 px phone: the yellow square logo and \"Relight\" at the left (no \"Banana Hacks 2026\" at this width), then at the right \"How it works\" and a short pill: amber dot, \"online\". The full text (\"Backend at ... \") is still in the pill's tooltip, which a phone does not show.",
+  "phone-320-top-bar": "Enlarged, the whole width of a 320 px phone: logo and \"Relight\", \"How it works\", and the pill \"online\". They fit on one line with a small gap between each; nothing is cut off and the page does not scroll sideways.",
+  "phone-how-it-works-open": "The panel covers the whole screen: no dimmed page round it, no rounded corners, and the top bar is hidden behind it. \"How Relight works\" and \"Close\" at the top, the opening text on four lines, the three chips on one line, \"ONCE PER PHOTO\" and step 1, where the blue chip \"Pretrained model: Depth Anything V2\" sits on its own line under \"Estimate depth\". The two pictures are side by side, each about 150 px.",
+  "phone-how-it-works-step-1": "\"ONCE PER PHOTO\", its grey line on three lines, and step 1 with its two small pictures side by side; the caption \"Depth map: lighter is nearer\" wraps onto two lines. Step 2 starts below.",
+  "phone-how-it-works-step-2": "Step 2 with one picture, the normal map, as wide as the card. The grey note that sits beside it on a wider screen (\"A depth map is too smooth...\") is not shown on a phone. Then \"EVERY FRAME, IN YOUR BROWSER\" and the start of step 3.",
+  "phone-how-it-works-step-3": "\"EVERY FRAME, IN YOUR BROWSER\", then step 3 with one picture, the grey shading, as wide as the card. The grey note beside it on a wider screen (\"A surface also goes dark gradually...\") is not shown on a phone. Step 4 starts below, with its yellow chip on a line of its own.",
+  "phone-how-it-works-step-4": "Step 4 with its two small pictures side by side (captions on two lines each), then the un-numbered card: a small picture \"The same maps, light moved to the right\" with the note about Python beside it in a narrow column of seven lines. \"ONLY IF YOU PRESS ENHANCE\" and the top of step 5 show at the bottom.",
+  "phone-how-it-works-step-5-and-limits": "The end of the panel on a phone: the un-numbered card, \"ONLY IF YOU PRESS ENHANCE\" with \"Off until you ask for it. The app is complete without it.\", step 5 \"A photoreal pass\" with the grey chip \"Hosted model, optional\", and \"HONEST LIMITS\" with its two bullets.",
+  "shading-line-full-quality": "The open GEOMETRY panel, enlarged. Under the Detailed normals switch are two small grey lines in typewriter letters: \"512 x 512 px, relief 0.3\" and, new, \"shading: graphics chip, full quality\". The mouse is on the new line; the tooltip it brings up is not in the picture. Its words are: \"The photo is shaded live by the graphics chip (<the chip's name>), at full quality.\"",
+  "no-float-filtering": "Exactly what a computer with every ability shows: no note above the stage, the portrait lit for the Left preset (x -0.10, y 0.40), and at the bottom of the open GEOMETRY panel \"shading: graphics chip, full quality\".",
+  "no-float-colour-buffers": "No note above the stage and nothing red. The portrait is lit for the Left preset (x -0.10, y 0.40) and looks the same as in 122-no-float-filtering. The only difference is the last grey line of the open GEOMETRY panel: \"shading: graphics chip, compatibility mode\".",
+  "shading-line-compatibility-mode": "The open GEOMETRY panel, enlarged: the last line reads \"shading: graphics chip, compatibility mode\". Its tooltip (not in the picture) reads: \"The photo is shaded live by the graphics chip (<the chip's name>). Shadows are kept in 8-bit buffers because this graphics chip cannot draw into floating-point buffers; the picture is the same to within a level or two of brightness.\"",
+  "no-webgl-all-panels": "The grey two-line note above the stage, the coffee cup lit with the Right preset (x 1.10, y 0.40, sun at the right edge of the stage, the cup's shadow falling to the left), and the whole sidebar: LIGHT, ENHANCE with a bright yellow \"Enhance\" button, and GEOMETRY open, ending \"600 x 400 px, relief 0.3\" and \"shading: processor, in the background\".",
+  "processor-note": "Enlarged: a rounded box with a thin grey outline and light grey words on two lines: \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" It is not red, has no warning triangle, no x and no \"Retry\".",
+  "shading-line-processor-in-background": "The open GEOMETRY panel, enlarged: the last line reads \"shading: processor, in the background\". Its tooltip (not in the picture) reads: \"The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.\"",
+  "no-webgl-no-workers": "The same grey note as in any browser without WebGL2, the portrait lit for the Left preset (x -0.10, y 0.40), and at the bottom of the open GEOMETRY panel the shorter line \"shading: processor\". Nothing else tells the two processor paths apart; on this one the sun and sliders can stutter a little while a picture is being shaded.",
+  "shading-line-processor": "The open GEOMETRY panel, enlarged: the last line reads only \"shading: processor\". Its tooltip (not in the picture) reads: \"The photo is shaded by the processor because the graphics chip could not be used: WebGL2 is not available in this browser.\"",
+  "processor-preview-while-dragging": "The mouse button is down and the sun is half way across the photo, on the neck ring (x about 0.52, y about 0.32, changing). The picture is the quick preview: look at the stitching on the mission patch and the edge of the helmet, which are slightly blurred next to 131-processor-sharp-after-drag, and at the shadows, which have softer edges. The grey note is above the stage.",
+  "processor-sharp-after-drag": "The sun has been let go at the right of the photo (x 0.90, y 0.30). A fraction of a second later the picture is the full-quality one: fine detail is crisp again and the right side of the face is bright with the left in shadow.",
+  "processor-sweep-during": "The button reads \"Stop sweep\" in yellow and the sun is at the right edge of the photo (x about 0.93, y about 0.24, changing). The picture is the softer quick preview and stays so for the whole sweep; it sharpens only when the sweep ends and the light is back where it started.",
+  "processor-enhance-done": "The \"Enhanced\" tab is selected, with the divider in the middle (\"Live preview\" left, \"Enhanced\" right) and \"Download enhanced\" below. The grey processor note is still above the stage. Sidebar: x -0.10, y 0.40, \"Enhance again\" with the download button, \"Sweep\" greyed out.",
+  "phone-processor-note": "On a phone the grey note is four lines tall and sits between the top bar and the stage, so the photo starts lower than in 79-phone-sample by the note's height. The coffee cup is lit as usual (sun at the left, x 0.12, y 0.35) and the LIGHT panel follows under the stage.",
+  "phone-processor-full-page": "The whole phone page in a browser without WebGL2: the four-line grey note, the stage, LIGHT, ENHANCE, and GEOMETRY open, ending \"600 x 400 px, relief 0.3\" and \"shading: processor, in the background\".",
+  "shader-compile-failed": "The same grey note with a different reason in its brackets: \"Shading on this device's processor, not its graphics chip (the shader did not compile on this graphics chip). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit for the Left preset (x -0.10, y 0.40) and everything works.",
+  "graphics-chip-stopped-waiting": "For about two and a half seconds after the graphics chip stops, the photo is the plain original with even lighting, although the readout still says x -0.10, y 0.40 and the sun is in its place. There is no note and no message yet, and the controls look normal but the picture does not answer them. (Compare 06-preset-left, where the right cheek is in shadow.)",
+  "graphics-chip-stopped": "The grey note has appeared above the stage: \"Shading on this device's processor, not its graphics chip (the graphics chip stopped responding). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit again for the Left preset (x -0.10, y 0.40), a little smaller because of the note, and everything works.",
+  "slow-processor-server-renders": "A grey one-line note above the stage: \"This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.\" The number is whatever the device measured. The portrait is the server's picture for the Left preset (x -0.10, y 0.40); the sun, the sliders, \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. GEOMETRY is open and its last line reads \"shading: server renders\".",
+  "slow-processor-server-lost": "Pill: red dot, \"backend: offline\". No red bar. The note above the stage has changed back to \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit by the processor for the Right preset (x 1.10, y 0.40, right side of the face bright), and the last line of GEOMETRY reads \"shading: processor\".",
+  "no-shading-at-all-server-renders": "A red bar with a warning triangle above the stage, with no x and no \"Retry\": \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.). Showing server renders instead, which lag slightly behind the light.\" The portrait is the server's picture for the Left preset (x -0.10, y 0.40) with the sun on it, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are available. You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
+  "no-shading-at-all-backend-stopped": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with the word \"Retry\" at its right end and no x. The photo is the plain original with no sun on it. The LIGHT panel is faded, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. Pill: \"offline\".",
+  "demo-top-bar": "The right end of the demo's top bar, enlarged: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\".",
+  "demo-phone-top-bar": "Enlarged, the whole width of a 390 px phone: logo and \"Relight\" at the left, \"How it works\" and a short pill at the right: green dot, \"demo\".",
+  "demo-how-it-works-open": "The same card as in 105-how-it-works-open over the dimmed demo page. One line differs: under \"ONCE PER PHOTO\" it reads \"For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.\"",
+  "demo-how-it-works-step-5-and-limits": "The end of the card in the demo. Under \"ONLY IF YOU PRESS ENHANCE\" the grey line reads \"Switched off in this demo, because it needs the server.\" Step 5 and \"HONEST LIMITS\" are word for word as in 110-how-it-works-step-5-and-limits.",
+  "demo-phone-how-it-works-open": "The panel covers the whole phone screen. Under \"ONCE PER PHOTO\" the demo's own line: \"For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.\" Step 1 and the top of step 2 follow.",
+  "demo-no-float-colour-buffers": "The demo with no note above the stage: the portrait lit for the Left preset (x -0.10, y 0.40), the top-right stage button \"Other samples\", and GEOMETRY open, ending \"512 x 512 px, relief 0.3\" and \"shading: graphics chip, compatibility mode\".",
+  "demo-no-float-filtering": "The demo exactly as on a computer with every ability: no note, the portrait lit for the Left preset, and the last line of GEOMETRY \"shading: graphics chip, full quality\".",
+  "demo-no-webgl-all-panels": "The demo with the grey two-line processor note above the stage, the coffee cup lit with the Right preset (x 1.10, y 0.40), the short ENHANCE panel with its greyed-out button, and GEOMETRY open, ending \"600 x 400 px, relief 0.3\" and \"shading: processor, in the background\".",
+  "demo-phone-no-webgl": "The demo on a phone: the pill \"demo\", then the grey note on four lines, then the stage with \"Other samples\" and the cat lit from the left (sun by the ear, x 0.12, y 0.35), \"Hold to see original\" and \"Export PNG\" available, and the LIGHT panel under it at full brightness.",
+  "demo-no-shading-at-all": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.\" It has no \"Retry\" and no x. The photo is the plain original with no sun. The LIGHT panel is faded and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. \"Other samples\" still works. You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
 };
 
 const numbered = SHOTS.map((shot, i) => ({ ...shot, needs: shot.needs ?? "any", file: `${String(i + 1).padStart(2, "0")}-${shot.name}.jpg` }));
@@ -1951,16 +2802,24 @@ async function main() {
             // With GEOMETRY open the sidebar is taller than the window: show its top, or its bottom when the shot is about Enhance or Geometry.
             await page.js(`(document.querySelector("aside")?.scrollTo({ top: ${options.sidebar === "bottom" ? 100000 : 0}, behavior: "instant" }), true)`);
             note.light = await page.light();
-            const mainText = await page.js(`document.body.innerText`);
-            // The demo has no server to fall back on: without WebGL2 nothing shades the photo there.
-            if (mainText.includes("Live shading is unavailable")) note.shading = mode === "demo" ? "none" : "server";
+            // On the processor the finished picture follows the light by a moment. "quick" shots want the moving one.
+            if (!options.quick) await page.sharp();
+            const shown = await page.js(`({ path: document.querySelector("canvas")?.dataset.shading ?? null, quality: document.querySelector("canvas")?.dataset.quality ?? null, serverPicture: !!document.querySelector('img[alt="Relit photo"]'), unavailable: document.body.innerText.includes("Live shading is unavailable") })`);
+            if (shown.serverPicture) note.shading = "server";
+            // Neither the graphics chip nor the processor can shade and no server picture is up (the demo has no server at all).
+            else if (shown.unavailable) note.shading = "none";
+            else if (shown.path) {
+              note.shading = shown.path.startsWith("cpu") ? "cpu" : "webgl";
+              note.shadingPath = shown.path;
+              if (shown.quality) note.picture = shown.quality === "full" ? "full quality" : "quick preview (the light was moving)";
+            }
             await page.capture(file, options);
           },
         };
         await shot.run(t);
         const light = note.light ? `light x ${note.light.x} y ${note.light.y}` : "";
-        const fallback = note.shading === "server" ? "  ** SERVER-RENDER FALLBACK, not the live canvas **" : "";
-        console.log(`ok    ${shot.file}  ${((Date.now() - started) / 1000).toFixed(1)} s  ${note.shading ?? ""} ${light}${fallback}`);
+        const fallback = note.shading === "server" ? "  ** a render from the server, not the live canvas **" : "";
+        console.log(`ok    ${shot.file}  ${((Date.now() - started) / 1000).toFixed(1)} s  ${note.shadingPath ?? note.shading ?? ""} ${light}${fallback}`);
         if (args.backendStopped) note.backend = "really stopped while this picture was taken";
         results.push({ file: shot.file, name: shot.name, status: "ok", about: shot.about, ...(SEE[shot.name] ? { see: SEE[shot.name] } : {}), viewport: `${(shot.viewport ?? DESKTOP).width}x${(shot.viewport ?? DESKTOP).height}`, appMode: mode, ...note, console: page.console.slice() });
       } catch (error) {

@@ -4,7 +4,7 @@
     "name": "landing",
     "status": "ok",
     "about": "The first page at \"/\" before any photo is chosen.",
-    "see": "Yellow word \"MOVE THE LIGHT\", the heading \"Relight a photo by dragging the light.\", a dashed box \"Drop a photo here\", then \"Or try a sample photo:\" and four thumbnails: Portrait, Coffee cup, Cat, Rocket. Top right pill: amber dot, \"backend: online, mock providers\".",
+    "see": "Top bar: \"Relight  Banana Hacks 2026\" on the left; on the right the text button \"How it works\" and then the pill: amber dot, \"backend: online, mock providers\". Below: the yellow words \"MOVE THE LIGHT\", the heading \"Relight a photo by dragging the light.\", a dashed box \"Drop a photo here\", then \"Or try a sample photo:\" and four thumbnails: Portrait, Coffee cup, Cat, Rocket.",
     "viewport": "1440x900",
     "appMode": "backend",
     "light": null,
@@ -51,7 +51,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 3.5,
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -62,6 +62,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "05-scene-all-panels.jpg": {
@@ -73,7 +74,7 @@
     "viewport": "1440x1300",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 2.4,
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -84,6 +85,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "06-preset-left.jpg": {
@@ -95,7 +97,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 1.9,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -106,6 +108,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "07-preset-right.jpg": {
@@ -117,7 +120,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.7,
+    "sceneSeconds": 2,
     "light": {
       "x": 1.1,
       "y": 0.4,
@@ -128,6 +131,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "08-preset-top.jpg": {
@@ -139,7 +143,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 2.1,
     "light": {
       "x": 0.5,
       "y": -0.15,
@@ -150,6 +154,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "09-preset-low-and-warm.jpg": {
@@ -161,7 +166,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 2.1,
     "light": {
       "x": 0,
       "y": 0.9,
@@ -172,6 +177,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "10-drag-far-left.jpg": {
@@ -183,7 +189,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 1.9,
     "light": {
       "x": 0.03,
       "y": 0.5,
@@ -194,6 +200,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "11-drag-far-right.jpg": {
@@ -216,6 +223,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "12-drag-top.jpg": {
@@ -227,7 +235,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 1.8,
     "light": {
       "x": 0.5,
       "y": 0.03,
@@ -238,6 +246,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "13-drag-outside-photo.jpg": {
@@ -249,7 +258,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 1.7,
     "light": {
       "x": 1.21,
       "y": 0.3,
@@ -260,6 +269,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "14-drag-centre.jpg": {
@@ -271,7 +281,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 1.8,
     "light": {
       "x": 0.5,
       "y": 0.45,
@@ -282,6 +292,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "15-height-min.jpg": {
@@ -304,6 +315,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "16-height-max.jpg": {
@@ -315,7 +327,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.7,
+    "sceneSeconds": 1.8,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -326,6 +338,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "17-intensity-low.jpg": {
@@ -337,7 +350,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 1.8,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -348,6 +361,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "18-intensity-high.jpg": {
@@ -359,7 +373,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 3.4,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -370,6 +384,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "19-ambient-low.jpg": {
@@ -381,7 +396,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 2.3,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -392,6 +407,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "20-ambient-high.jpg": {
@@ -414,6 +430,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "21-colour-warm.jpg": {
@@ -425,7 +442,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 1.7,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -436,6 +453,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "22-colour-cool.jpg": {
@@ -447,7 +465,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 1.7,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -458,6 +476,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "23-shadows-on.jpg": {
@@ -469,7 +488,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.2,
+    "sceneSeconds": 1.3,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -480,6 +499,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "24-shadows-off.jpg": {
@@ -502,6 +522,7 @@
       "shadows": false,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "25-detailed-normals-on.jpg": {
@@ -509,7 +530,30 @@
     "name": "detailed-normals-on",
     "status": "ok",
     "about": "Portrait photo, \"Left\" preset, GEOMETRY panel opened, Detailed normals ON (the default). Look at the Normals thumbnail.",
-    "see": "The sidebar is scrolled to the bottom. GEOMETRY is open (\"Hide\", arrow up): a grey Depth picture (\"white = near\"), a rainbow-coloured Normals picture (\"surface direction\") with fine detail, the Detailed normals switch on (yellow), and \"512 x 512 px, relief 0.3\".",
+    "see": "The sidebar is scrolled to the bottom. GEOMETRY is open (\"Hide\", arrow up): a grey Depth picture (\"white = near\"), a rainbow-coloured Normals picture (\"surface direction\") with fine detail, the Detailed normals switch on (yellow), then two small grey lines: \"512 x 512 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.8,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "26-detailed-normals-off.jpg": {
+    "file": "26-detailed-normals-off.jpg",
+    "name": "detailed-normals-off",
+    "status": "ok",
+    "about": "The same, after turning the Detailed normals switch OFF and waiting for the photo to be analysed again.",
+    "see": "The same with the Detailed normals switch off (grey). The Normals picture is now smooth lilac with no fine detail, and the shading on the photo is flatter with a thin light outline around the head and shoulders. The two grey lines under the switch are unchanged.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
@@ -522,30 +566,9 @@
       "ambient": "0.06",
       "colour": "neutral",
       "shadows": true,
-      "detailedNormals": true
-    },
-    "console": []
-  },
-  "26-detailed-normals-off.jpg": {
-    "file": "26-detailed-normals-off.jpg",
-    "name": "detailed-normals-off",
-    "status": "ok",
-    "about": "The same, after turning the Detailed normals switch OFF and waiting for the photo to be analysed again.",
-    "see": "The same with the Detailed normals switch off (grey). The Normals picture is now smooth lilac with no fine detail, and the shading on the photo is flatter with a thin light outline around the head and shoulders.",
-    "viewport": "1440x900",
-    "appMode": "backend",
-    "shading": "webgl",
-    "sceneSeconds": 2.1,
-    "light": {
-      "x": -0.1,
-      "y": 0.4,
-      "height": "0.35",
-      "intensity": "1.30",
-      "ambient": "0.06",
-      "colour": "neutral",
-      "shadows": true,
       "detailedNormals": false
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "27-hold-original.jpg": {
@@ -557,7 +580,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 1.8,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -568,6 +591,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "28-enhance-before.jpg": {
@@ -579,95 +603,6 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
-    "light": {
-      "x": -0.1,
-      "y": 0.4,
-      "height": "0.35",
-      "intensity": "1.30",
-      "ambient": "0.06",
-      "colour": "neutral",
-      "shadows": true,
-      "detailedNormals": true
-    },
-    "console": []
-  },
-  "29-enhance-running.jpg": {
-    "file": "29-enhance-running.jpg",
-    "name": "enhance-running",
-    "status": "ok",
-    "about": "Straight after clicking Enhance, while the job is still running.",
-    "see": "Top left of the stage: two tabs, \"Live preview\" (selected) and \"Enhancing…\" (greyed out). Bottom left: a pill \"Enhancing in the background, keep dragging\". The yellow button is dimmed and reads \"Enhancing…\" with a spinner. The sun can still be dragged.",
-    "viewport": "1440x900",
-    "appMode": "backend",
-    "shading": "webgl",
-    "sceneSeconds": 1.7,
-    "light": {
-      "x": -0.1,
-      "y": 0.4,
-      "height": "0.35",
-      "intensity": "1.30",
-      "ambient": "0.06",
-      "colour": "neutral",
-      "shadows": true,
-      "detailedNormals": true
-    },
-    "console": []
-  },
-  "30-enhance-done.jpg": {
-    "file": "30-enhance-done.jpg",
-    "name": "enhance-done",
-    "status": "ok",
-    "about": "Enhance finished: the stage has switched to the Enhanced tab with the before/after divider in the middle.",
-    "see": "The \"Enhanced\" tab is selected. A vertical white line with a round handle splits the photo in the middle: left half tagged \"Live preview\", right half tagged \"Enhanced\". Below: \"Download enhanced\". In the sidebar the button reads \"Enhance again\" with a small download button beside it, and \"Sweep\" is greyed out. There is no sun.",
-    "viewport": "1440x900",
-    "appMode": "backend",
-    "shading": "webgl",
-    "sceneSeconds": 2,
-    "light": {
-      "x": -0.1,
-      "y": 0.4,
-      "height": "0.35",
-      "intensity": "1.30",
-      "ambient": "0.06",
-      "colour": "neutral",
-      "shadows": true,
-      "detailedNormals": true
-    },
-    "console": []
-  },
-  "31-enhance-divider-dragged.jpg": {
-    "file": "31-enhance-divider-dragged.jpg",
-    "name": "enhance-divider-dragged",
-    "status": "ok",
-    "about": "The Enhanced tab with the round divider handle dragged to the left, a quarter of the way across.",
-    "see": "The same, with the divider line and its round handle a quarter of the way from the left edge, so three quarters of the photo shows the Enhanced side.",
-    "viewport": "1440x900",
-    "appMode": "backend",
-    "shading": "webgl",
-    "sceneSeconds": 2.1,
-    "divider": 25,
-    "light": {
-      "x": -0.1,
-      "y": 0.4,
-      "height": "0.35",
-      "intensity": "1.30",
-      "ambient": "0.06",
-      "colour": "neutral",
-      "shadows": true,
-      "detailedNormals": true
-    },
-    "console": []
-  },
-  "32-enhance-back-to-live.jpg": {
-    "file": "32-enhance-back-to-live.jpg",
-    "name": "enhance-back-to-live",
-    "status": "ok",
-    "about": "After an Enhance, back on the \"Live preview\" tab: the button now reads \"Enhance again\".",
-    "see": "The \"Live preview\" tab is selected again and the sun is back (x -0.10, y 0.40). The \"Enhanced\" tab can be clicked. The sidebar button still reads \"Enhance again\" with the download button beside it.",
-    "viewport": "1440x900",
-    "appMode": "backend",
-    "shading": "webgl",
     "sceneSeconds": 1.9,
     "light": {
       "x": -0.1,
@@ -679,6 +614,100 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "29-enhance-running.jpg": {
+    "file": "29-enhance-running.jpg",
+    "name": "enhance-running",
+    "status": "ok",
+    "about": "Straight after clicking Enhance, while the job is still running.",
+    "see": "Top left of the stage: two tabs, \"Live preview\" (selected) and \"Enhancing…\" (greyed out). Bottom left: a pill \"Enhancing in the background, keep dragging\". The yellow button is dimmed and reads \"Enhancing…\" with a spinner. The sun can still be dragged.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.8,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "30-enhance-done.jpg": {
+    "file": "30-enhance-done.jpg",
+    "name": "enhance-done",
+    "status": "ok",
+    "about": "Enhance finished: the stage has switched to the Enhanced tab with the before/after divider in the middle.",
+    "see": "The \"Enhanced\" tab is selected. A vertical white line with a round handle splits the photo in the middle: left half tagged \"Live preview\", right half tagged \"Enhanced\". Below: \"Download enhanced\". In the sidebar the button reads \"Enhance again\" with a small download button beside it, and \"Sweep\" is greyed out. There is no sun.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.8,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "31-enhance-divider-dragged.jpg": {
+    "file": "31-enhance-divider-dragged.jpg",
+    "name": "enhance-divider-dragged",
+    "status": "ok",
+    "about": "The Enhanced tab with the round divider handle dragged to the left, a quarter of the way across.",
+    "see": "The same, with the divider line and its round handle a quarter of the way from the left edge, so three quarters of the photo shows the Enhanced side.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.8,
+    "divider": 25,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "32-enhance-back-to-live.jpg": {
+    "file": "32-enhance-back-to-live.jpg",
+    "name": "enhance-back-to-live",
+    "status": "ok",
+    "about": "After an Enhance, back on the \"Live preview\" tab: the button now reads \"Enhance again\".",
+    "see": "The \"Live preview\" tab is selected again and the sun is back (x -0.10, y 0.40). The \"Enhanced\" tab can be clicked. The sidebar button still reads \"Enhance again\" with the download button beside it.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2.1,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "33-sample-portrait.jpg": {
@@ -690,7 +719,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "light": {
       "x": 0.12,
@@ -702,6 +731,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "34-object-side-light.jpg": {
@@ -713,7 +743,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.3,
+    "sceneSeconds": 1.4,
     "light": {
       "x": 1.1,
       "y": 0.4,
@@ -724,6 +754,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "35-cat-side-light.jpg": {
@@ -746,6 +777,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "36-dark-photo.jpg": {
@@ -757,7 +789,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.3,
+    "sceneSeconds": 1.2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -768,6 +800,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "37-tall-photo.jpg": {
@@ -779,7 +812,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.2,
+    "sceneSeconds": 4.6,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -790,6 +823,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "38-wide-photo.jpg": {
@@ -801,7 +835,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.7,
+    "sceneSeconds": 1.9,
     "light": {
       "x": 0.5,
       "y": -0.15,
@@ -812,6 +846,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "39-tiny-photo.jpg": {
@@ -823,7 +858,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.2,
+    "sceneSeconds": 1.4,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -834,6 +869,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "40-huge-photo.jpg": {
@@ -845,7 +881,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.4,
+    "sceneSeconds": 3.2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -856,6 +892,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "41-error-not-an-image.jpg": {
@@ -880,7 +917,6 @@
     "appMode": "backend",
     "light": null,
     "console": [
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health"
     ]
   },
@@ -918,7 +954,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 3.9,
     "error": "Cannot reach the backend at http://localhost:8123. Is it running?",
     "barIsAbovePhoto": true,
     "light": {
@@ -931,6 +967,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/enhance"
     ]
@@ -940,7 +977,30 @@
     "name": "phone-scene",
     "status": "ok",
     "about": "A phone-sized window (390 x 844) with the portrait photo loaded: what you see before scrolling.",
-    "see": "One column. The photo with the sun on the flag, then \"Hold to see original\" and \"Export PNG\", then the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The helper lines under Height and Ambient show. The pill has no word \"backend:\", only \"online, mock providers\".",
+    "see": "One column. Top bar: \"Relight\", \"How it works\" and a short pill that reads only \"online\" (amber dot; no word \"backend:\" and no \"mock providers\" at this width). Then the photo with the sun on the flag, \"Hold to see original\" and \"Export PNG\", and the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The helper lines under Height and Ambient show.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2.4,
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "46-phone-full-page.jpg": {
+    "file": "46-phone-full-page.jpg",
+    "name": "phone-full-page",
+    "status": "ok",
+    "about": "The same phone-sized page photographed from top to bottom, as if you scrolled all the way down.",
+    "see": "The whole phone page: stage, LIGHT (the five buttons Left, Right, Top, Low and warm, Reset light on one line), ENHANCE with its helper line and a two-row box that reads \"Optional: a mood, such as golden hour\", and the one-row GEOMETRY panel at the bottom.",
     "viewport": "390x844",
     "appMode": "backend",
     "shading": "webgl",
@@ -955,28 +1015,7 @@
       "shadows": true,
       "detailedNormals": true
     },
-    "console": []
-  },
-  "46-phone-full-page.jpg": {
-    "file": "46-phone-full-page.jpg",
-    "name": "phone-full-page",
-    "status": "ok",
-    "about": "The same phone-sized page photographed from top to bottom, as if you scrolled all the way down.",
-    "see": "The whole phone page: stage, LIGHT (the five buttons Left, Right, Top, Low and warm, Reset light on one line), ENHANCE with its helper line and a two-row box that reads \"Optional: a mood, such as golden hour\", and the one-row GEOMETRY panel at the bottom.",
-    "viewport": "390x844",
-    "appMode": "backend",
-    "shading": "webgl",
-    "sceneSeconds": 1.9,
-    "light": {
-      "x": 0.12,
-      "y": 0.35,
-      "height": "0.12",
-      "intensity": "1.80",
-      "ambient": "0.06",
-      "colour": "neutral",
-      "shadows": true,
-      "detailedNormals": true
-    },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "47-phone-landing.jpg": {
@@ -984,7 +1023,7 @@
     "name": "phone-landing",
     "status": "ok",
     "about": "The empty upload page in a phone-sized window.",
-    "see": "The first page in one column: heading on two lines, the dashed drop box, \"Or try a sample photo:\" and the four thumbnails in one row.",
+    "see": "The first page in one column: the top bar with \"Relight\", \"How it works\" and the pill \"online\"; the heading on two lines, the dashed drop box, \"Or try a sample photo:\" and the four thumbnails in one row.",
     "viewport": "390x844",
     "appMode": "backend",
     "light": null,
@@ -994,8 +1033,8 @@
     "file": "48-status-checking.jpg",
     "name": "status-checking",
     "status": "ok",
-    "about": "Close-up of the status pill in the top right during the first moment after the page opens: grey dot, \"checking\".",
-    "see": "Grey dot, \"backend: checking\". It shows for a moment after the page opens.",
+    "about": "Close-up of the right end of the top bar during the first moment after the page opens: grey dot, \"checking\".",
+    "see": "The right end of the top bar, enlarged: \"How it works\", then the pill with a grey dot and \"backend: checking\". It shows for a moment after the page opens.",
     "viewport": "1440x900",
     "appMode": "backend",
     "light": null,
@@ -1006,7 +1045,7 @@
     "name": "status-online-mock-providers",
     "status": "ok",
     "about": "Close-up of the status pill when the backend runs with MOCK_MODE=1: amber dot, \"online, mock providers\".",
-    "see": "Amber dot, \"backend: online, mock providers\".",
+    "see": "The right end of the top bar, enlarged: \"How it works\", then the pill with an amber dot and \"backend: online, mock providers\".",
     "viewport": "1440x900",
     "appMode": "backend",
     "tooltip": "Backend at http://localhost:8123 (fal: ready, gemini: ready)",
@@ -1018,7 +1057,7 @@
     "name": "status-online",
     "status": "ok",
     "about": "Close-up of the status pill when the backend runs for real (MOCK_MODE=0): green dot, \"online\".",
-    "see": "Green dot, \"backend: online\".",
+    "see": "The right end of the top bar, enlarged: \"How it works\", then the pill with a green dot and \"backend: online\".",
     "viewport": "1440x900",
     "appMode": "backend",
     "tooltip": "Backend at http://localhost:8123 (fal: ready, gemini: ready)",
@@ -1031,12 +1070,13 @@
     "name": "status-offline",
     "status": "ok",
     "about": "Close-up of the status pill when the backend is not running: red dot, \"offline\".",
-    "see": "Red dot, \"backend: offline\".",
+    "see": "The right end of the top bar, enlarged: \"How it works\", then the pill with a red dot and \"backend: offline\".",
     "viewport": "1440x900",
     "appMode": "backend",
     "tooltip": "Cannot reach the backend at http://localhost:8123",
     "light": null,
     "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health"
     ]
   },
@@ -1044,12 +1084,19 @@
     "file": "52-no-webgl-fallback.jpg",
     "name": "no-webgl-fallback",
     "status": "ok",
-    "about": "A browser without WebGL2: a red notice above the stage, and the picture comes from the server instead.",
-    "see": "A red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser). Showing server renders instead, which lag slightly behind the light.\" The photo is lit by the server for the Left preset (x -0.10, y 0.40) and looks softer and more even than the live shading. \"Hold to see original\" and \"Export PNG\" are available.",
+    "about": "A browser without WebGL2, an uploaded photo, \"Left\" preset: a grey note above the stage says the processor is shading, and the photo is lit in the browser as usual. No render is asked of the server.",
+    "see": "No red bar. Above the stage a grey note with a thin grey outline, no x and no \"Retry\": \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The photo is lit for the Left preset (x -0.10, y 0.40) exactly as in 06-preset-left, a little smaller because the note takes two lines. The sun, the sliders, \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. The page asked the backend for nothing but the photo's analysis.",
     "viewport": "1440x900",
     "appMode": "backend",
-    "shading": "server",
-    "sceneSeconds": 2.8,
+    "shading": "cpu",
+    "sceneSeconds": 2.4,
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "askedOfBackend": [
+      "POST /relight/scene"
+    ],
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1060,14 +1107,18 @@
       "shadows": true,
       "detailedNormals": true
     },
-    "console": []
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
   },
   "53-not-found-page.jpg": {
     "file": "53-not-found-page.jpg",
     "name": "not-found-page",
     "status": "ok",
     "about": "An address that no longer exists (\"/autocomplete\"): the plain 404 page.",
-    "see": "A black page with \"404\" and \"This page could not be found.\" in the middle, under the normal top bar.",
+    "see": "A black page with \"404\" and \"This page could not be found.\" in the middle, under the normal top bar, which has \"How it works\" and the status pill here too.",
     "viewport": "1440x900",
     "appMode": "backend",
     "light": null,
@@ -1080,7 +1131,7 @@
     "name": "mock-landing",
     "status": "ok",
     "about": "Frontend mock mode (no backend): the first page, status pill yellow \"mock\".",
-    "see": "The first page with a yellow dot and \"backend: mock\" in the pill. Everything else is the same as 01-landing.",
+    "see": "The first page with a yellow dot and \"backend: mock\" in the pill, and \"How it works\" to its left. Everything else is the same as 01-landing.",
     "viewport": "1440x900",
     "appMode": "mock",
     "light": null,
@@ -1091,7 +1142,7 @@
     "name": "mock-status",
     "status": "ok",
     "about": "Close-up of the status pill in frontend mock mode: yellow dot, \"mock\".",
-    "see": "Yellow dot, \"backend: mock\".",
+    "see": "The right end of the top bar, enlarged: \"How it works\", then the pill with a yellow dot and \"backend: mock\".",
     "viewport": "1440x900",
     "appMode": "mock",
     "tooltip": "Mock mode: responses are generated in the browser, no backend is called. Set NEXT_PUBLIC_MOCK=0 to use the real one.",
@@ -1118,6 +1169,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "57-mock-enhance-running.jpg": {
@@ -1126,6 +1178,29 @@
     "status": "ok",
     "about": "Frontend mock mode, straight after clicking Enhance.",
     "see": "Frontend mock mode: tabs \"Live preview\" and \"Enhancing…\", the pill \"Enhancing in the background, keep dragging\" at the bottom left, and the dimmed \"Enhancing…\" button.",
+    "viewport": "1440x900",
+    "appMode": "mock",
+    "shading": "webgl",
+    "sceneSeconds": 1.4,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "58-mock-enhance-done.jpg": {
+    "file": "58-mock-enhance-done.jpg",
+    "name": "mock-enhance-done",
+    "status": "ok",
+    "about": "Frontend mock mode after Enhance finished: the right half has more contrast and a soft glow.",
+    "see": "Frontend mock mode: the Enhanced tab with the divider in the middle. The right half (\"Enhanced\") has more contrast and a soft glow; the left half is the live preview.",
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
@@ -1140,28 +1215,7 @@
       "shadows": true,
       "detailedNormals": true
     },
-    "console": []
-  },
-  "58-mock-enhance-done.jpg": {
-    "file": "58-mock-enhance-done.jpg",
-    "name": "mock-enhance-done",
-    "status": "ok",
-    "about": "Frontend mock mode after Enhance finished: the right half has more contrast and a soft glow.",
-    "see": "Frontend mock mode: the Enhanced tab with the divider in the middle. The right half (\"Enhanced\") has more contrast and a soft glow; the left half is the live preview.",
-    "viewport": "1440x900",
-    "appMode": "mock",
-    "shading": "webgl",
-    "sceneSeconds": 1.3,
-    "light": {
-      "x": -0.1,
-      "y": 0.4,
-      "height": "0.35",
-      "intensity": "1.30",
-      "ambient": "0.06",
-      "colour": "neutral",
-      "shadows": true,
-      "detailedNormals": true
-    },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "59-sample-thumbnails.jpg": {
@@ -1202,7 +1256,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Coffee cup",
     "light": {
       "x": 0.12,
@@ -1214,6 +1268,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "62-sample-cat.jpg": {
@@ -1237,6 +1292,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "63-sample-rocket.jpg": {
@@ -1260,6 +1316,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "64-sample-backend-stopped.jpg": {
@@ -1281,7 +1338,9 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health"
     ]
   },
@@ -1309,7 +1368,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.3,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "sweepTooltip": "Moves the light once around the subject in about six seconds, then gives it back. Handy for recording a demo.",
     "light": {
@@ -1322,6 +1381,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "67-sweep-during.jpg": {
@@ -1337,7 +1397,7 @@
     "sample": "Portrait",
     "light": {
       "x": 0.91,
-      "y": 0.22,
+      "y": 0.21,
       "height": "0.12",
       "intensity": "1.80",
       "ambient": "0.06",
@@ -1346,6 +1406,7 @@
       "detailedNormals": true,
       "moving": true
     },
+    "shadingPath": "gpu-full",
     "button": "Stop sweep",
     "buttonStyle": {
       "pressed": "true",
@@ -1363,9 +1424,9 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
-    "sweepSeconds": 6.1,
+    "sweepSeconds": 6,
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -1376,6 +1437,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "69-geometry-collapsed.jpg": {
@@ -1399,6 +1461,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "70-geometry-expanded.jpg": {
@@ -1406,13 +1469,17 @@
     "name": "geometry-expanded",
     "status": "ok",
     "about": "The same after clicking the GEOMETRY row: the panel is open (\"Hide\", arrow up) with the Depth and Normals pictures, the Detailed normals switch and the size line.",
-    "see": "The sidebar is scrolled to the bottom. GEOMETRY is open: \"Hide\" and an up arrow, the sentence \"What the models recovered from the photo. The shader lights these.\", a grey Depth picture of the cup, a purple and green Normals picture, the Detailed normals switch on, and \"600 x 400 px, relief 0.3\".",
+    "see": "The sidebar is scrolled to the bottom. GEOMETRY is open: \"Hide\" and an up arrow, the sentence \"What the models recovered from the photo. The shader lights these.\", a grey Depth picture of the cup, a purple and green Normals picture, the Detailed normals switch on, then \"600 x 400 px, relief 0.3\" and under it \"shading: graphics chip, full quality\".",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
     "sceneSeconds": 0.1,
     "sample": "Coffee cup",
     "sizeLine": "600 x 400 px, relief 0.3",
+    "shadingLine": "shading: graphics chip, full quality",
+    "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)), at full quality.",
+    "greyNote": null,
+    "redBars": [],
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -1423,6 +1490,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "71-sample-enhance-done.jpg": {
@@ -1436,7 +1504,7 @@
     "shading": "webgl",
     "sceneSeconds": 0.1,
     "sample": "Coffee cup",
-    "enhanceSeconds": 3,
+    "enhanceSeconds": 2.8,
     "light": {
       "x": 1.1,
       "y": 0.4,
@@ -1447,6 +1515,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "72-sample-enhance-backend-stopped.jpg": {
@@ -1471,7 +1540,9 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
     ]
@@ -1485,7 +1556,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.4,
     "sample": "Rocket",
     "light": {
       "x": -0.1,
@@ -1497,6 +1568,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "74-sample-detailed-normals-backend-stopped.jpg": {
@@ -1504,11 +1576,11 @@
     "name": "sample-detailed-normals-backend-stopped",
     "status": "ok",
     "about": "The Detailed normals switch clicked on a sample while the backend is not running: a red bar above the stage, the sample stays and the switch goes back to on.",
-    "see": "A red bar above the stage: \"Cannot reach the backend at http://localhost:8123. Is it running? The sample keeps the geometry it came with.\" The portrait is still lit (x 0.12, y 0.35), GEOMETRY is open and the Detailed normals switch is back on (yellow). Pill: \"offline\".",
+    "see": "A red bar above the stage: \"Cannot reach the backend at http://localhost:8123. Is it running? The sample keeps the geometry it came with.\" The portrait is still lit (x 0.12, y 0.35), GEOMETRY is open, the Detailed normals switch is back on (yellow) and the last line still reads \"shading: graphics chip, full quality\". Pill: \"offline\".",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "error": "Cannot reach the backend at http://localhost:8123. Is it running? The sample keeps the geometry it came with.",
     "light": {
@@ -1521,6 +1593,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
@@ -1556,6 +1629,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "76-laptop-1280x720-landing.jpg": {
@@ -1579,7 +1653,7 @@
     "viewport": "1366x768",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.4,
+    "sceneSeconds": 2,
     "sidebarScrolls": false,
     "light": {
       "x": 1.1,
@@ -1591,6 +1665,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "78-window-1440x820-scene.jpg": {
@@ -1602,7 +1677,7 @@
     "viewport": "1440x820",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "sidebarScrolls": false,
     "light": {
@@ -1615,6 +1690,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "79-phone-sample.jpg": {
@@ -1622,11 +1698,11 @@
     "name": "phone-sample",
     "status": "ok",
     "about": "A phone-sized window (390 x 844) with the \"Coffee cup\" sample: the stage is only as tall as the photo needs and the LIGHT panel starts right under it.",
-    "see": "The coffee cup sample on a phone: a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35 and the helper lines showing.",
+    "see": "The coffee cup sample on a phone: the top bar with \"How it works\" and the pill \"online\", a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35 and the helper lines showing.",
     "viewport": "390x844",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Coffee cup",
     "light": {
       "x": 0.12,
@@ -1638,6 +1714,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "80-phone-sample-full-page.jpg": {
@@ -1645,7 +1722,7 @@
     "name": "phone-sample-full-page",
     "status": "ok",
     "about": "The same phone-sized page with the \"Coffee cup\" sample, photographed from top to bottom with the GEOMETRY panel opened.",
-    "see": "The whole phone page with GEOMETRY opened at the bottom: Depth and Normals pictures side by side, the Detailed normals switch on, \"600 x 400 px, relief 0.3\".",
+    "see": "The whole phone page with GEOMETRY opened at the bottom: Depth and Normals pictures side by side, the Detailed normals switch on, \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
     "viewport": "390x844",
     "appMode": "backend",
     "shading": "webgl",
@@ -1661,6 +1738,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "81-phone-load-failed-wide.jpg": {
@@ -1698,7 +1776,7 @@
     "viewport": "768x1024",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Cat",
     "light": {
       "x": 0.12,
@@ -1710,42 +1788,45 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "83-no-webgl-backend-stopped-sample.jpg": {
     "file": "83-no-webgl-backend-stopped-sample.jpg",
     "name": "no-webgl-backend-stopped-sample",
     "status": "ok",
-    "about": "A browser without WebGL2, a sample, and the backend not running: one red bar with a \"Retry\" link above the plain photo, no sun, and the light controls, Sweep, Enhance, \"Hold to see original\" and \"Export PNG\" all greyed out.",
-    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with the word \"Retry\" at its right end and no x. The photo is the plain original with no sun on it. The LIGHT panel is faded, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. Pill: \"offline\".",
+    "about": "A browser without WebGL2, a sample, and the backend not running, \"Right\" preset: the processor lights the photo all the same. A grey note, no red bar, and every light control works.",
+    "see": "Pill: red dot, \"backend: offline\". No red bar: only the grey note \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit with the Right preset (sun right of the photo, x 1.10, y 0.40, right side of the face bright). The LIGHT panel is at full brightness and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. The page asked the backend for nothing.",
     "viewport": "1440x900",
     "appMode": "backend",
-    "errors": [
-      "Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives."
+    "shading": "cpu",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "sunShown": true,
+    "buttons": [
+      "Sweep: enabled",
+      "Enhance: enabled",
+      "Hold to see original: enabled",
+      "Export PNG: enabled"
     ],
-    "retryLink": true,
-    "sunShown": false,
-    "greyedOut": [
-      "Sweep: disabled",
-      "Enhance: disabled",
-      "Hold to see original: disabled",
-      "Export PNG: disabled"
-    ],
+    "askedOfBackend": [],
     "light": {
-      "x": 0.12,
-      "y": 0.35,
-      "height": "0.12",
-      "intensity": "1.80",
+      "x": 1.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
       "ambient": "0.06",
       "colour": "neutral",
       "shadows": true,
       "detailedNormals": true
     },
-    "shading": "server",
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
     ]
   },
   "84-mock-sample.jpg": {
@@ -1757,7 +1838,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Cat",
     "light": {
       "x": -0.1,
@@ -1769,6 +1850,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "85-sweep-stop-button.jpg": {
@@ -1789,7 +1871,7 @@
     },
     "light": {
       "x": 0.12,
-      "y": 0.32,
+      "y": 0.34,
       "height": "0.12",
       "intensity": "1.80",
       "ambient": "0.06",
@@ -1798,6 +1880,7 @@
       "detailedNormals": true,
       "moving": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "86-hold-original-button.jpg": {
@@ -1809,7 +1892,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "buttonStyle": {
       "textColour": "rgb(251, 209, 61)",
@@ -1825,6 +1908,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "87-preset-row.jpg": {
@@ -1836,7 +1920,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "resetTooltip": "Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone.",
     "row": {
@@ -1867,6 +1951,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "88-phone-360-preset-row.jpg": {
@@ -1878,7 +1963,7 @@
     "viewport": "360x740",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Coffee cup",
     "row": {
       "labels": [
@@ -1909,6 +1994,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "89-phone-320-preset-row.jpg": {
@@ -1951,6 +2037,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "90-laptop-1280x720-preset-top.jpg": {
@@ -1962,7 +2049,7 @@
     "viewport": "1280x720",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "sun": {
       "centreAbovePhotoPx": 46,
@@ -1978,6 +2065,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "91-new-photo-starts-clean.jpg": {
@@ -1985,11 +2073,11 @@
     "name": "new-photo-starts-clean",
     "status": "ok",
     "about": "After changing everything on one photo (a typed mood, Cast shadows off, Detailed normals off, \"Low and warm\"), then \"New photo\" and a second photo: every control is back at its starting value.",
-    "see": "The coffee cup, freshly loaded. Sun on the table at the left, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, colour dot white, Cast shadows on (yellow). The Enhance box is empty and shows its grey \"Optional: a mood, such as golden hour\". GEOMETRY is open and Detailed normals is on (yellow).",
+    "see": "The coffee cup, freshly loaded. Sun on the table at the left, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, colour dot white, Cast shadows on (yellow). The Enhance box is empty and shows its grey \"Optional: a mood, such as golden hour\". GEOMETRY is open, Detailed normals is on (yellow), and the last two lines read \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
     "viewport": "1440x1300",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.5,
+    "sceneSeconds": 2.6,
     "before": {
       "x": 0,
       "y": 0.9,
@@ -2012,6 +2100,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "92-laptop-1280x720-enhance-error.jpg": {
@@ -2023,7 +2112,7 @@
     "viewport": "1280x720",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "error": "Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.",
     "sidebarScrolls": false,
@@ -2038,6 +2127,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
@@ -2053,7 +2143,7 @@
     "viewport": "390x844",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Coffee cup",
     "error": "Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.",
     "barIsInEnhancePanel": true,
@@ -2067,7 +2157,9 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
     ]
@@ -2076,15 +2168,17 @@
     "file": "94-no-webgl-render-lost.jpg",
     "name": "no-webgl-render-lost",
     "status": "ok",
-    "about": "A browser without WebGL2, an uploaded photo already shown by the server with the \"Left\" preset, then the backend stops and \"Right\" is clicked: the one red bar now says the render failed and offers \"Retry\".",
-    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with \"Retry\" at its right end. The photo still shows the last picture the server sent (the Left preset), with no sun. The readout already says x 1.10, y 0.40. The LIGHT panel is faded and \"Sweep\" and \"Enhance\" are greyed out; \"Hold to see original\" and \"Export PNG\" still work on that last picture.",
+    "about": "A browser in which neither the graphics chip nor the processor can shade (no WebGL2 and no 2D canvas), a sample already shown by the server with the \"Left\" preset, then the backend stops and \"Right\" is clicked: the red bar now says the render failed and offers \"Retry\".",
+    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with \"Retry\" at its right end and no x. The photo still shows the last picture the server sent (the Left preset), with no sun. The readout already says x 1.10, y 0.40. The LIGHT panel is faded and \"Sweep\" and \"Enhance\" are greyed out; \"Hold to see original\" and \"Export PNG\" still work on that last picture. Pill: \"offline\". You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "server",
-    "sceneSeconds": 2.1,
+    "sceneSeconds": 3.1,
+    "sample": "Portrait",
     "errors": [
-      "Live shading is unavailable (WebGL2 is not available in this browser), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives."
+      "Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives."
     ],
+    "retryLink": true,
     "sunShown": false,
     "buttons": [
       "Sweep: disabled",
@@ -2092,6 +2186,7 @@
       "Hold to see original: enabled",
       "Export PNG: enabled"
     ],
+    "how": "Both ways of shading in the browser were taken away before the page loaded. In normal use this needs a browser with no WebGL2 in which the processor fallback also breaks.",
     "light": {
       "x": 1.1,
       "y": 0.4,
@@ -2103,6 +2198,7 @@
       "detailedNormals": true
     },
     "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/render"
     ]
   },
@@ -2111,7 +2207,7 @@
     "name": "mock-sample-detailed-normals",
     "status": "ok",
     "about": "Frontend mock mode with the \"Cat\" sample and GEOMETRY opened: the Detailed normals switch is on, greyed out and cannot be clicked.",
-    "see": "The light has not been moved: the sun is at the left of the photo, where it starts. The sidebar is scrolled to the bottom, GEOMETRY open: grey Depth and purple Normals pictures of the cat, then \"Detailed normals\" with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\" Its switch is on but dull (dark yellow) and does nothing when clicked. \"451 x 300 px, relief 0.3\". Pill: \"mock\".",
+    "see": "The light has not been moved: the sun is at the left of the photo, where it starts. The sidebar is scrolled to the bottom, GEOMETRY open: grey Depth and purple Normals pictures of the cat, then \"Detailed normals\" with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\" Its switch is on but dull (dark yellow) and does nothing when clicked. Then \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\". Pill: \"mock\".",
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
@@ -2132,6 +2228,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "96-demo-landing.jpg": {
@@ -2139,7 +2236,7 @@
     "name": "demo-landing",
     "status": "ok",
     "about": "The static demo build: the first page. A note card stands where the drop box is in the normal app.",
-    "see": "Pill: green dot, \"demo: runs in your browser\". The text under the heading starts \"Pick a sample photo. Its depth and surface normals were estimated ahead of time\". There is no dashed drop box: in its place a card \"This is the in-browser demo.\" with a yellow link. Then \"Pick a sample photo:\" and the four thumbnails.",
+    "see": "Top right: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". The text under the heading starts \"Pick a sample photo. Its depth and surface normals were estimated ahead of time\". There is no dashed drop box: in its place a card \"This is the in-browser demo.\" with a yellow link. Then \"Pick a sample photo:\" and the four thumbnails.",
     "viewport": "1440x900",
     "appMode": "demo",
     "fileInputOnPage": false,
@@ -2164,7 +2261,7 @@
     "name": "demo-status",
     "status": "ok",
     "about": "The static demo build: close-up of the status pill. Green dot, \"demo: runs in your browser\".",
-    "see": "Green dot, \"demo: runs in your browser\". It never reads \"checking\" or \"offline\".",
+    "see": "The right end of the top bar, enlarged: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". It never reads \"checking\" or \"offline\".",
     "viewport": "1440x900",
     "appMode": "demo",
     "tooltip": "Static demo: the sample photos are shaded entirely in your browser and no server is contacted. Uploading your own photo and Enhance need the Relight server.",
@@ -2198,6 +2295,7 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "100-demo-all-panels.jpg": {
@@ -2205,7 +2303,7 @@
     "name": "demo-all-panels",
     "status": "ok",
     "about": "The static demo build in a taller window (1440 x 1300) with the \"Coffee cup\" sample, the \"Right\" preset and GEOMETRY opened: the whole sidebar at once.",
-    "see": "Coffee cup, Right preset (x 1.10, y 0.40; the sun is at the right edge of the stage). The whole sidebar shows: LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open with Depth and Normals pictures, a dull Detailed normals switch with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\", and \"600 x 400 px, relief 0.3\".",
+    "see": "Coffee cup, Right preset (x 1.10, y 0.40; the sun is at the right edge of the stage). The whole sidebar shows: LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open with Depth and Normals pictures, a dull Detailed normals switch with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\", then \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
     "viewport": "1440x1300",
     "appMode": "demo",
     "shading": "webgl",
@@ -2226,14 +2324,15 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "101-demo-phone-landing.jpg": {
     "file": "101-demo-phone-landing.jpg",
     "name": "demo-phone-landing",
     "status": "ok",
-    "about": "The static demo build: the first page in a phone-sized window. The pill is shortened to \"runs in your browser\".",
-    "see": "One column. The pill reads only \"runs in your browser\" with a green dot. Heading, the \"Pick a sample photo. Its depth...\" text, the demo card (the yellow link breaks onto a second line), \"Pick a sample photo:\" and the four thumbnails in one row.",
+    "about": "The static demo build: the first page in a phone-sized window. The pill is shortened to \"demo\".",
+    "see": "One column. Top bar: \"Relight\", \"How it works\" and a pill that reads only \"demo\" with a green dot. Heading, the \"Pick a sample photo. Its depth...\" text, the demo card (the yellow link breaks onto a second line), \"Pick a sample photo:\" and the four thumbnails in one row.",
     "viewport": "390x844",
     "appMode": "demo",
     "light": null,
@@ -2244,7 +2343,7 @@
     "name": "demo-phone-sample-full-page",
     "status": "ok",
     "about": "The static demo build on a phone with the \"Cat\" sample, photographed from top to bottom with GEOMETRY opened.",
-    "see": "The whole phone page with the cat: a short stage with \"Other samples\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch and \"451 x 300 px, relief 0.3\".",
+    "see": "The whole phone page with the cat: the top bar with the pill \"demo\", a short stage with \"Other samples\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch, \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
     "viewport": "390x844",
     "appMode": "demo",
     "shading": "webgl",
@@ -2260,22 +2359,1010 @@
       "shadows": true,
       "detailedNormals": true
     },
+    "shadingPath": "gpu-full",
     "console": []
   },
   "103-demo-no-webgl.jpg": {
     "file": "103-demo-no-webgl.jpg",
     "name": "demo-no-webgl",
     "status": "ok",
-    "about": "The static demo build in a browser without WebGL2: one red bar above the plain photo, no sun, and everything that would change the light greyed out.",
-    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.\" It has no \"Retry\" and no x. The photo is the plain original with no sun. The LIGHT panel is faded and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. \"Other samples\" still works.",
+    "about": "The static demo build in a browser without WebGL2, \"Portrait\" sample, \"Left\" preset: a grey note above the stage, and the processor lights the photo. Nothing is greyed out but Enhance, which the demo never has.",
+    "see": "No red bar. Above the stage the grey note \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" It has no x and no \"Retry\". The portrait is lit for the Left preset (sun left of the photo, x -0.10, y 0.40, left of the face bright). The LIGHT panel is at full brightness and \"Sweep\", \"Hold to see original\" and \"Export PNG\" are available. \"Enhance\" is greyed out as it always is in the demo.",
     "viewport": "1440x900",
     "appMode": "demo",
-    "errors": [
-      "Live shading is unavailable (WebGL2 is not available in this browser), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari."
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Portrait",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "sunShown": true,
+    "buttons": [
+      "Sweep: enabled",
+      "Enhance: disabled",
+      "Hold to see original: enabled",
+      "Export PNG: enabled"
     ],
-    "retryLink": false,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new S (http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:10740"
+    ]
+  },
+  "104-how-it-works-button.jpg": {
+    "file": "104-how-it-works-button.jpg",
+    "name": "how-it-works-button",
+    "status": "ok",
+    "about": "Close-up of the right end of the top bar: the \"How it works\" button sits just left of the status pill, on every page.",
+    "see": "Enlarged: the words \"How it works\" in light grey with no box round them (a faint box appears when the mouse is on them), and right of them the status pill, here \"backend: online, mock providers\" with an amber dot.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "bar": {
+      "button": "How it works",
+      "pill": "backend: online, mock providers",
+      "pillTextCutOff": false,
+      "barOverflows": false,
+      "pageScrollsSideways": false,
+      "buttonRightPx": 1187,
+      "pillLeftPx": 1195
+    },
+    "light": null,
+    "console": []
+  },
+  "105-how-it-works-open.jpg": {
+    "file": "105-how-it-works-open.jpg",
+    "name": "how-it-works-open",
+    "status": "ok",
+    "about": "The first page straight after clicking \"How it works\": a card in the middle of the window over the dimmed page.",
+    "see": "The first page is dimmed almost to black. In the middle of the window a dark card about half the window wide and most of its height, with a thin border and rounded corners. Top row: \"How Relight works\" and a \"Close\" button with an x. Then three lines that start \"Two pretrained vision models measure the photo once.\", three small chips (\"Pretrained model\" in blue, \"Our code\" in yellow, \"Hosted model, optional\" in grey), the heading \"ONCE PER PHOTO\" with a grey line that starts \"Done by the Relight server when you upload a photo.\", and step 1 \"Estimate depth\" with the blue chip \"Pretrained model: Depth Anything V2\" and two pictures: \"The photo\" and \"Depth map: lighter is nearer\". The top of step 2 shows at the bottom edge; the card scrolls.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "panel": {
+      "title": "How Relight works",
+      "sections": [
+        "Once per photo | Done by the Relight server when you upload a photo. For the four samples it was done ahead of time and the two maps ship with the page.",
+        "Every frame, in your browser | A WebGL2 shader we wrote runs steps 3 and 4 again each time the light moves. No server and no AI model is involved in the dragging.",
+        "Only if you press Enhance | Off until you ask for it. The app is complete without it.",
+        "Honest limits | "
+      ],
+      "steps": [
+        "Step 1: Estimate depth | Pretrained model: Depth Anything V2",
+        "Step 2: Estimate surface direction | Pretrained model: Marigold",
+        "Step 3: Shade each pixel from the light | Our code",
+        "Step 4: Trace cast shadows in three layers | Our code",
+        "Step 5: A photoreal pass | Hosted model, optional"
+      ],
+      "captions": [
+        "The photo",
+        "Depth map: lighter is nearer",
+        "Normal map: colour is the way a surface faces",
+        "Our shading alone, light at the left",
+        "Our shadow map for the same light",
+        "Steps 3 and 4 multiplied into the photo",
+        "The same maps, light moved to the right"
+      ]
+    },
+    "card": {
+      "widthPx": 672,
+      "heightPx": 792,
+      "shareOfWindowHeight": 0.88
+    },
+    "focusIsOn": "Close",
+    "light": null,
+    "console": []
+  },
+  "106-how-it-works-step-1.jpg": {
+    "file": "106-how-it-works-step-1.jpg",
+    "name": "how-it-works-step-1",
+    "status": "ok",
+    "about": "The \"How it works\" panel alone, enlarged, scrolled to step 1.",
+    "see": "The card alone. \"ONCE PER PHOTO\" and its grey line, then step 1: a round \"1\", \"Estimate depth\", the blue chip \"Pretrained model: Depth Anything V2\", two lines that start \"A pretrained model estimates how near every pixel is to the camera.\", and two square pictures side by side: the astronaut photo (\"The photo\") and the same in greys with the helmet in front nearly white (\"Depth map: lighter is nearer\"). Step 2 starts below.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": null,
+    "console": []
+  },
+  "107-how-it-works-step-2.jpg": {
+    "file": "107-how-it-works-step-2.jpg",
+    "name": "how-it-works-step-2",
+    "status": "ok",
+    "about": "The \"How it works\" panel alone, enlarged, scrolled to step 2.",
+    "see": "Step 2: \"Estimate surface direction\", the blue chip \"Pretrained model: Marigold\", two lines that start \"A second pretrained model estimates which way every surface faces.\", then one picture in purple, pink and green (\"Normal map: colour is the way a surface faces\") and, to its right, the grey note \"A depth map is too smooth to shade a face: tilts worked out from it left faces almost flat. That is why there is a second model.\" Under it the heading \"EVERY FRAME, IN YOUR BROWSER\" with the grey line \"A WebGL2 shader we wrote runs steps 3 and 4 again each time the light moves. No server and no AI model is involved in the dragging.\", and the start of step 3.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": null,
+    "console": []
+  },
+  "108-how-it-works-step-3.jpg": {
+    "file": "108-how-it-works-step-3.jpg",
+    "name": "how-it-works-step-3",
+    "status": "ok",
+    "about": "The \"How it works\" panel alone, enlarged, scrolled to step 3.",
+    "see": "\"EVERY FRAME, IN YOUR BROWSER\" and its grey line, then step 3: \"Shade each pixel from the light\" with the yellow chip \"Our code\", three lines that start \"Diffuse shading: a pixel is bright when its surface faces the light.\", one grey picture of the astronaut like a plaster cast lit from the left (\"Our shading alone, light at the left\") and, to its right, the grey note \"A surface also goes dark gradually as it turns away from the light, not at a hard line, because estimated normals are too noisy for a hard cut.\" Step 4 starts below.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": null,
+    "console": []
+  },
+  "109-how-it-works-step-4.jpg": {
+    "file": "109-how-it-works-step-4.jpg",
+    "name": "how-it-works-step-4",
+    "status": "ok",
+    "about": "The \"How it works\" panel alone, enlarged, scrolled to step 4.",
+    "see": "Step 4: \"Trace cast shadows in three layers\" with the yellow chip \"Our code\", three lines that start \"Each pixel walks toward the light across the height field\", and two pictures: a white square with a soft grey shadow shape (\"Our shadow map for the same light\") and the astronaut lit from the left (\"Steps 3 and 4 multiplied into the photo\"). Under it a card with no number: the astronaut lit from the right and the note \"Moving the light only reruns steps 3 and 4. The stills in this panel were rendered with our Python version of the same maths; the shader is a port of it and the two are kept in agreement.\"",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": null,
+    "console": []
+  },
+  "110-how-it-works-step-5-and-limits.jpg": {
+    "file": "110-how-it-works-step-5-and-limits.jpg",
+    "name": "how-it-works-step-5-and-limits",
+    "status": "ok",
+    "about": "The \"How it works\" panel alone, enlarged, scrolled to the very end: the card about moving the light, step 5 and \"Honest limits\".",
+    "see": "The end of the card. The un-numbered card (picture \"The same maps, light moved to the right\" and its note), the heading \"ONLY IF YOU PRESS ENHANCE\" with the grey line \"Off until you ask for it. The app is complete without it.\", step 5 \"A photoreal pass\" with the grey chip \"Hosted model, optional\" and no picture (its text names \"the Gemini image model, or IC-Light v2 on fal.ai\"), then \"HONEST LIMITS\" with two bullets: the first starts \"One photo gives a height field, not real 3D\", the second \"Shading is diffuse only (no shine)\" and ends \"The live shader has been tested in one browser on one computer.\"",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "light": null,
+    "console": []
+  },
+  "111-how-it-works-over-photo.jpg": {
+    "file": "111-how-it-works-over-photo.jpg",
+    "name": "how-it-works-over-photo",
+    "status": "ok",
+    "about": "\"How it works\" opened while a photo is being lit (\"Portrait\" sample, \"Left\" preset): the page behind is dimmed and cannot be used until the panel is closed.",
+    "see": "The same card over a photo that is being lit: the portrait, its sun, the sidebar and the top bar are all still there behind it but dimmed, and none of them reacts until the card is closed. Before this picture was taken the card was closed three ways (the Escape key, a click on the dimmed page, the \"Close\" button); after the Escape key the keyboard focus was back on \"How it works\". Opened again after being scrolled, the card comes back where it was left, not at the top; it was scrolled back up for this picture.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.2,
+    "sample": "Portrait",
+    "escapeCloses": true,
+    "focusAfterClosing": "How it works",
+    "clickOutsideCloses": true,
+    "closeButtonCloses": true,
+    "reopensWhereItWasLeft": true,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "112-tablet-768x1024-how-it-works.jpg": {
+    "file": "112-tablet-768x1024-how-it-works.jpg",
+    "name": "tablet-768x1024-how-it-works",
+    "status": "ok",
+    "about": "A tablet-sized window (768 x 1024), \"How it works\" open: from 640 px wide the panel is a card with the page showing round it.",
+    "see": "At 768 px wide the card is 672 px wide, so only a narrow dimmed strip of the page shows on each side, and more above and below. The content is the same as on a desktop, including the pictures two to a row.",
+    "viewport": "768x1024",
+    "appMode": "backend",
+    "card": {
+      "widthPx": 672,
+      "heightPx": 896
+    },
+    "light": null,
+    "console": []
+  },
+  "113-phone-top-bar.jpg": {
+    "file": "113-phone-top-bar.jpg",
+    "name": "phone-top-bar",
+    "status": "ok",
+    "about": "The top bar of a phone-sized window (390 px wide), enlarged: \"Relight\", the \"How it works\" button and a one-word status pill.",
+    "see": "Enlarged, the whole width of a 390 px phone: the yellow square logo and \"Relight\" at the left (no \"Banana Hacks 2026\" at this width), then at the right \"How it works\" and a short pill: amber dot, \"online\". The full text (\"Backend at ... \") is still in the pill's tooltip, which a phone does not show.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "bar": {
+      "button": "How it works",
+      "pill": "online",
+      "pillTextCutOff": false,
+      "barOverflows": false,
+      "pageScrollsSideways": false,
+      "buttonRightPx": 293,
+      "pillLeftPx": 301
+    },
+    "tooltip": "Backend at http://localhost:8123 (fal: ready, gemini: ready)",
+    "light": null,
+    "console": []
+  },
+  "114-phone-320-top-bar.jpg": {
+    "file": "114-phone-320-top-bar.jpg",
+    "name": "phone-320-top-bar",
+    "status": "ok",
+    "about": "The top bar of the narrowest phone (320 px wide), enlarged: the three parts still fit on one line.",
+    "see": "Enlarged, the whole width of a 320 px phone: logo and \"Relight\", \"How it works\", and the pill \"online\". They fit on one line with a small gap between each; nothing is cut off and the page does not scroll sideways.",
+    "viewport": "320x740",
+    "appMode": "backend",
+    "bar": {
+      "button": "How it works",
+      "pill": "online",
+      "pillTextCutOff": false,
+      "barOverflows": false,
+      "pageScrollsSideways": false,
+      "buttonRightPx": 223,
+      "pillLeftPx": 231
+    },
+    "light": null,
+    "console": []
+  },
+  "115-phone-how-it-works-open.jpg": {
+    "file": "115-phone-how-it-works-open.jpg",
+    "name": "phone-how-it-works-open",
+    "status": "ok",
+    "about": "A phone-sized window straight after tapping \"How it works\": the panel fills the whole screen.",
+    "see": "The panel covers the whole screen: no dimmed page round it, no rounded corners, and the top bar is hidden behind it. \"How Relight works\" and \"Close\" at the top, the opening text on four lines, the three chips on one line, \"ONCE PER PHOTO\" and step 1, where the blue chip \"Pretrained model: Depth Anything V2\" sits on its own line under \"Estimate depth\". The two pictures are side by side, each about 150 px.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "fillsTheScreen": true,
+    "light": null,
+    "console": []
+  },
+  "116-phone-how-it-works-step-1.jpg": {
+    "file": "116-phone-how-it-works-step-1.jpg",
+    "name": "phone-how-it-works-step-1",
+    "status": "ok",
+    "about": "A phone-sized window, the \"How it works\" panel scrolled to step 1.",
+    "see": "\"ONCE PER PHOTO\", its grey line on three lines, and step 1 with its two small pictures side by side; the caption \"Depth map: lighter is nearer\" wraps onto two lines. Step 2 starts below.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "sideNoteShown": false,
+    "light": null,
+    "console": []
+  },
+  "117-phone-how-it-works-step-2.jpg": {
+    "file": "117-phone-how-it-works-step-2.jpg",
+    "name": "phone-how-it-works-step-2",
+    "status": "ok",
+    "about": "A phone-sized window, the \"How it works\" panel scrolled to step 2.",
+    "see": "Step 2 with one picture, the normal map, as wide as the card. The grey note that sits beside it on a wider screen (\"A depth map is too smooth...\") is not shown on a phone. Then \"EVERY FRAME, IN YOUR BROWSER\" and the start of step 3.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "sideNoteShown": false,
+    "light": null,
+    "console": []
+  },
+  "118-phone-how-it-works-step-3.jpg": {
+    "file": "118-phone-how-it-works-step-3.jpg",
+    "name": "phone-how-it-works-step-3",
+    "status": "ok",
+    "about": "A phone-sized window, the \"How it works\" panel scrolled to step 3.",
+    "see": "\"EVERY FRAME, IN YOUR BROWSER\", then step 3 with one picture, the grey shading, as wide as the card. The grey note beside it on a wider screen (\"A surface also goes dark gradually...\") is not shown on a phone. Step 4 starts below, with its yellow chip on a line of its own.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "sideNoteShown": false,
+    "light": null,
+    "console": []
+  },
+  "119-phone-how-it-works-step-4.jpg": {
+    "file": "119-phone-how-it-works-step-4.jpg",
+    "name": "phone-how-it-works-step-4",
+    "status": "ok",
+    "about": "A phone-sized window, the \"How it works\" panel scrolled to step 4.",
+    "see": "Step 4 with its two small pictures side by side (captions on two lines each), then the un-numbered card: a small picture \"The same maps, light moved to the right\" with the note about Python beside it in a narrow column of seven lines. \"ONLY IF YOU PRESS ENHANCE\" and the top of step 5 show at the bottom.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "sideNoteShown": false,
+    "light": null,
+    "console": []
+  },
+  "120-phone-how-it-works-step-5-and-limits.jpg": {
+    "file": "120-phone-how-it-works-step-5-and-limits.jpg",
+    "name": "phone-how-it-works-step-5-and-limits",
+    "status": "ok",
+    "about": "A phone-sized window, the \"How it works\" panel scrolled to the very end: step 5 and \"Honest limits\".",
+    "see": "The end of the panel on a phone: the un-numbered card, \"ONLY IF YOU PRESS ENHANCE\" with \"Off until you ask for it. The app is complete without it.\", step 5 \"A photoreal pass\" with the grey chip \"Hosted model, optional\", and \"HONEST LIMITS\" with its two bullets.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "light": null,
+    "console": []
+  },
+  "121-shading-line-full-quality.jpg": {
+    "file": "121-shading-line-full-quality.jpg",
+    "name": "shading-line-full-quality",
+    "status": "ok",
+    "about": "Close-up of the open GEOMETRY panel on a computer where everything works: the new last line reads \"shading: graphics chip, full quality\". The mouse rests on it.",
+    "see": "The open GEOMETRY panel, enlarged. Under the Detailed normals switch are two small grey lines in typewriter letters: \"512 x 512 px, relief 0.3\" and, new, \"shading: graphics chip, full quality\". The mouse is on the new line; the tooltip it brings up is not in the picture. Its words are: \"The photo is shaded live by the graphics chip (<the chip's name>), at full quality.\"",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.2,
+    "sample": "Portrait",
+    "shadingLine": "shading: graphics chip, full quality",
+    "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)), at full quality.",
+    "greyNote": null,
+    "redBars": [],
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "122-no-float-filtering.jpg": {
+    "file": "122-no-float-filtering.jpg",
+    "name": "no-float-filtering",
+    "status": "ok",
+    "about": "A graphics chip that cannot smooth floating-point textures, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: nothing changes. Still \"graphics chip, full quality\" and no note.",
+    "see": "Exactly what a computer with every ability shows: no note above the stage, the portrait lit for the Left preset (x -0.10, y 0.40), and at the bottom of the open GEOMETRY panel \"shading: graphics chip, full quality\".",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.2,
+    "sample": "Portrait",
+    "shadingLine": "shading: graphics chip, full quality",
+    "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)), at full quality.",
+    "greyNote": null,
+    "redBars": [],
+    "taken": [
+      "OES_texture_float_linear"
+    ],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "123-no-float-colour-buffers.jpg": {
+    "file": "123-no-float-colour-buffers.jpg",
+    "name": "no-float-colour-buffers",
+    "status": "ok",
+    "about": "A graphics chip that cannot draw into floating-point buffers, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: the picture looks the same, there is no note, and the last line of GEOMETRY reads \"graphics chip, compatibility mode\".",
+    "see": "No note above the stage and nothing red. The portrait is lit for the Left preset (x -0.10, y 0.40) and looks the same as in 122-no-float-filtering. The only difference is the last grey line of the open GEOMETRY panel: \"shading: graphics chip, compatibility mode\".",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.2,
+    "sample": "Portrait",
+    "shadingLine": "shading: graphics chip, compatibility mode",
+    "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)). Shadows are kept in 8-bit buffers because this graphics chip cannot draw into floating-point buffers; the picture is the same to within a level or two of brightness.",
+    "greyNote": null,
+    "redBars": [],
+    "taken": [
+      "EXT_color_buffer_float",
+      "EXT_color_buffer_half_float"
+    ],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-packed",
+    "console": []
+  },
+  "124-shading-line-compatibility-mode.jpg": {
+    "file": "124-shading-line-compatibility-mode.jpg",
+    "name": "shading-line-compatibility-mode",
+    "status": "ok",
+    "about": "Close-up of the open GEOMETRY panel on a graphics chip that cannot draw into floating-point buffers: \"shading: graphics chip, compatibility mode\".",
+    "see": "The open GEOMETRY panel, enlarged: the last line reads \"shading: graphics chip, compatibility mode\". Its tooltip (not in the picture) reads: \"The photo is shaded live by the graphics chip (<the chip's name>). Shadows are kept in 8-bit buffers because this graphics chip cannot draw into floating-point buffers; the picture is the same to within a level or two of brightness.\"",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.2,
+    "sample": "Portrait",
+    "shadingLine": "shading: graphics chip, compatibility mode",
+    "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)). Shadows are kept in 8-bit buffers because this graphics chip cannot draw into floating-point buffers; the picture is the same to within a level or two of brightness.",
+    "greyNote": null,
+    "redBars": [],
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-packed",
+    "console": []
+  },
+  "125-no-webgl-all-panels.jpg": {
+    "file": "125-no-webgl-all-panels.jpg",
+    "name": "no-webgl-all-panels",
+    "status": "ok",
+    "about": "A browser without WebGL2 in a taller window (1440 x 1300), \"Coffee cup\" sample, \"Right\" preset, GEOMETRY open: the grey note, the lit photo and the whole sidebar at once.",
+    "see": "The grey two-line note above the stage, the coffee cup lit with the Right preset (x 1.10, y 0.40, sun at the right edge of the stage, the cup's shadow falling to the left), and the whole sidebar: LIGHT, ENHANCE with a bright yellow \"Enhance\" button, and GEOMETRY open, ending \"600 x 400 px, relief 0.3\" and \"shading: processor, in the background\".",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Coffee cup",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "light": {
+      "x": 1.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
+  },
+  "126-processor-note.jpg": {
+    "file": "126-processor-note.jpg",
+    "name": "processor-note",
+    "status": "ok",
+    "about": "Close-up of the grey note above the stage when the processor is shading (a browser without WebGL2).",
+    "see": "Enlarged: a rounded box with a thin grey outline and light grey words on two lines: \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" It is not red, has no warning triangle, no x and no \"Retry\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Portrait",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "noteHas": {
+      "closeButton": false,
+      "retry": false,
+      "textColour": "lab(84.9837 0.601262 -2.17986)",
+      "borderColour": "oklab(0.999994 0.0000455678 0.0000200868 / 0.1)",
+      "heightPx": 58
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
+  },
+  "127-shading-line-processor-in-background.jpg": {
+    "file": "127-shading-line-processor-in-background.jpg",
+    "name": "shading-line-processor-in-background",
+    "status": "ok",
+    "about": "Close-up of the open GEOMETRY panel in a browser without WebGL2: \"shading: processor, in the background\".",
+    "see": "The open GEOMETRY panel, enlarged: the last line reads \"shading: processor, in the background\". Its tooltip (not in the picture) reads: \"The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.\"",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Portrait",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
+  },
+  "128-no-webgl-no-workers.jpg": {
+    "file": "128-no-webgl-no-workers.jpg",
+    "name": "no-webgl-no-workers",
+    "status": "ok",
+    "about": "A browser without WebGL2 that also blocks background threads (Workers), \"Portrait\" sample, \"Left\" preset, GEOMETRY open: the same grey note, and the last line of GEOMETRY reads \"shading: processor\".",
+    "see": "The same grey note as in any browser without WebGL2, the portrait lit for the Left preset (x -0.10, y 0.40), and at the bottom of the open GEOMETRY panel the shorter line \"shading: processor\". Nothing else tells the two processor paths apart; on this one the sun and sliders can stutter a little while a picture is being shaded.",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Portrait",
+    "shadingLine": "shading: processor",
+    "shadingTooltip": "The photo is shaded by the processor because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "timings": {
+      "fullPictureMs": 85.9,
+      "previewMs": 30.3
+    },
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-main",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: shading on the page's own thread because Workers are not available (blocked for this test)."
+    ]
+  },
+  "129-shading-line-processor.jpg": {
+    "file": "129-shading-line-processor.jpg",
+    "name": "shading-line-processor",
+    "status": "ok",
+    "about": "Close-up of the open GEOMETRY panel in a browser without WebGL2 and without Workers: \"shading: processor\".",
+    "see": "The open GEOMETRY panel, enlarged: the last line reads only \"shading: processor\". Its tooltip (not in the picture) reads: \"The photo is shaded by the processor because the graphics chip could not be used: WebGL2 is not available in this browser.\"",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Portrait",
+    "shadingLine": "shading: processor",
+    "shadingTooltip": "The photo is shaded by the processor because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-main",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: shading on the page's own thread because Workers are not available (blocked for this test)."
+    ]
+  },
+  "130-processor-preview-while-dragging.jpg": {
+    "file": "130-processor-preview-while-dragging.jpg",
+    "name": "processor-preview-while-dragging",
+    "status": "ok",
+    "about": "A browser without WebGL2, \"Portrait\" sample, photographed while the sun is being dragged across the photo: the picture is the quick, softer preview.",
+    "see": "The mouse button is down and the sun is half way across the photo, on the neck ring (x about 0.52, y about 0.32, changing). The picture is the quick preview: look at the stitching on the mission patch and the edge of the helmet, which are slightly blurred next to 131-processor-sharp-after-drag, and at the shadows, which have softer edges. The grey note is above the stage.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.3,
+    "sample": "Portrait",
+    "light": {
+      "x": 0.52,
+      "y": 0.33,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true,
+      "moving": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "quick preview (the light was moving)",
+    "pictureAfterTheShot": "preview",
+    "previewSize": {
+      "canvasPx": "512 x 512",
+      "previewMs": 21.4
+    },
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
+  },
+  "131-processor-sharp-after-drag.jpg": {
+    "file": "131-processor-sharp-after-drag.jpg",
+    "name": "processor-sharp-after-drag",
+    "status": "ok",
+    "about": "The same drag, a moment after the mouse was let go at the right of the photo: the picture has sharpened to full quality.",
+    "see": "The sun has been let go at the right of the photo (x 0.90, y 0.30). A fraction of a second later the picture is the full-quality one: fine detail is crisp again and the right side of the face is bright with the left in shadow.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Portrait",
+    "timings": {
+      "fullPictureMs": 87.2,
+      "previewMs": 29.5
+    },
+    "light": {
+      "x": 0.9,
+      "y": 0.3,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
+  },
+  "132-processor-sweep-during.jpg": {
+    "file": "132-processor-sweep-during.jpg",
+    "name": "processor-sweep-during",
+    "status": "ok",
+    "about": "A browser without WebGL2, about two and a half seconds into a Sweep: the picture stays the quick, softer preview until the sweep ends.",
+    "see": "The button reads \"Stop sweep\" in yellow and the sun is at the right edge of the photo (x about 0.93, y about 0.24, changing). The picture is the softer quick preview and stays so for the whole sweep; it sharpens only when the sweep ends and the light is back where it started.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Portrait",
+    "light": {
+      "x": 0.91,
+      "y": 0.22,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true,
+      "moving": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "quick preview (the light was moving)",
+    "pictureAfterTheSweep": "full",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
+  },
+  "133-processor-enhance-done.jpg": {
+    "file": "133-processor-enhance-done.jpg",
+    "name": "processor-enhance-done",
+    "status": "ok",
+    "about": "A browser without WebGL2, Enhance finished on the \"Portrait\" sample (\"Left\" preset): the Enhanced tab, with the grey note still above the stage.",
+    "see": "The \"Enhanced\" tab is selected, with the divider in the middle (\"Live preview\" left, \"Enhanced\" right) and \"Download enhanced\" below. The grey processor note is still above the stage. Sidebar: x -0.10, y 0.40, \"Enhance again\" with the download button, \"Sweep\" greyed out.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Portrait",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
+  },
+  "134-phone-processor-note.jpg": {
+    "file": "134-phone-processor-note.jpg",
+    "name": "phone-processor-note",
+    "status": "ok",
+    "about": "A phone-sized window without WebGL2, \"Coffee cup\" sample: the grey note takes four lines and pushes the photo down by its height.",
+    "see": "On a phone the grey note is four lines tall and sits between the top bar and the stage, so the photo starts lower than in 79-phone-sample by the note's height. The coffee cup is lit as usual (sun at the left, x 0.12, y 0.35) and the LIGHT panel follows under the stage.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Coffee cup",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "noteLines": 4,
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
+  },
+  "135-phone-processor-full-page.jpg": {
+    "file": "135-phone-processor-full-page.jpg",
+    "name": "phone-processor-full-page",
+    "status": "ok",
+    "about": "The same phone-sized page without WebGL2, photographed from top to bottom with GEOMETRY opened.",
+    "see": "The whole phone page in a browser without WebGL2: the four-line grey note, the stage, LIGHT, ENHANCE, and GEOMETRY open, ending \"600 x 400 px, relief 0.3\" and \"shading: processor, in the background\".",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Coffee cup",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
+  },
+  "136-shader-compile-failed.jpg": {
+    "file": "136-shader-compile-failed.jpg",
+    "name": "shader-compile-failed",
+    "status": "ok",
+    "about": "A graphics chip whose driver rejects the shader, \"Portrait\" sample, \"Left\" preset: the processor shades, and the grey note gives that reason in its brackets.",
+    "see": "The same grey note with a different reason in its brackets: \"Shading on this device's processor, not its graphics chip (the shader did not compile on this graphics chip). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit for the Left preset (x -0.10, y 0.40) and everything works.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Portrait",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: the shader did not compile on this graphics chip.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (the shader did not compile on this graphics chip). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: a shader failed to compile. ",
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: the shader did not compile on this graphics chip\n    at RelightRenderer.compile (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3437:19)\n    at RelightRenderer.link (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3445:25)\n    at new RelightRenderer (http"
+    ]
+  },
+  "137-graphics-chip-stopped-waiting.jpg": {
+    "file": "137-graphics-chip-stopped-waiting.jpg",
+    "name": "graphics-chip-stopped-waiting",
+    "status": "ok",
+    "about": "\"Portrait\" sample, \"Left\" preset, in the two and a half seconds after the graphics chip stops responding: the page is waiting for it to come back.",
+    "see": "For about two and a half seconds after the graphics chip stops, the photo is the plain original with even lighting, although the readout still says x -0.10, y 0.40 and the sun is in its place. There is no note and no message yet, and the controls look normal but the picture does not answer them. (Compare 06-preset-left, where the right cheek is in shadow.)",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Portrait",
+    "greyNote": null,
+    "busyText": false,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "138-graphics-chip-stopped.jpg": {
+    "file": "138-graphics-chip-stopped.jpg",
+    "name": "graphics-chip-stopped",
+    "status": "ok",
+    "about": "The same a few seconds later: the chip did not come back, so the processor has taken over, with the grey note saying why.",
+    "see": "The grey note has appeared above the stage: \"Shading on this device's processor, not its graphics chip (the graphics chip stopped responding). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit again for the Left preset (x -0.10, y 0.40), a little smaller because of the note, and everything works.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sceneSeconds": 0.2,
+    "sample": "Portrait",
+    "secondsUntilTheNote": 2.6,
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: the graphics chip stopped responding.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (the graphics chip stopped responding). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": []
+  },
+  "139-slow-processor-server-renders.jpg": {
+    "file": "139-slow-processor-server-renders.jpg",
+    "name": "slow-processor-server-renders",
+    "status": "ok",
+    "about": "A device with no WebGL2 and a slow processor, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: a grey note says the server draws the photo instead, and the last line of GEOMETRY reads \"shading: server renders\".",
+    "see": "A grey one-line note above the stage: \"This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.\" The number is whatever the device measured. The portrait is the server's picture for the Left preset (x -0.10, y 0.40); the sun, the sliders, \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. GEOMETRY is open and its last line reads \"shading: server renders\".",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "server",
+    "sample": "Portrait",
+    "slowNote": "This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
+    "how": "No WebGL2, no Workers, and the page's own thread slowed 40 times with Chrome's CPU throttle until the page noticed.",
+    "shadingLine": "shading: server renders",
+    "shadingTooltip": "The photo is shaded by the processor because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
+    "redBars": [],
+    "buttons": [
+      "Sweep: enabled",
+      "Enhance: enabled",
+      "Hold to see original: enabled",
+      "Export PNG: enabled"
+    ],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: shading on the page's own thread because Workers are not available (blocked for this test)."
+    ]
+  },
+  "140-slow-processor-server-lost.jpg": {
+    "file": "140-slow-processor-server-lost.jpg",
+    "name": "slow-processor-server-lost",
+    "status": "ok",
+    "about": "The same device after the backend stops and \"Right\" is clicked: no red bar. The page has gone back to shading on the processor, with the usual grey note.",
+    "see": "Pill: red dot, \"backend: offline\". No red bar. The note above the stage has changed back to \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit by the processor for the Right preset (x 1.10, y 0.40, right side of the face bright), and the last line of GEOMETRY reads \"shading: processor\".",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "shading": "cpu",
+    "sample": "Portrait",
+    "slowNote": "This device's processor is slow at shading (3.3 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
+    "how": "No WebGL2, no Workers, and the page's own thread slowed 40 times with Chrome's CPU throttle until the page noticed.",
+    "shadingLine": "shading: processor",
+    "shadingTooltip": "The photo is shaded by the processor because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "light": {
+      "x": 1.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-main",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: shading on the page's own thread because Workers are not available (blocked for this test).",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/render",
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: shading on the page's own thread because Workers are not available (blocked for this test)."
+    ]
+  },
+  "141-no-shading-at-all-server-renders.jpg": {
+    "file": "141-no-shading-at-all-server-renders.jpg",
+    "name": "no-shading-at-all-server-renders",
+    "status": "ok",
+    "about": "A browser in which neither the graphics chip nor the processor can shade, \"Portrait\" sample, \"Left\" preset: only now does the red bar appear, and the picture comes from the server.",
+    "see": "A red bar with a warning triangle above the stage, with no x and no \"Retry\": \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.). Showing server renders instead, which lag slightly behind the light.\" The portrait is the server's picture for the Left preset (x -0.10, y 0.40) with the sun on it, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are available. You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "server",
+    "sceneSeconds": 2.3,
+    "sample": "Portrait",
+    "shadingLine": null,
+    "shadingTooltip": null,
+    "greyNote": null,
+    "redBars": [
+      "Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.). Showing server renders instead, which lag slightly behind the light."
+    ],
+    "sunShown": true,
+    "buttons": [
+      "Sweep: enabled",
+      "Enhance: enabled",
+      "Hold to see original: enabled",
+      "Export PNG: enabled"
+    ],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+    ]
+  },
+  "142-no-shading-at-all-backend-stopped.jpg": {
+    "file": "142-no-shading-at-all-backend-stopped.jpg",
+    "name": "no-shading-at-all-backend-stopped",
+    "status": "ok",
+    "about": "The same browser with the backend not running: the red bar with \"Retry\" above the plain photo, no sun, and the light controls greyed out.",
+    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with the word \"Retry\" at its right end and no x. The photo is the plain original with no sun on it. The LIGHT panel is faded, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. Pill: \"offline\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shadingLine": null,
+    "shadingTooltip": null,
+    "greyNote": null,
+    "redBars": [
+      "Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives."
+    ],
+    "retryLink": true,
     "sunShown": false,
-    "greyedOut": [
+    "buttons": [
       "Sweep: disabled",
       "Enhance: disabled",
       "Hold to see original: disabled",
@@ -2292,6 +3379,264 @@
       "detailedNormals": true
     },
     "shading": "none",
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
+    ]
+  },
+  "143-demo-top-bar.jpg": {
+    "file": "143-demo-top-bar.jpg",
+    "name": "demo-top-bar",
+    "status": "ok",
+    "about": "The static demo build: close-up of the right end of the top bar, with the \"How it works\" button beside the pill.",
+    "see": "The right end of the demo's top bar, enlarged: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\".",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "bar": {
+      "button": "How it works",
+      "pill": "demo: runs in your browser",
+      "pillTextCutOff": false,
+      "barOverflows": false,
+      "pageScrollsSideways": false,
+      "buttonRightPx": 1217,
+      "pillLeftPx": 1225
+    },
+    "light": null,
     "console": []
+  },
+  "144-demo-phone-top-bar.jpg": {
+    "file": "144-demo-phone-top-bar.jpg",
+    "name": "demo-phone-top-bar",
+    "status": "ok",
+    "about": "The static demo build: the top bar of a phone-sized window, enlarged. The pill reads only \"demo\".",
+    "see": "Enlarged, the whole width of a 390 px phone: logo and \"Relight\" at the left, \"How it works\" and a short pill at the right: green dot, \"demo\".",
+    "viewport": "390x844",
+    "appMode": "demo",
+    "bar": {
+      "button": "How it works",
+      "pill": "demo",
+      "pillTextCutOff": false,
+      "barOverflows": false,
+      "pageScrollsSideways": false,
+      "buttonRightPx": 296,
+      "pillLeftPx": 304
+    },
+    "tooltip": "Static demo: the sample photos are shaded entirely in your browser and no server is contacted. Uploading your own photo and Enhance need the Relight server.",
+    "light": null,
+    "console": []
+  },
+  "145-demo-how-it-works-open.jpg": {
+    "file": "145-demo-how-it-works-open.jpg",
+    "name": "demo-how-it-works-open",
+    "status": "ok",
+    "about": "The static demo build straight after clicking \"How it works\": the same panel, with the demo's own grey line under \"Once per photo\".",
+    "see": "The same card as in 105-how-it-works-open over the dimmed demo page. One line differs: under \"ONCE PER PHOTO\" it reads \"For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.\"",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "panel": {
+      "title": "How Relight works",
+      "sections": [
+        "Once per photo | For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.",
+        "Every frame, in your browser | A WebGL2 shader we wrote runs steps 3 and 4 again each time the light moves. No server and no AI model is involved in the dragging.",
+        "Only if you press Enhance | Switched off in this demo, because it needs the server.",
+        "Honest limits | "
+      ],
+      "steps": [
+        "Step 1: Estimate depth | Pretrained model: Depth Anything V2",
+        "Step 2: Estimate surface direction | Pretrained model: Marigold",
+        "Step 3: Shade each pixel from the light | Our code",
+        "Step 4: Trace cast shadows in three layers | Our code",
+        "Step 5: A photoreal pass | Hosted model, optional"
+      ],
+      "captions": [
+        "The photo",
+        "Depth map: lighter is nearer",
+        "Normal map: colour is the way a surface faces",
+        "Our shading alone, light at the left",
+        "Our shadow map for the same light",
+        "Steps 3 and 4 multiplied into the photo",
+        "The same maps, light moved to the right"
+      ]
+    },
+    "light": null,
+    "console": []
+  },
+  "146-demo-how-it-works-step-5-and-limits.jpg": {
+    "file": "146-demo-how-it-works-step-5-and-limits.jpg",
+    "name": "demo-how-it-works-step-5-and-limits",
+    "status": "ok",
+    "about": "The static demo build: the \"How it works\" panel alone, enlarged, scrolled to the very end. The line under \"Only if you press Enhance\" says it is switched off here.",
+    "see": "The end of the card in the demo. Under \"ONLY IF YOU PRESS ENHANCE\" the grey line reads \"Switched off in this demo, because it needs the server.\" Step 5 and \"HONEST LIMITS\" are word for word as in 110-how-it-works-step-5-and-limits.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "light": null,
+    "console": []
+  },
+  "147-demo-phone-how-it-works-open.jpg": {
+    "file": "147-demo-phone-how-it-works-open.jpg",
+    "name": "demo-phone-how-it-works-open",
+    "status": "ok",
+    "about": "The static demo build on a phone straight after tapping \"How it works\": the panel fills the whole screen.",
+    "see": "The panel covers the whole phone screen. Under \"ONCE PER PHOTO\" the demo's own line: \"For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.\" Step 1 and the top of step 2 follow.",
+    "viewport": "390x844",
+    "appMode": "demo",
+    "light": null,
+    "console": []
+  },
+  "148-demo-no-float-colour-buffers.jpg": {
+    "file": "148-demo-no-float-colour-buffers.jpg",
+    "name": "demo-no-float-colour-buffers",
+    "status": "ok",
+    "about": "The static demo build on a graphics chip that cannot draw into floating-point buffers, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: no note, and the last line of GEOMETRY reads \"graphics chip, compatibility mode\".",
+    "see": "The demo with no note above the stage: the portrait lit for the Left preset (x -0.10, y 0.40), the top-right stage button \"Other samples\", and GEOMETRY open, ending \"512 x 512 px, relief 0.3\" and \"shading: graphics chip, compatibility mode\".",
+    "viewport": "1440x1300",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Portrait",
+    "shadingLine": "shading: graphics chip, compatibility mode",
+    "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)). Shadows are kept in 8-bit buffers because this graphics chip cannot draw into floating-point buffers; the picture is the same to within a level or two of brightness.",
+    "greyNote": null,
+    "redBars": [],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-packed",
+    "console": []
+  },
+  "149-demo-no-float-filtering.jpg": {
+    "file": "149-demo-no-float-filtering.jpg",
+    "name": "demo-no-float-filtering",
+    "status": "ok",
+    "about": "The static demo build on a graphics chip that cannot smooth floating-point textures, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: nothing changes.",
+    "see": "The demo exactly as on a computer with every ability: no note, the portrait lit for the Left preset, and the last line of GEOMETRY \"shading: graphics chip, full quality\".",
+    "viewport": "1440x1300",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 0.2,
+    "sample": "Portrait",
+    "shadingLine": "shading: graphics chip, full quality",
+    "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)), at full quality.",
+    "greyNote": null,
+    "redBars": [],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "150-demo-no-webgl-all-panels.jpg": {
+    "file": "150-demo-no-webgl-all-panels.jpg",
+    "name": "demo-no-webgl-all-panels",
+    "status": "ok",
+    "about": "The static demo build without WebGL2 in a taller window, \"Coffee cup\" sample, \"Right\" preset, GEOMETRY open: the last line of GEOMETRY reads \"shading: processor, in the background\".",
+    "see": "The demo with the grey two-line processor note above the stage, the coffee cup lit with the Right preset (x 1.10, y 0.40), the short ENHANCE panel with its greyed-out button, and GEOMETRY open, ending \"600 x 400 px, relief 0.3\" and \"shading: processor, in the background\".",
+    "viewport": "1440x1300",
+    "appMode": "demo",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Coffee cup",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "light": {
+      "x": 1.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new S (http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:10740"
+    ]
+  },
+  "151-demo-phone-no-webgl.jpg": {
+    "file": "151-demo-phone-no-webgl.jpg",
+    "name": "demo-phone-no-webgl",
+    "status": "ok",
+    "about": "The static demo build on a phone without WebGL2, \"Cat\" sample: the four-line grey note above the photo, and the photo lit by the processor.",
+    "see": "The demo on a phone: the pill \"demo\", then the grey note on four lines, then the stage with \"Other samples\" and the cat lit from the left (sun by the ear, x 0.12, y 0.35), \"Hold to see original\" and \"Export PNG\" available, and the LIGHT panel under it at full brightness.",
+    "viewport": "390x844",
+    "appMode": "demo",
+    "shading": "cpu",
+    "sceneSeconds": 0.4,
+    "sample": "Cat",
+    "shadingLine": "shading: processor, in the background",
+    "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
+    "redBars": [],
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "cpu-worker",
+    "picture": "full quality",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new S (http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:10740"
+    ]
+  },
+  "152-demo-no-shading-at-all.jpg": {
+    "file": "152-demo-no-shading-at-all.jpg",
+    "name": "demo-no-shading-at-all",
+    "status": "ok",
+    "about": "The static demo build in a browser in which neither the graphics chip nor the processor can shade: the red bar above the plain photo, no sun, and everything that would change the light greyed out.",
+    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.\" It has no \"Retry\" and no x. The photo is the plain original with no sun. The LIGHT panel is faded and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. \"Other samples\" still works. You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "shadingLine": null,
+    "shadingTooltip": null,
+    "greyNote": null,
+    "redBars": [
+      "Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari."
+    ],
+    "retryLink": false,
+    "sunShown": false,
+    "buttons": [
+      "Sweep: disabled",
+      "Enhance: disabled",
+      "Hold to see original: disabled",
+      "Export PNG: disabled"
+    ],
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shading": "none",
+    "console": [
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new S (http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:10740"
+    ]
   }
 }
