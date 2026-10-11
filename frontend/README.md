@@ -76,6 +76,27 @@ In the normal app the backend comes first; if it cannot be reached, the failure 
 - **The library is loaded only when a photo is analysed.** It is a separate 576 KB file that the first page
   does not fetch.
 
+## iPhone photos (HEIC and HEIF)
+
+An iPhone saves photos as `.heic`, and AirDrop to a Mac delivers them unchanged. The file chooser, a drop and
+a paste all accept them (`lib/heic.ts` tells one by its type, its name or its first bytes).
+
+- **Safari** decodes them itself, like any other image.
+- **Chrome, Edge and Firefox** cannot. There the photo is decoded by
+  [`libheif-js`](https://www.npmjs.com/package/libheif-js) 1.23.5 (libheif and the libde265 HEVC decoder as
+  WebAssembly, **LGPL-3.0**) in a Web Worker (`lib/heic.worker.js`). The Worker ends after each photo, which
+  is what gives the decoder's memory back.
+- **The decoder is loaded at run time, not bundled.** It is one 2 MB file (620 KB as sent), fetched from
+  `cdn.jsdelivr.net` when the first HEIC photo arrives and kept by the browser afterwards. The address names
+  one exact version and carries its SHA-384 fingerprint, so the browser refuses anything else. It is not in
+  `package.json`, in the build or in `out/`: the first page does not grow, nothing LGPL is shipped from this
+  repository, and the published folder gains no third-party bundle. The cost is that a HEIC photo needs the
+  internet the first time, also when the app runs on your own machine; the page says so if the download fails.
+- The picture comes out upright (the file's own rotation is applied), shrunk to at most 1536 px in the Worker,
+  and is handed on as a JPEG, so the backend and the browser's depth model receive what they always did.
+- To move to another version: change `DECODER_URL` and `DECODER_SHA384` together in `lib/heic.worker.js`
+  (`openssl dgst -sha384 -binary libheif-bundle.js | openssl base64 -A`).
+
 ## Built-in samples
 
 The four samples on the first page are static files, so they work with no backend and in the static demo.

@@ -6,9 +6,11 @@ Drag a light around a photo and watch the highlights and shadows follow, live, i
 
 *The Portrait sample with the light on the path the app's Sweep button takes (the small orange dot is the light). These frames were rendered by our Python reference of the shading; the browser runs the same maths in a shader.*
 
-**Live demo: https://aarooshpravici.github.io/BanannaHacksSubmission/** (the four sample photos, in your browser, nothing to install)
+**Live demo: https://aarooshpravici.github.io/BanannaHacksSubmission/** (the four sample photos or your own, in your browser, nothing to install)
 
 Built for the Banana Hacks hackathon. The app has a "How it works" button in the top bar that shows each step below as a picture.
+
+The sun on the photo is the light. Drag it to move the light. Scroll on it (or pinch with two fingers on a touch screen, or press + and - with it selected) to bring the light nearer or push it back: the sun grows as the light comes nearer, and the Height slider follows.
 
 ## How it works
 
@@ -64,7 +66,7 @@ If a device cannot run the shader, the page falls back by itself: first to the s
 | | |
 | --- | --- |
 | **Ours** | All of the lighting: the diffuse shading, the exposure-steady falloff, the soft edge where a surface turns from the light, the ray-marched shadows and their three layers, the linear-light mix, written three times (Python, TypeScript, GLSL). The server that runs the two models once and hands the browser the maps, and the port of its depth-to-maps step to the browser (`sceneGeometry.ts`). The page. |
-| **Not ours** | The depth model (Depth Anything V2 Small) and the normals model (Marigold): pretrained, downloaded, run as they are. We trained nothing. The optional Enhance model is a hosted service we call. |
+| **Not ours** | The depth model (Depth Anything V2 Small) and the normals model (Marigold): pretrained, downloaded, run as they are. We trained nothing. The optional Enhance model is a hosted service we call. The decoder for iPhone HEIC photos (libheif-js, LGPL-3.0), which the browser fetches from jsDelivr only when such a photo arrives. |
 
 Without the two pretrained models there is nothing to shade; without our code there is nothing to drag. Dragging the light never calls a model.
 
@@ -75,6 +77,9 @@ Without the two pretrained models there is nothing to shade; without our code th
 - The live shader has been tested by people on three devices so far: an Apple-chip Mac (Chrome and Safari), a Windows laptop with Intel graphics (Chrome) and one phone.
 - Real Enhance has run once, and it weakened the side lighting. In the default setup (`MOCK_MODE=1`) Enhance returns the preview unchanged.
 - With no backend (the static demo, mock mode, or the backend not answering), your own photo is analysed in the browser: the same depth model (an ONNX build, `onnx-community/depth-anything-v2-small`, Apache-2.0, run by transformers.js on WebGPU or WebAssembly; about 25 MB downloaded once from Hugging Face and jsDelivr, the photo itself is not uploaded). The normals model is too large for a browser, so those scenes take their normals from the slope of the depth map and faces shade flatter. Tested in Chrome on one Apple-chip Mac only.
+- iPhone photos (`.heic`, `.heif`, as AirDrop delivers them) are accepted everywhere a photo is. Safari decodes them itself. Chrome, Edge and Firefox cannot, so there the page fetches a decoder when the first such photo arrives: [`libheif-js`](https://www.npmjs.com/package/libheif-js) 1.23.5, which is libheif with the libde265 HEVC decoder built to WebAssembly, licensed LGPL-3.0. It is not part of this repository or of the site: the browser downloads that one pinned file (2 MB, checked against a fingerprint) from jsDelivr, so a HEIC photo needs the internet the first time. The photo itself is converted on the device and is not uploaded for that. Tested in Chrome on one Apple-chip Mac with files made by macOS, not yet with a photo straight from an iPhone, and not in Safari or Firefox.
+- Scrolling and pinching on the sun have only been driven by a program, in Chrome on one Mac. No real mouse wheel, trackpad or finger has tried them yet. In Safari on a Mac the trackpad pinch on the sun does nothing; two-finger scrolling on it works.
+- The copy at the live-demo address was built before the last two points (version `f37a871`): it takes your own photo, but not an iPhone HEIC photo in Chrome, Edge or Firefox, and scrolling on the sun does nothing there, until it is republished.
 
 `testing/PENDING.md` is the full list of what has not been verified.
 
@@ -107,6 +112,8 @@ frontend/   Next.js app. One page, served at / and /relight
                               relightCPU.ts, relightCpuCore.ts, relightCpu.worker.js
                               localScene.ts, depth.worker.js, sceneGeometry.ts (a photo's depth and normals worked out in
                               the browser when there is no backend)
+                              heic.ts, heic.worker.js (iPhone HEIC photos decoded in the browsers that cannot read them;
+                              the decoder itself is fetched at run time, see "Honest limits")
 docs/       relight-sweep.gif and the script that renders it; submission/ holds the write-up drafts
 proofs/     output images from the scripts
 testing/    what to test and how, written for the testers
