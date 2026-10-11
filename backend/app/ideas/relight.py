@@ -28,6 +28,9 @@ DEPTH_MODEL = "depth-anything/Depth-Anything-V2-Small-hf"
 NORMALS_MODEL = "prs-eth/marigold-normals-v1-1"
 
 _lock = threading.Lock()
+# Loading a model is not safe to do twice at once: two overlapping first requests
+# left the normals pipeline half-built and every later request failed.
+_load_lock = threading.Lock()
 
 
 @lru_cache
@@ -40,8 +43,13 @@ def device() -> str:
     return "cpu"
 
 
-@lru_cache
 def _depth_model():
+    with _load_lock:
+        return _load_depth_model()
+
+
+@lru_cache
+def _load_depth_model():
     # CPU on purpose: this small model runs in ~0.3 s on CPU, faster than the
     # round trip to the Mac GPU, and it keeps the preview free of any GPU need.
     processor = AutoImageProcessor.from_pretrained(DEPTH_MODEL)
@@ -63,8 +71,13 @@ def estimate_height(img: Image.Image) -> np.ndarray:
     return np.clip((raw - lo) / (hi - lo), 0.0, 1.0).astype(np.float32)
 
 
-@lru_cache
 def _normals_model():
+    with _load_lock:
+        return _load_normals_model()
+
+
+@lru_cache
+def _load_normals_model():
     from diffusers import MarigoldNormalsPipeline
 
     if device() == "cpu":

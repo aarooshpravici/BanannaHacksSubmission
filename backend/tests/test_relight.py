@@ -283,3 +283,41 @@ def test_relight_endpoints_end_to_end():
 
     assert client.post("/relight/render", json={"scene_id": "nope"}).status_code == 404
     assert client.post("/relight/render", json={"scene_id": scene["scene_id"], "light": {"height": 0}}).status_code == 422
+
+
+def test_two_requests_arriving_together_load_the_normals_model_once(monkeypatch):
+    import threading
+    import time
+
+    import diffusers
+
+    loads = []
+
+    class FakePipeline:
+        def to(self, device):
+            return self
+
+        def __call__(self, img, **kwargs):
+            class Out:
+                prediction = np.concatenate([np.zeros((1, img.height, img.width, 2), np.float32), np.ones((1, img.height, img.width, 1), np.float32)], axis=-1)
+
+            return Out()
+
+    def slow_load(*args, **kwargs):
+        loads.append(1)
+        time.sleep(0.2)  # long enough for the second thread to arrive mid-load
+        return FakePipeline()
+
+    monkeypatch.setattr(diffusers.MarigoldNormalsPipeline, "from_pretrained", slow_load)
+    R._load_normals_model.cache_clear()
+    results = []
+    threads = [threading.Thread(target=lambda: results.append(R.estimate_normals(Image.new("RGB", (16, 12))))) for _ in range(3)]
+    try:
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join()
+    finally:
+        R._load_normals_model.cache_clear()  # the real model must load for later tests
+    assert len(loads) == 1 and len(results) == 3
+    assert all(r.shape == (12, 16, 3) for r in results)
