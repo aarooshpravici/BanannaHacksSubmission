@@ -183,6 +183,23 @@ export function buildGeometry(height: Float32Array, width: number, rows: number)
 /** How the depth model is run: on the graphics chip, or on the processor. */
 export type DepthDevice = "webgpu" | "wasm";
 
+/**
+ * Which route to take: "auto" is the graphics chip when it can run the model,
+ * is not on the Worker's list of chips known to get it wrong and passes the
+ * check in lib/depthCheck.ts, otherwise the processor. The others are a
+ * tester's choice (see depthChoice in lib/localScene.ts): "check" is "auto"
+ * without the list.
+ */
+export type DepthChoice = "auto" | "check" | DepthDevice;
+
+/**
+ * Why the processor is running the model although the graphics chip could have:
+ *   "known"  the chip is on the Worker's list of chips known to get the model wrong; it was not tried
+ *   "check"  the chip ran the model and got the test picture wrong (lib/depthCheck.ts)
+ *   "error"  the chip threw, setting the model up or running it, or did not answer
+ */
+export type DepthFallback = "known" | "check" | "error";
+
 /** The photo at the scene's size, as RGBA bytes. */
 export interface DepthRequest {
   type: "estimate";
@@ -190,6 +207,9 @@ export interface DepthRequest {
   width: number;
   height: number;
   pixels: Uint8ClampedArray<ArrayBuffer>;
+  choice: DepthChoice;
+  /** What an earlier Worker on this page found wrong with the graphics chip, so a new one does not try it again. */
+  fallback: DepthFallback | null;
 }
 
 /**
@@ -202,8 +222,9 @@ export type DepthStage = "download" | "start" | "estimate";
 
 export type DepthReply =
   | { type: "progress"; id: number; stage: DepthStage; device: DepthDevice; loaded?: number; total?: number; cached?: boolean }
-  | { type: "done"; id: number; device: DepthDevice; ms: number; maps: GeometryMaps }
+  /** `fallback` says why, when the processor ran it in the graphics chip's place. */
+  | { type: "done"; id: number; device: DepthDevice; fallback: DepthFallback | null; ms: number; maps: GeometryMaps }
   /** `stage` is what was going on when it failed; "library" is the code that runs the model failing to load. */
-  | { type: "error"; id: number; stage: DepthStage | "library"; message: string }
+  | { type: "error"; id: number; stage: DepthStage | "library"; message: string; fallback: DepthFallback | null }
   /** A newer photo has taken this one's place. */
   | { type: "skipped"; id: number };

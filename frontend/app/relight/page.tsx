@@ -15,7 +15,7 @@ import { ApiError, errorMessage, isAbort, relightAdoptScene, relightEnhance, rel
 import { cn } from "@/lib/cn";
 import { API_URL, DEMO, MOCK } from "@/lib/config";
 import { type LoadedImage, downloadBase64AsPng, downloadCanvas, toDataUrl } from "@/lib/image";
-import { type DepthDevice, type LocalProgress, isLocalScene, localScene, progressText } from "@/lib/localScene";
+import { type DepthDevice, type LocalProgress, depthDeviceText, isLocalScene, localScene, progressText } from "@/lib/localScene";
 import { SAMPLES, type SamplePhoto, isSampleScene, loadSampleScene, sampleThumbUrl } from "@/lib/samples";
 import type { Light, RelightRender, RelightScene } from "@/lib/types";
 import { useJob } from "@/lib/useJob";
@@ -137,7 +137,6 @@ const DETAIL_HINT = "Slower to analyse, much better surface detail.";
 const DETAIL_HINT_SAMPLE = "Always on for a sample photo: its maps were made ahead of time with detailed normals.";
 const DETAIL_HINT_BROWSER_ONLY = "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs.";
 const DETAIL_HINT_BROWSER = "Off: this photo was analysed in your browser. Turn on to ask the Relight server for detailed normals.";
-const DEPTH_DEVICE_LABEL: Record<DepthDevice, string> = { webgpu: "graphics chip (WebGPU)", wasm: "processor (WebAssembly)" };
 /** Mock mode only, and only when asked for on the failure card: why the photo has a round edge. */
 const STAND_IN_SHAPE_NOTE =
   "No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or click New photo and try again once the depth model can be downloaded.";
@@ -977,7 +976,7 @@ export default function RelightPage() {
                 {scene.width} x {scene.height} px, relief {scene.relief}
                 {depthDevice && (
                   <span className="mt-0.5 block" data-depth-device={depthDevice} title="The depth model ran in this browser. The photo was not sent anywhere.">
-                    depth: this browser, {DEPTH_DEVICE_LABEL[depthDevice]}
+                    depth: this browser, {depthDeviceText(depthDevice)}
                   </span>
                 )}
                 {shadingLine && (

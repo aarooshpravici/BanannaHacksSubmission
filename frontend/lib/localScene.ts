@@ -7,7 +7,7 @@
 // model): these scenes have normals taken from the depth map's slope.
 
 import { base64ToBitmap, canvasToBase64, ctx2d, makeCanvas, sniffMime, stripDataUrl } from "./image";
-import { type DepthDevice, type DepthReply, type DepthRequest, type DepthStage, RELIEF, SCENE_MAX_SIDE } from "./sceneGeometry";
+import { type DepthChoice, type DepthDevice, type DepthFallback, type DepthReply, type DepthRequest, type DepthStage, RELIEF, SCENE_MAX_SIDE } from "./sceneGeometry";
 import type { RelightScene } from "./types";
 
 export type { DepthDevice } from "./sceneGeometry";
@@ -57,6 +57,44 @@ export interface LocalScene {
   device: DepthDevice;
 }
 
+/**
+ * A tester's choice of route, on the page's address:
+ *   ?depth=wasm    the processor, whatever the graphics chip can do
+ *   ?depth=webgpu  the graphics chip, without the check in lib/depthCheck.ts,
+ *                  so that a chip that fails it can still be shown failing
+ *   ?depth=check   the graphics chip with the check, also for a chip on the
+ *                  Worker's list of chips known to get the model wrong: this
+ *                  is how to find out whether the check catches such a chip
+ *   ?depth=auto    or nothing, or anything else: the graphics chip if it can
+ *                  run the model, is not on that list and passes the check,
+ *                  otherwise the processor
+ */
+function depthChoice(): DepthChoice {
+  try {
+    const asked = new URLSearchParams(window.location.search).get("depth")?.toLowerCase();
+    return asked === "wasm" || asked === "webgpu" || asked === "check" ? asked : "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+/** Why the processor has taken the graphics chip's place, for the rest of this page's life; null while it has not. */
+let gpuProblem: DepthFallback | null = null;
+
+/**
+ * The words after "depth: this browser," in the Geometry panel, for a scene
+ * from localScene(). They say so when the route is not the one the device
+ * would normally take, because that changes the speed and, on a faulty chip, the picture.
+ */
+export function depthDeviceText(device: DepthDevice): string {
+  const choice = depthChoice();
+  if (device === "webgpu") return choice === "webgpu" ? "graphics chip (WebGPU, not checked: ?depth=webgpu)" : "graphics chip (WebGPU)";
+  if (gpuProblem === "known") return "processor (this graphics chip is known to get the depth model wrong)";
+  if (gpuProblem === "check") return "processor (the graphics chip failed a check)";
+  if (gpuProblem === "error") return "processor (the graphics chip failed)";
+  return choice === "wasm" ? "processor (WebAssembly, asked for with ?depth=wasm)" : "processor (WebAssembly)";
+}
+
 /** The line under the spinner. */
 export function progressText(progress: LocalProgress): string {
   if (progress.stage === "prepare") return "Preparing your photo…";
@@ -84,6 +122,10 @@ interface Job {
   reject: (error: Error) => void;
   onProgress: (progress: LocalProgress) => void;
   timer: ReturnType<typeof setTimeout> | null;
+  /** The route the Worker last said this photo was on. */
+  device: DepthDevice | null;
+  /** The Worker has said the model is looking at a photo: this one, or the one whose place this one took and which the Worker has still to finish. */
+  running: boolean;
 }
 
 // One Worker for the page's lifetime, so the model stays set up between photos.
@@ -101,10 +143,13 @@ function fail(error: Error): void {
   failed?.reject(error);
 }
 
-function watch(current: Job, ms: number, text: string): void {
+/** `running` is for the wait while the model looks at the photo: a graphics chip that never answers then is not tried again. */
+function watch(current: Job, ms: number, text: string, running = false): void {
   if (current.timer) clearTimeout(current.timer);
   current.timer = setTimeout(() => {
-    if (job === current) fail(new Error(text));
+    if (job !== current) return;
+    if (running && current.device === "webgpu") gpuProblem = "error";
+    fail(new Error(text));
   }, ms);
 }
 
@@ -113,33 +158,48 @@ function onReply(reply: DepthReply): void {
   const current = job;
   if (reply.id !== current.id) {
     // The photo before this one is still finishing in the Worker, which is not silence: this one's turn comes next.
-    if (reply.type === "progress") watch(current, QUIET_TIMEOUT_MS, failureText("download", ""));
+    if (reply.type === "progress") {
+      current.device = reply.device;
+      current.running = reply.stage === "estimate";
+      if (current.running) watch(current, ESTIMATE_TIMEOUT_MS, failureText("timeout", ""), true);
+      else watch(current, QUIET_TIMEOUT_MS, failureText("download", ""));
+    }
     return;
   }
   if (reply.type === "progress") {
     current.onProgress(reply);
-    if (reply.stage === "estimate") watch(current, ESTIMATE_TIMEOUT_MS, failureText("timeout", ""));
+    current.device = reply.device;
+    current.running = reply.stage === "estimate";
+    if (current.running) watch(current, ESTIMATE_TIMEOUT_MS, failureText("timeout", ""), true);
     else watch(current, reply.stage === "start" ? START_TIMEOUT_MS : QUIET_TIMEOUT_MS, `The depth model stopped downloading. Check your connection and try again. ${SAMPLES_STILL_WORK}`);
     return;
   }
   if (reply.type === "done") {
     job = null;
     if (current.timer) clearTimeout(current.timer);
+    // Remembered here as well as in the Worker, which is thrown away when it stops answering.
+    gpuProblem ??= reply.fallback;
     current.resolve(reply);
   }
   // A Worker that has failed once keeps failing (the code that runs the model remembers a failed start): Retry gets a new one.
-  else if (reply.type === "error") fail(new Error(failureText(reply.stage, reply.message)));
+  else if (reply.type === "error") {
+    gpuProblem ??= reply.fallback;
+    fail(new Error(failureText(reply.stage, reply.message)));
+  }
   // "skipped" never comes for the current photo: run() has already rejected the one it belonged to.
 }
 
-function run(request: Omit<DepthRequest, "id">, onProgress: (progress: LocalProgress) => void): Promise<Extract<DepthReply, { type: "done" }>> {
+function run(request: Omit<DepthRequest, "id" | "choice" | "fallback">, onProgress: (progress: LocalProgress) => void): Promise<Extract<DepthReply, { type: "done" }>> {
   return new Promise((resolve, reject) => {
     // A photo still being worked on has been replaced: its caller is no longer listening for anything but this.
-    if (job) {
-      if (job.timer) clearTimeout(job.timer);
-      job.reject(new DOMException("Another photo was chosen.", "AbortError"));
+    const replaced = job;
+    if (replaced) {
+      if (replaced.timer) clearTimeout(replaced.timer);
+      replaced.reject(new DOMException("Another photo was chosen.", "AbortError"));
     }
-    const current: Job = { id: ++nextId, resolve, reject, onProgress, timer: null };
+    // The Worker finishes the replaced photo first. If the model was looking at it, this photo waits no longer for that than the replaced one would have, and a graphics chip that never answers is found out the same way.
+    const waiting = replaced?.running ?? false;
+    const current: Job = { id: ++nextId, resolve, reject, onProgress, timer: null, device: waiting ? (replaced?.device ?? null) : null, running: waiting };
     job = current;
     try {
       if (!worker) {
@@ -151,8 +211,9 @@ function run(request: Omit<DepthRequest, "id">, onProgress: (progress: LocalProg
           fail(new Error(failureText("estimate", event.message ?? "")));
         };
       }
-      watch(current, START_TIMEOUT_MS, failureText("download", ""));
-      const message: DepthRequest = { ...request, id: current.id };
+      if (waiting) watch(current, ESTIMATE_TIMEOUT_MS, failureText("timeout", ""), true);
+      else watch(current, START_TIMEOUT_MS, failureText("download", ""));
+      const message: DepthRequest = { ...request, id: current.id, choice: depthChoice(), fallback: gpuProblem };
       worker.postMessage(message, [request.pixels.buffer]);
     } catch (error) {
       console.warn("Relight: the depth Worker could not be started.", error);
@@ -190,7 +251,16 @@ export async function localScene(image: string, onProgress: (progress: LocalProg
   // A JPEG that already fits is kept as it is: saving it again would only soften it.
   const photo = scale === 1 && sniffMime(base64) === "image/jpeg" ? base64 : canvasToBase64(canvas, "image/jpeg");
 
-  const reply = await run({ type: "estimate", width, height, pixels }, onProgress);
+  const problemBefore = gpuProblem;
+  let reply: Extract<DepthReply, { type: "done" }>;
+  try {
+    reply = await run({ type: "estimate", width, height, pixels }, onProgress);
+  } catch (error) {
+    // The graphics chip was found out during this photo and took the Worker down with it: once more, on the processor, in a new Worker.
+    // Not for a chip on the list of known bad ones: it was never started, so whatever failed was something else.
+    if (problemBefore !== null || gpuProblem === null || gpuProblem === "known" || (error instanceof DOMException && error.name === "AbortError")) throw error;
+    reply = await run({ type: "estimate", width, height, pixels: ctx.getImageData(0, 0, width, height).data }, onProgress);
+  }
   const toPng = (data: Uint8ClampedArray<ArrayBuffer>) => {
     const out = makeCanvas(width, height);
     ctx2d(out).putImageData(new ImageData(data, width, height), 0, 0);
