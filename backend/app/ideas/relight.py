@@ -109,6 +109,35 @@ class Geometry:
     relief: float
 
 
+# Normals taken from the slope of the height field go wrong where one object
+# ends and what is behind it begins: the depth jumps, the slope there is very
+# steep, and the normal points sideways. Lit from the side, every object then
+# gets a bright rim towards the light and a dark rim away from it, like a
+# cut-out. A surface that really is that steep fills almost no pixels in a
+# photo, so a slope this steep is taken for a jump between objects and the
+# normal there is turned to face the viewer, like the flat ground beside it.
+#
+# The slope (rise over run, both in image widths) below which a normal is kept
+# as it is, and above which it faces the viewer; in between, a mix. 1.5 is a
+# surface tilted 56 degrees from the viewer and 4 is 76 degrees. Lower removes
+# more of the rim but flattens the rounded edge of a cup or a cheek sooner.
+DEPTH_STEP_SLOPE = (1.5, 4.0)
+# How far the flattening reaches to either side of a jump, and how softly it
+# fades out, in pixels at 512 width: the blur of the height field (smooth)
+# spreads a jump over several pixels, and its gentler shoulders would
+# otherwise be left as a thinner rim.
+DEPTH_STEP_GROW = 3.0
+DEPTH_STEP_FEATHER = 2.0
+
+
+def _depth_steps(dz_dx: np.ndarray, dz_dy: np.ndarray, w: int) -> np.ndarray:
+    """Where the height field jumps from one object to what is behind it: 0 = a surface, 1 = a jump."""
+    steep = _smoothstep(*DEPTH_STEP_SLOPE, np.hypot(dz_dx, dz_dy)).astype(np.float32)
+    grow = max(1, int(DEPTH_STEP_GROW * w / 512 + 0.5))
+    steep = cv2.dilate(steep, np.ones((2 * grow + 1, 2 * grow + 1), np.uint8))
+    return cv2.GaussianBlur(steep, (0, 0), DEPTH_STEP_FEATHER * w / 512)
+
+
 def build_geometry(
     height: np.ndarray, *, normals: np.ndarray | None = None, relief: float = 0.3, smooth: float = 1.5
 ) -> Geometry:
@@ -119,7 +148,8 @@ def build_geometry(
     tilt more.
     normals, if given (from estimate_normals), are used as they are; otherwise
     normals are derived from the slope of the height field, which is fast but
-    flat-looking because the depth map has little fine detail.
+    flat-looking because the depth map has little fine detail. Where the height
+    jumps from one object to the next they face the viewer (see DEPTH_STEP_SLOPE).
     smooth is a blur (pixels at 512 width) that removes depth-map noise, which
     would otherwise show up as speckled shading.
     """
@@ -131,7 +161,8 @@ def build_geometry(
     if normals is None:
         # Slopes with x and y in image widths: a step of one pixel is 1/W.
         dz_dy, dz_dx = np.gradient(z, 1.0 / w)
-        normals = np.dstack([-dz_dx, -dz_dy, np.ones_like(z)])
+        surface = 1.0 - _depth_steps(dz_dx, dz_dy, w)
+        normals = np.dstack([-dz_dx * surface, -dz_dy * surface, np.ones_like(z)])
         normals /= np.linalg.norm(normals, axis=2, keepdims=True)
     elif normals.shape[:2] != (h, w):
         raise ValueError(f"normals {normals.shape[:2]} do not match height {(h, w)}")

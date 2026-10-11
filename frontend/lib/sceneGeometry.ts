@@ -14,6 +14,17 @@ export const SCENE_MAX_SIDE = 1024;
 export const RELIEF = 0.3;
 /** Blur of the depth map, in pixels at 512 width. build_geometry's default: less and depth noise shows as speckled shading, more and edges go soft. */
 const SMOOTH = 1.5;
+/**
+ * DEPTH_STEP_SLOPE in the Python: the slope of the height field (rise over run, both in image widths) below which a
+ * normal is kept as it is and above which it is turned to face the viewer. A slope that steep is a jump from one object
+ * to what is behind it, not a surface; left alone, it gives every object a bright rim towards the light and a dark one
+ * away from it.
+ */
+const DEPTH_STEP_SLOPE_LOW = 1.5;
+const DEPTH_STEP_SLOPE_HIGH = 4;
+/** DEPTH_STEP_GROW and DEPTH_STEP_FEATHER: how far the flattening reaches to either side of a jump, and how softly it fades out, in pixels at 512 width. */
+const DEPTH_STEP_GROW = 3;
+const DEPTH_STEP_FEATHER = 2;
 /** The share of pixels ignored at each end when the depth is stretched to 0..1, so one stray pixel cannot squash the range. */
 const PERCENTILE_LOW = 0.01;
 const PERCENTILE_HIGH = 0.99;
@@ -141,11 +152,37 @@ export interface GeometryMaps {
   normals: Uint8ClampedArray<ArrayBuffer>;
 }
 
+/** cv2.dilate(src, np.ones((2 * reach + 1, 2 * reach + 1))): each pixel becomes the largest value within `reach` pixels of it, sideways and up and down. Past the picture's edge there is nothing to count. */
+function dilate(src: Float32Array, width: number, height: number, reach: number): Float32Array {
+  const across = new Float32Array(width * height);
+  for (let j = 0; j < height; j++) {
+    const row = j * width;
+    for (let i = 0; i < width; i++) {
+      let most = -Infinity;
+      for (let k = Math.max(0, i - reach), end = Math.min(width - 1, i + reach); k <= end; k++) if (src[row + k] > most) most = src[row + k];
+      across[row + i] = most;
+    }
+  }
+  const out = new Float32Array(width * height);
+  for (let j = 0; j < height; j++) {
+    const first = Math.max(0, j - reach);
+    const last = Math.min(height - 1, j + reach);
+    for (let i = 0; i < width; i++) {
+      let most = -Infinity;
+      for (let k = first; k <= last; k++) if (across[k * width + i] > most) most = across[k * width + i];
+      out[j * width + i] = most;
+    }
+  }
+  return out;
+}
+
 /**
  * build_geometry(height) with no detailed normals: blur the nearness map, and
  * take the normals from the slope of the height field it stands for. Fast, but
  * the depth map has little fine detail, so the normals are smooth: a face
- * shades flatter than with the backend's detailed normals model.
+ * shades flatter than with the backend's detailed normals model. Where the
+ * height jumps from one object to the next, the normal faces the viewer
+ * (_depth_steps in the Python).
  */
 export function buildGeometry(height: Float32Array, width: number, rows: number): GeometryMaps {
   const blurred = gaussianBlur(height, width, rows, (SMOOTH * width) / 512);
@@ -154,6 +191,9 @@ export function buildGeometry(height: Float32Array, width: number, rows: number)
   const z = (i: number, j: number) => blurred[j * width + i] * RELIEF;
   // np.gradient: the step is one pixel, 1 / width of an image width; one-sided at the edges.
   const slope = (ahead: number, behind: number, steps: number) => ((ahead - behind) / steps) * width;
+  const slopeX = new Float32Array(width * rows);
+  const slopeY = new Float32Array(width * rows);
+  const steep = new Float32Array(width * rows);
   for (let j = 0; j < rows; j++) {
     const up = Math.max(0, j - 1);
     const down = Math.min(rows - 1, j + 1);
@@ -162,6 +202,21 @@ export function buildGeometry(height: Float32Array, width: number, rows: number)
       const right = Math.min(width - 1, i + 1);
       const dzdx = right > left ? slope(z(right, j), z(left, j), right - left) : 0;
       const dzdy = down > up ? slope(z(i, down), z(i, up), down - up) : 0;
+      slopeX[j * width + i] = dzdx;
+      slopeY[j * width + i] = dzdy;
+      // _smoothstep(*DEPTH_STEP_SLOPE, slope)
+      const t = Math.min(1, Math.max(0, (Math.hypot(dzdx, dzdy) - DEPTH_STEP_SLOPE_LOW) / (DEPTH_STEP_SLOPE_HIGH - DEPTH_STEP_SLOPE_LOW)));
+      steep[j * width + i] = t * t * (3 - 2 * t);
+    }
+  }
+  // _depth_steps: 0 = a surface, 1 = a jump from one object to what is behind it.
+  const grown = dilate(steep, width, rows, Math.max(1, Math.floor((DEPTH_STEP_GROW * width) / 512 + 0.5)));
+  const steps = gaussianBlur(grown, width, rows, (DEPTH_STEP_FEATHER * width) / 512);
+  for (let j = 0; j < rows; j++) {
+    for (let i = 0; i < width; i++) {
+      const surface = 1 - steps[j * width + i];
+      const dzdx = slopeX[j * width + i] * surface;
+      const dzdy = slopeY[j * width + i] * surface;
       const length = Math.hypot(dzdx, dzdy, 1);
       const p = (j * width + i) * 4;
       const grey = Math.floor(blurred[j * width + i] * 255 + 0.5);

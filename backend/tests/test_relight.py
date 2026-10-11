@@ -67,6 +67,20 @@ def test_normals_point_outward_from_a_bump():
     assert np.allclose(g.normals[2, 2], [0, 0, 1], atol=1e-5)  # flat plane faces the viewer
 
 
+def test_a_jump_in_depth_does_not_get_a_sideways_normal():
+    """The edge of an object in front of a far background is a jump, not a surface: no bright or dark rim there."""
+    g = R.build_geometry(_block())
+    c = N // 2
+    # Across each of the block's four edges, and a few pixels to either side, every normal faces the viewer.
+    assert g.normals[c, 50:58, 2].min() > 0.99 and g.normals[c, 70:78, 2].min() > 0.99
+    assert g.normals[50:58, c, 2].min() > 0.99 and g.normals[70:78, c, 2].min() > 0.99
+    # A real slope is left as it was.
+    dome, plain = R.build_geometry(_dome(), smooth=0), _dome() * 0.3
+    dz_dy, dz_dx = np.gradient(plain, 1.0 / N)
+    expected = -dz_dx[c, c - 25] / np.sqrt(dz_dx[c, c - 25] ** 2 + dz_dy[c, c - 25] ** 2 + 1)
+    assert dome.normals[c, c - 25, 0] == pytest.approx(expected, abs=1e-4)
+
+
 @pytest.mark.parametrize(
     "light_xy, bright, dark",
     [
