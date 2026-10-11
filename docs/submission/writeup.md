@@ -6,11 +6,11 @@
 
 **How it works.** Three kinds of work. Here is which is ours.
 
-*Pretrained models, run once per photo.* Depth Anything V2 (Small) estimates depth and Marigold estimates surface normals. We trained neither. Without them there is nothing to shade, so the image AI is the core of the app.
+*Pretrained models, run once per photo.* Depth Anything V2 (Small) estimates depth and Marigold (a diffusion model fine-tuned from Stable Diffusion) estimates surface normals. We trained neither. Without them there is nothing to shade, so the image AI is the core of the app.
 
 *Our code, run every frame.* Each pixel gets diffuse (Lambert) shading from its normal and the direction to the light. Distance falloff is measured relative to the scene centre, so moving the light changes direction and gradient but not overall exposure. Cast shadows are ray-marched: each pixel walks 48 steps toward the light across the depth map. Whatever blocks the ray is sorted into a near, mid or far layer by how far it stands in front of the receiving surface, and each layer gets its own blur, so contact shadows stay crisp and distant ones spread and fade. The result is multiplied into the photo in linear light. This runs in a WebGL2 fragment shader, four passes per frame. The maths exists three times, as a Python reference, a TypeScript CPU port and the shader, kept within 2 levels out of 255.
 
-*Hosted model, optional.* Enhance sends our shaded preview to Gemini's image model or IC-Light v2 on fal.ai for a more photographic finish. The app is complete without it.
+*Hosted model, optional.* Enhance sends our shaded preview to Gemini's image model for a more photographic finish. The app is complete without it.
 
 **What was hard.**
 - Normals derived from the depth map left faces almost unshaded, because depth maps lack fine detail. A dedicated normals model fixed that.
@@ -18,4 +18,4 @@
 - Hard shadows landed on the sky as solid blocks, because a depth map treats a far background as a wall just behind the subject. The three shadow layers were our answer.
 - A server call per drag would lag, so the server sends depth and normals once and the browser shades.
 
-**Honest limits.** One photo gives a height field, not real 3D, so shadows are approximate: light from below looks blotchy on faces, and a faint dark column remains on open sky. Shading is diffuse only, and light already in the photo is not removed. The live shader has been tested on four devices so far: a Mac (Chrome and Safari), two Windows laptops (Intel and Snapdragon graphics) and a phone. Real Enhance has run once, and it weakened the side lighting. The hosted demo takes your own photo too, analysed in the browser: browser-estimated depth only, so faces shade flatter.
+**Honest limits.** One photo gives a height field, not real 3D, so shadows are approximate: light from below looks blotchy on faces, and a faint dark column remains on open sky. Shading is diffuse only, and light already in the photo is not removed. The live shader has been tested on four devices: a Mac (Chrome and Safari), two Windows laptops (Intel and Snapdragon graphics) and a phone. Real Enhance has run once, and it weakened the side lighting. The hosted demo takes your own photo too, analysed in the browser: browser-estimated depth only, so faces shade flatter.

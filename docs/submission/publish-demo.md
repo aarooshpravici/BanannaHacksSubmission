@@ -1,6 +1,8 @@
 # Publishing the static demo for free
 
-The static demo is the whole page with no backend: the four built-in samples, and your own photo, whose depth is estimated in the browser (a model of about 25 MB fetched once from huggingface.co and cdn.jsdelivr.net, so the host must not block those). Only Enhance is switched off.
+> **Superseded draft, kept for the record.** It was written before the static build existed. The demo is published with `bash tools/publish_demo.sh`, which builds `frontend/out` from the last commit and pushes it to the `gh-pages` branch; no workflow file is used. `frontend/README.md` ("Static demo") is the accurate description.
+
+The static demo is the whole page with no backend: the four built-in samples, and your own photo, whose depth is estimated in the browser (a model of about 25 MB fetched once from huggingface.co, from the host it sends downloads on to (us.aws.cdn.hf.co on Oct 11; the name can differ by region) and from cdn.jsdelivr.net, so the network must not block those). Only Enhance is switched off.
 
 Details marked [CHECK] could not be confirmed from the code, because the static build was still being added when this was written. At that time `frontend/package.json` had no `build:demo` script and `frontend/next.config.ts` had no static-export or base-path setting.
 
