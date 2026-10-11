@@ -10,7 +10,7 @@ You need about **12 GB of free disk space** and a good internet connection for t
 
 **Were you given a demo address?** The static demo needs no setup: open the address in any browser and go to group H in [TEST_PLAN.md](TEST_PLAN.md#h-hosted-demo-static-build). The demo takes your own photo too. It is not a replacement for this page: only the setup below can run Enhance or give a photo of yours detailed normals.
 
-> Honest note: the developer built and ran the app on one Apple-chip Mac, using Chrome. The Windows commands below were written carefully but **have not been run on a Windows computer**. If a command fails, copy the error text into an issue ([Reporting](README.md#reporting-what-you-found)). That is a useful result.
+> Honest note: the developer built and ran the app on one Apple-chip Mac, using Chrome. Of the Windows commands below, the frontend ones (step 2 and [Plan B](#plan-b-no-backend-mock-mode)) have been run by two testers, on Windows 11 and on Windows 11 on ARM, and work with `npm.cmd`. The backend ones (steps 3 to 5) were written carefully but **have not been run on a Windows computer**. If a command fails, copy the error text into an issue ([Reporting](README.md#reporting-what-you-found)). That is a useful result.
 
 ---
 
