@@ -171,7 +171,8 @@ input[type="range"].slider:focus-visible {
   --photo-w: min(100cqw, var(--photo-ratio) * 100cqh);
   --photo-h: min(100cqh, 100cqw / var(--photo-ratio));
   /* From the photo's edge out to where the middle of the sun has to stop. */
-  --reach-x: calc((100cqw - var(--photo-w)) / 2 + var(--stage-inset-x) - var(--handle-margin));
+  /* --handle-margin-x is larger than --handle-margin on a touch screen: see TOUCH_EDGE_CLEAR_PX in app/relight/page.tsx. */
+  --reach-x: calc((100cqw - var(--photo-w)) / 2 + var(--stage-inset-x) - var(--handle-margin-x, var(--handle-margin)));
   --reach-y: calc((100cqh - var(--photo-h)) / 2 + var(--stage-inset-y) - var(--handle-margin));
   left: clamp(calc(-1 * var(--reach-x)), calc(var(--light-x) * var(--photo-w)), calc(var(--photo-w) + var(--reach-x)));
   top: clamp(calc(-1 * var(--reach-y)), calc(var(--light-y) * var(--photo-h)), calc(var(--photo-h) + var(--reach-y)));

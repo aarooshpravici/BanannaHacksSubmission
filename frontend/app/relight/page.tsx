@@ -24,6 +24,14 @@ import { useJob } from "@/lib/useJob";
 const OUTSIDE = 0.5;
 /** How close the middle of the sun may come to the stage's edge, in pixels: close enough to reach past a photo that fills the stage, far enough that most of the sun stays in view. Also read by .light-handle in globals.css. */
 const HANDLE_MARGIN_PX = 18;
+/**
+ * On a touch screen, how far the middle of the sun keeps from the left and right
+ * sides of the screen, in pixels. A phone's browser takes a finger that goes down
+ * at the very side of the screen as its Back or Forward swipe, and a page cannot
+ * switch that off. With the stage 17 px from the side, a sun parked at the stage's
+ * edge sat inside that strip: a tester who reached for it on an iPhone left the page.
+ */
+const TOUCH_EDGE_CLEAR_PX = 48;
 /** Height: how far in front of the subject the light floats, in image widths. The slider's two ends. */
 const HEIGHT_MIN = 0.03;
 const HEIGHT_MAX = 2;
@@ -153,6 +161,13 @@ const PRESETS: { label: string; light: Partial<LightBase>; warmth?: number }[] =
 ];
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/** How close the middle of the sun may come to the stage's left and right edges: HANDLE_MARGIN_PX, or more on a touch screen where the stage reaches the side of the screen (TOUCH_EDGE_CLEAR_PX). */
+function handleMarginX(bounds: DOMRect | undefined) {
+  if (!bounds || !window.matchMedia("(pointer: coarse)").matches) return HANDLE_MARGIN_PX;
+  const gap = Math.min(bounds.left, document.documentElement.clientWidth - bounds.right);
+  return Math.max(HANDLE_MARGIN_PX, TOUCH_EDGE_CLEAR_PX - gap);
+}
 const round = (v: number, digits = 3) => Number(v.toFixed(digits));
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
 /** Height: 0 at the slider's low end, 1 at its high end, in equal ratios between. */
@@ -271,6 +286,8 @@ export default function RelightPage() {
   // A server render failed, so being slow is no longer a reason to ask the server.
   const [serverDown, setServerDown] = useState(false);
   const [dragging, setDragging] = useState(false);
+  // How close the drawn sun may come to the stage's sides: more on a touch screen (handleMarginX).
+  const [sunMarginX, setSunMarginX] = useState(HANDLE_MARGIN_PX);
   const [sweeping, setSweeping] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [tab, setTab] = useState<"live" | "enhanced">("live");
@@ -346,6 +363,21 @@ export default function RelightPage() {
   }, []);
   // Leaving the page (or having it hidden) ends a sweep in progress.
   useEffect(() => stopSweep, [stopSweep]);
+  // The stage's distance from the side of the screen changes with the photo, the window and a turned phone.
+  // A ref callback, so the watching starts when the stage is put on the page, whenever that is.
+  const watchStage = useCallback((stage: HTMLDivElement | null) => {
+    surface.current = stage;
+    if (!stage) return;
+    const measure = () => setSunMarginX(handleMarginX(stage.getBoundingClientRect()));
+    const watcher = new ResizeObserver(measure); // also calls measure once, as it starts watching
+    watcher.observe(stage);
+    window.addEventListener("resize", measure);
+    return () => {
+      watcher.disconnect();
+      window.removeEventListener("resize", measure);
+      surface.current = null;
+    };
+  }, []);
 
   const resetEnhance = enhance.reset;
   /** Everything that belongs to the photo on screen, cleared before another one takes its place. */
@@ -461,7 +493,8 @@ export default function RelightPage() {
     const bounds = surface.current?.getBoundingClientRect();
     if (!box || !bounds || box.width === 0) return;
     // The handle may leave the photo but not the stage.
-    const cx = clamp(event.clientX, bounds.left + HANDLE_MARGIN_PX, bounds.right - HANDLE_MARGIN_PX);
+    const marginX = handleMarginX(bounds);
+    const cx = clamp(event.clientX, bounds.left + marginX, bounds.right - marginX);
     const cy = clamp(event.clientY, bounds.top + HANDLE_MARGIN_PX, bounds.bottom - HANDLE_MARGIN_PX);
     const x = round(clamp((cx - box.left) / box.width, -OUTSIDE, 1 + OUTSIDE));
     const y = round(clamp((cy - box.top) / box.height, -OUTSIDE, 1 + OUTSIDE));
@@ -528,8 +561,9 @@ export default function RelightPage() {
     const box = imageBox.current?.getBoundingClientRect();
     const bounds = surface.current?.getBoundingClientRect();
     if (!box || !bounds || box.width === 0) return { x, y };
+    const marginX = handleMarginX(bounds);
     return {
-      x: round(clamp(x, (bounds.left + HANDLE_MARGIN_PX - box.left) / box.width, (bounds.right - HANDLE_MARGIN_PX - box.left) / box.width)),
+      x: round(clamp(x, (bounds.left + marginX - box.left) / box.width, (bounds.right - marginX - box.left) / box.width)),
       y: round(clamp(y, (bounds.top + HANDLE_MARGIN_PX - box.top) / box.height, (bounds.bottom - HANDLE_MARGIN_PX - box.top) / box.height)),
     };
   };
@@ -964,7 +998,7 @@ export default function RelightPage() {
       <Stage hug={{ width, height }}>
         {/* The whole stage is the drag surface, so the light can be pulled past the photo's edge. */}
         <div
-          ref={surface}
+          ref={watchStage}
           className={cn("absolute inset-0 touch-none", live && canLight && (dragging ? "cursor-grabbing" : "cursor-crosshair"))}
           onPointerDown={(e) => {
             if (!live || !canLight || e.button !== 0) return;
@@ -1054,6 +1088,7 @@ export default function RelightPage() {
                         "--light-y": light.y,
                         "--photo-ratio": width / height,
                         "--handle-margin": `${HANDLE_MARGIN_PX}px`,
+                        "--handle-margin-x": `${sunMarginX}px`,
                       } as CSSProperties
                     }
                   >
