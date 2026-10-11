@@ -369,7 +369,9 @@ export default function RelightPage() {
     surface.current = stage;
     if (!stage) return;
     const measure = () => setSunMarginX(handleMarginX(stage.getBoundingClientRect()));
-    const watcher = new ResizeObserver(measure); // also calls measure once, as it starts watching
+    // Once now: the watcher below only reports while the page is being drawn, which a tab in the background is not.
+    measure();
+    const watcher = new ResizeObserver(measure);
     watcher.observe(stage);
     window.addEventListener("resize", measure);
     return () => {
