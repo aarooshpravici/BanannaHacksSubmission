@@ -3,10 +3,10 @@
 ## Before you record
 
 - Record in Chrome on the Mac, window 1440 x 900, at 100% zoom. Hide the bookmarks bar.
-- Run the app with the backend on (so the status dot is not red) or use the hosted demo. The four samples work either way.
+- Run the app with the backend on (so the status dot is not red) or use the hosted demo. The four samples work either way. On the hosted demo your own photo works too once it has been republished from version 2b385ef or later, but its first load downloads about 25 MB and a face shades flatter than the Portrait sample, so film the samples.
 - Record the screen first with no voice, then read the words over it. It is much easier than doing both at once.
 - Read slowly. Each row's words fit its time at a calm pace. If you run long, cut shot 9 (the Cat) first, then shot 12.
-- Things to avoid on camera, because they are known weak spots: the **Right** preset on the Portrait (hard diagonal shadow edge on the face), the light below a face (blotchy bands), and clicking **Detailed normals** on a sample if the backend is off (it turns the sample into a dome).
+- Things to avoid on camera, because they are known weak spots: the **Right** preset on the Portrait (hard diagonal shadow edge on the face), the light below a face (blotchy bands), and clicking **Detailed normals** with the backend off (a red bar appears).
 - Shot 11 needs one still image: `proofs/live/relight_enhance.jpg` from the repository. Open it in a second tab before you start. [CHECK: look at it first. If the team thinks it looks bad, use the fallback line given in shot 11.]
 
 ## Shots

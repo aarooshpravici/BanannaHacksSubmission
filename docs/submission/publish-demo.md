@@ -1,6 +1,6 @@
 # Publishing the static demo for free
 
-The static demo is the page with the four built-in samples. It needs no backend: the samples' depth and normals are files in `frontend/public/samples/`. Uploading your own photo and real Enhance do not work on a static host (an uploaded photo is lit as a round dome, and Enhance is a stand-in). [CHECK: confirm this is still how the demo build behaves, and whether it hides or labels the upload box.]
+The static demo is the whole page with no backend: the four built-in samples, and your own photo, whose depth is estimated in the browser (a model of about 25 MB fetched once from huggingface.co and cdn.jsdelivr.net, so the host must not block those). Only Enhance is switched off.
 
 Details marked [CHECK] could not be confirmed from the code, because the static build was still being added when this was written. At that time `frontend/package.json` had no `build:demo` script and `frontend/next.config.ts` had no static-export or base-path setting.
 
@@ -33,7 +33,7 @@ Use this if the deadline is close. The example is Netlify Drop; Cloudflare Pages
 4. Open Finder and find the `frontend/out` folder.
 5. Drag the whole `out` folder onto the box on the web page. Wait for the upload to finish.
 6. Netlify shows an address ending in `.netlify.app`. Open it in a new private window.
-7. Check: all four thumbnails show; clicking each one loads the photo; dragging the sun changes the lighting; **Sweep** and **Cast shadows** work.
+7. Check: all four thumbnails show; clicking each one loads the photo; dragging the sun changes the lighting; **Sweep** and **Cast shadows** work. Upload one photo of your own in a private window and check it is lit (case H-12), on a phone too.
 8. Optional: in **Site configuration**, choose **Change site name** to get a tidier address. [CHECK: menu wording.]
 9. To update the site later: build again, open the site's **Deploys** page, and drag the new `out` folder onto it.
 10. Put the address in the submission form and in the README.
@@ -120,7 +120,7 @@ Pages can also publish a folder straight from a branch, but only a folder named 
 
 ## After publishing (both options)
 
-1. Open the address on a second computer and, if you can, a phone. The live shader has only ever run in Chrome on one Apple-chip Mac (open item 26 in `testing/PENDING.md`).
+1. Open the address on a second computer and, if you can, a phone. Upload one photo of your own in a private window and check it is lit (case H-12), on a phone too. The in-browser analysis of your own photo has only run in Chrome on one Apple-chip Mac (open item 40 in `testing/PENDING.md`).
 2. Run test cases U-05 and U-18 to U-21 from `testing/TEST_PLAN.md` on the hosted copy.
 3. Add the address to the top of `README.md` and to the submission form.
 4. Do not put any key in a build setting. The static demo needs none.

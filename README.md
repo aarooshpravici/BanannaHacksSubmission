@@ -63,7 +63,7 @@ If a device cannot run the shader, the page falls back by itself: first to the s
 
 | | |
 | --- | --- |
-| **Ours** | All of the lighting: the diffuse shading, the exposure-steady falloff, the soft edge where a surface turns from the light, the ray-marched shadows and their three layers, the linear-light mix, written three times (Python, TypeScript, GLSL). The server that runs the two models once and hands the browser the maps. The page. |
+| **Ours** | All of the lighting: the diffuse shading, the exposure-steady falloff, the soft edge where a surface turns from the light, the ray-marched shadows and their three layers, the linear-light mix, written three times (Python, TypeScript, GLSL). The server that runs the two models once and hands the browser the maps, and the port of its depth-to-maps step to the browser (`sceneGeometry.ts`). The page. |
 | **Not ours** | The depth model (Depth Anything V2 Small) and the normals model (Marigold): pretrained, downloaded, run as they are. We trained nothing. The optional Enhance model is a hosted service we call. |
 
 Without the two pretrained models there is nothing to shade; without our code there is nothing to drag. Dragging the light never calls a model.
@@ -82,8 +82,8 @@ Without the two pretrained models there is nothing to shade; without our code th
 
 Three ways, shortest first:
 
-- **Samples only, no backend:** `cd frontend && npm install && npm run dev`, then open http://localhost:3000 and click a sample. See "Frontend".
-- **Everything, on your own photos:** start the backend ("Backend"), then the frontend with `NEXT_PUBLIC_MOCK=0`.
+- **No backend:** `cd frontend && npm install && npm run dev`, then open http://localhost:3000 and click a sample or upload your own photo (its depth is estimated in the browser). See "Frontend".
+- **Everything, including detailed normals and Enhance:** start the backend ("Backend"), then the frontend with `NEXT_PUBLIC_MOCK=0`.
 - **A static folder for a web host:** see "Static demo".
 
 The earlier three-idea version of the project is on the `overnight-foundation` branch; `docs/overnight-report.md` describes it.
@@ -105,6 +105,8 @@ frontend/   Next.js app. One page, served at / and /relight
   public/how-it-works/        the stills in the "How it works" panel (written by docs/make_explainer_images.py)
   lib/                        relightGL.ts (the shader), relightMath.ts (the CPU port), and the CPU fallback that runs it:
                               relightCPU.ts, relightCpuCore.ts, relightCpu.worker.js
+                              localScene.ts, depth.worker.js, sceneGeometry.ts (a photo's depth and normals worked out in
+                              the browser when there is no backend)
 docs/       relight-sweep.gif and the script that renders it; submission/ holds the write-up drafts
 proofs/     output images from the scripts
 testing/    what to test and how, written for the testers
