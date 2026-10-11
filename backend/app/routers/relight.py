@@ -87,7 +87,8 @@ def _enhance(s: _Scene, light: R.Light, prompt: str, shadows: bool = True) -> di
     # of the image the light is nearest to.
     dx, dy = light.x - 0.5, light.y - 0.5
     side = ("Left" if dx < 0 else "Right") if abs(dx) >= abs(dy) else ("Top" if dy < 0 else "Bottom")
-    out = generation.relight_enhance(preview, prompt or "natural realistic lighting, detailed photo", light_from=side)
+    # The words go on as typed, empty or not: what an empty box means is generation's to say.
+    out = generation.relight_enhance(preview, prompt, light_from=side)
     return RelightRender(image=encode_image(out, "JPEG")).model_dump()
 
 

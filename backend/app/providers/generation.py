@@ -26,6 +26,11 @@ FAL_RELIGHT = "fal-ai/iclight-v2"
 
 IMAGE_TIMEOUT_SECONDS = 180  # a stalled call must fail, not pin a job worker forever
 
+# What Enhance asks for when its text box is left empty.
+DEFAULT_ENHANCE_PROMPT = "natural realistic lighting, detailed photo"
+# The longest request passed on, in characters. The box is for a line or two.
+MAX_ENHANCE_PROMPT = 400
+
 
 class GenerationError(RuntimeError):
     """A hosted generation call failed in a way the caller should report."""
@@ -138,27 +143,53 @@ def fal_run(endpoint: str, arguments: dict) -> list[Image.Image]:
     return images
 
 
+def enhance_instruction(prompt: str, light_from: str = "None") -> str:
+    """The words Gemini is sent with the shaded preview.
+
+    Nothing typed: a tidy-up. The same picture and the same light, made to look
+    like a photograph, and nothing else may change.
+
+    Something typed: the request leads, and it may change whatever it names,
+    the light and the colours included. What the tidy-up would have asked for
+    follows as a preference for whatever the request leaves open. It used to
+    come first, as a rule ("keep the subject, pose, framing and colors
+    unchanged"), with the request tacked on after it, so a request such as
+    "golden hour" or "on a beach" contradicted the sentence before it and lost.
+    """
+    prompt = " ".join(prompt.split())[:MAX_ENHANCE_PROMPT]
+    if not prompt:
+        return (
+            "This photo was relit by a rough shading algorithm. Re-render it as a natural, realistic photograph "
+            "with physically plausible light and shadow. Keep the light coming from exactly the same direction "
+            "and with the same brightness pattern as shown, and keep the subject, pose, framing and colors "
+            f"unchanged. {DEFAULT_ENHANCE_PROMPT}"
+        )
+    side = {"Left": "the left", "Right": "the right", "Top": "above", "Bottom": "below"}.get(light_from)
+    light = f"the light coming from {side}, as in the photo" if side else "the light coming from the same direction as in the photo"
+    return (
+        "This photo was relit by a rough shading algorithm. Edit it as the request below asks. Do everything the "
+        "request calls for, even where that changes the lighting, the colors, the background or the mood.\n"
+        f"Request: {prompt}\n"
+        "Where the request leaves something open, prefer, but do not insist on: the same subject, pose and framing; "
+        f"{light}; and the look of a natural, realistic, detailed photograph with physically plausible light and shadow."
+    )
+
+
 def relight_enhance(
     image: Image.Image, prompt: str, *, light_from: str = "None", seed: int | None = None, fresh: bool = False
 ) -> Image.Image:
-    """Diffusion relight (IC-Light v2) used to clean up a shaded preview.
+    """Hosted relight of a shaded preview: Gemini's image model, or IC-Light v2 on fal.
 
-    light_from is one of None / Left / Right / Top / Bottom: the coarse
-    direction the model starts the lighting from.
+    prompt is what the user typed, and may be empty. light_from is one of
+    None / Left / Right / Top / Bottom: the side the light is nearest to.
     """
     image = to_rgb(image)
     if get_settings().mock_mode:
         return image
     if provider() == "gemini":
-        instruction = (
-            "This photo was relit by a rough shading algorithm. Re-render it as a natural, realistic photograph "
-            "with physically plausible light and shadow. Keep the light coming from exactly the same direction "
-            "and with the same brightness pattern as shown, and keep the subject, pose, framing and colors "
-            f"unchanged. {prompt}"
-        )
-        return gemini_image(instruction, [image], fresh=fresh).resize(image.size, Image.LANCZOS)
+        return gemini_image(enhance_instruction(prompt, light_from), [image], fresh=fresh).resize(image.size, Image.LANCZOS)
     arguments = {
-        "prompt": prompt,
+        "prompt": " ".join(prompt.split())[:MAX_ENHANCE_PROMPT] or DEFAULT_ENHANCE_PROMPT,
         "image_url": to_data_url(image, "PNG"),
         "initial_latent": light_from,
         "output_format": "png",

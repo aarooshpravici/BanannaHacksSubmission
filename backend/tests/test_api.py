@@ -59,6 +59,27 @@ def test_mock_enhance_returns_the_preview_unchanged():
     assert generation.relight_enhance(img, "anything") is img
 
 
+def test_an_empty_enhance_box_asks_for_the_tidy_up_it_always_did():
+    # Word for word: results already paid for are found again in the cache by these words.
+    assert generation.enhance_instruction("  ", "Left") == (
+        "This photo was relit by a rough shading algorithm. Re-render it as a natural, realistic photograph "
+        "with physically plausible light and shadow. Keep the light coming from exactly the same direction "
+        "and with the same brightness pattern as shown, and keep the subject, pose, framing and colors "
+        "unchanged. natural realistic lighting, detailed photo"
+    )
+
+
+def test_a_typed_enhance_request_leads_and_the_tidy_up_is_only_a_preference():
+    words = generation.enhance_instruction("  golden hour,\n on a beach ", "Right")
+    assert "Request: golden hour, on a beach\n" in words
+    assert words.index("Request:") < words.index("prefer, but do not insist on")
+    assert "the light coming from the right, as in the photo" in words
+    # The old rule, which a request could not get past, is gone.
+    assert "unchanged" not in words and "exactly the same direction" not in words
+    assert "same direction as in the photo" in generation.enhance_instruction("warmer")
+    assert len(generation.enhance_instruction("x" * 5000)) < 1200
+
+
 def test_real_generation_without_key_fails_with_a_clear_message(monkeypatch):
     monkeypatch.setattr(get_settings(), "mock_mode", False)
     monkeypatch.setattr(get_settings(), "image_provider", "auto")
