@@ -1,6 +1,6 @@
 "use client";
 
-import { type MouseEvent, type ReactNode, useId, useRef } from "react";
+import { type MouseEvent, type ReactNode, useEffect, useId, useRef } from "react";
 import { XIcon } from "./icons";
 import { Button } from "./ui";
 import { cn } from "@/lib/cn";
@@ -87,8 +87,20 @@ export function HowItWorks() {
     // Start at the top every time. The browser keeps the place the text was scrolled to when the panel was
     // closed, and a closed dialog has no box to scroll, so this has to come after showModal().
     if (scroller.current) scroller.current.scrollTop = 0;
+    // On a phone the panel is the whole screen, and Back is how a screen is left there. Without a step of
+    // history of its own, Back left the app and lost the photo.
+    window.history.pushState({ howItWorks: true }, "");
   };
   const close = () => dialog.current?.close();
+  // Back closes the panel. Closed any other way, the panel takes its step of history away again.
+  useEffect(() => {
+    const onBack = () => dialog.current?.close();
+    window.addEventListener("popstate", onBack);
+    return () => window.removeEventListener("popstate", onBack);
+  }, []);
+  const dropHistoryStep = () => {
+    if (window.history.state?.howItWorks) window.history.back();
+  };
   // The panel's content fills the dialog edge to edge, so a click that lands on the dialog element itself is on the backdrop.
   const closeOnBackdrop = (e: MouseEvent<HTMLDialogElement>) => {
     if (e.target === e.currentTarget) close();
@@ -104,6 +116,7 @@ export function HowItWorks() {
         ref={dialog}
         aria-labelledby={titleId}
         onClick={closeOnBackdrop}
+        onClose={dropHistoryStep}
         className="m-auto h-full max-h-none w-full max-w-none overflow-hidden bg-surface p-0 text-zinc-200 backdrop:bg-black/70 sm:h-auto sm:max-h-[min(88vh,56rem)] sm:max-w-2xl sm:rounded-2xl sm:border sm:border-white/10 sm:shadow-2xl"
       >
         <div className="flex h-full max-h-[inherit] flex-col motion-safe:animate-rise">
@@ -117,7 +130,8 @@ export function HowItWorks() {
             </Button>
           </header>
 
-          <div ref={scroller} className="thin-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-5 pt-4">
+          {/* Chrome lets the Tab key select this scrolling text and draws its own blue ring; the ring here is the page's yellow one, inside the edge where the dialog does not clip it. */}
+          <div ref={scroller} className="thin-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-5 pt-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent/70">
             <p className="text-[13px] leading-5 text-zinc-300">
               Two pretrained vision models measure the photo once. Everything that moves when you drag the light is our own shading code, running in your browser. Here is each step on the Portrait sample, and who does it.
             </p>
