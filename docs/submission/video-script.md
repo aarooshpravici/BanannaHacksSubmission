@@ -29,5 +29,6 @@
 ## Notes for whoever edits
 
 - Total speech is about 364 words. At 135 words a minute, with the pauses the shots need, the table adds up to 2:55. Nobody has timed it aloud: time one read-through before recording, and keep the finished video under 3:00.
+- A tester who found the starting light too contrasty on the Portrait liked this setting best: light at the upper left outside the photo (x -0.38, y -0.03), Height 0.03, Intensity 0.95, **Ambient 0.60**, Colour fully warm. If a face looks harsh on camera, raise **Ambient** before anything else.
 - Do not say a frame rate or a speed number. None has been measured on a second computer.
 - The "what is next" list in shot 11 is a plan, not something built. Keep the word "Next".
