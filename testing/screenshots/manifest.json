@@ -1158,7 +1158,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 1.5,
+    "sceneSeconds": 1.1,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1838,7 +1838,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Cat",
     "light": {
       "x": -0.1,

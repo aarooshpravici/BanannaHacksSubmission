@@ -56,6 +56,9 @@ const ENHANCE_HINT = "A photoreal pass over this lighting. Takes a few seconds."
 const SERVER_RENDER_OFFLINE = `Cannot reach the backend at ${API_URL}. Is it running?`;
 /** The static demo: why uploading and Enhance are missing. */
 const DEMO_UPLOAD_NOTE = "Uploading your own photo needs the Relight server, which this demo runs without.";
+const STAND_IN_SHAPE_NOTE =
+  "No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or start the backend to light your own photo properly.";
+
 const DEMO_ENHANCE_NOTE = "Enhance needs the Relight server, which this demo runs without.";
 /**
  * Shading on the processor: a full-quality picture that takes longer than this,
@@ -518,6 +521,10 @@ export default function RelightPage() {
           : `Live shading is unavailable (${localProblem}). Showing server renders instead, which lag slightly behind the light.`;
   const onProcessor = path !== null && path.kind.startsWith("cpu");
   // A quiet line for the slower ways of shading that still work. The red bar above is for when none does.
+  // In mock mode there is no backend to work out a photo's shape, so an upload
+  // is lit as a made-up dome. A tester reported that dome as a bug: say what it is.
+  const standInShape = MOCK && scene !== null && !isSampleScene(scene);
+
   const shadingNote =
     localProblem !== null || !ready || path === null
       ? null
@@ -760,6 +767,7 @@ export default function RelightPage() {
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
       <ErrorBanner message={enhanceError} onDismiss={enhance.reset} className="max-lg:hidden" />
       <ErrorBanner message={gpuMessage} onRetry={!DEMO && server.error !== null ? server.retry : undefined} />
+      <ShadingNote message={standInShape ? STAND_IN_SHAPE_NOTE : null} />
       <ShadingNote message={shadingNote} />
 
       <Stage hug={{ width, height }}>
