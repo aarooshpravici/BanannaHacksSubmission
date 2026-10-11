@@ -25,7 +25,7 @@ Short on time? Read [TEST_FIRST.md](TEST_FIRST.md): one page saying what to test
 | Your share of the full plan ([TEST_PLAN.md](TEST_PLAN.md)) | 1.5 to 3 hours |
 | The whole plan alone | 5 to 6 hours |
 
-The plan has **208 test cases** in 17 groups. Some need a key, a touch screen or a second browser, and some can only be done if your device happens to take a rare path; skip those you cannot do and mark them NOT RUN.
+The plan has **211 test cases** in 17 groups. Some need a key, a touch screen or a second browser, and some can only be done if your device happens to take a rare path; skip those you cannot do and mark them NOT RUN.
 
 If setup fails, that is a result too. Report it (see [Reporting](#reporting-what-you-found)) and switch to "Plan B" in [SETUP.md](SETUP.md#plan-b-no-backend-mock-mode).
 
@@ -54,6 +54,8 @@ Everyone does the smoke test first. Then pick one share and say which in your re
 | C | Layout (W), Kinds of photos (T), Errors (R), Shading paths (F), Speed (D), What a judge would try (J) |
 | Everyone, if an address was given | Hosted demo (H). On a real phone if you have one |
 
+**New in the depth check update of Oct 11, after a tester's report (issue 4):** if you have a Snapdragon (Qualcomm) laptop with Windows, do **P-15** before anything else; nobody else can. On any other computer, do **P-14**: two minutes, and it gives us one line from your browser's console that we cannot get any other way.
+
 Everyone starts with **H-12** (your own photo with no backend, on your phone and your computer; without a demo address, **P-10** in Plan B). Next come the two things that are new on Oct 11: **Q-13** and **L-13** (the sun grows as the light comes nearer, and scrolling on the sun changes Height; on a phone **L-16**), and, if you have an iPhone and a Mac, **U-27** (a photo sent by AirDrop). Everyone also does three cases, whatever their share: **W-16** (which shading path your device uses, and whether the light works), on every device you own; **Q-11** (the face under side light); and **G-07** (is the "How it works" card clear and right to a newcomer). In group F, most cases can only be done if your device takes that path by itself; mark the others NOT RUN. If you have time left, do the rest of the "Picture quality (Q)" group as well. It needs human judgement, and three opinions are better than one.
 
 ## Words used in this kit
@@ -65,7 +67,7 @@ Everyone starts with **H-12** (your own photo with no backend, on your phone and
 - **Stage**: the big dark area on the left that holds the photo.
 - **Sun**: the round button with a sun icon on the stage. It is the light.
 - **Sidebar**: the column on the right with three panels: LIGHT, ENHANCE, GEOMETRY. GEOMETRY starts folded into one row; click the row to open it. On a phone-sized window the sidebar sits under the stage.
-- **Depth line**: a small grey line just above the shading line, only for a photo whose shape your browser worked out: "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)". With the backend, and for a sample, there is no such line.
+- **Depth line**: a small grey line just above the shading line, only for a photo whose shape your browser worked out: "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)". Since the depth check update of Oct 11 the words after "processor" can also give a reason, for example "(the graphics chip failed a check)"; case P-14 in the test plan lists every wording. With the backend, and for a sample, there is no such line.
 - **Sample**: one of the four small pictures on the first page (Portrait, Coffee cup, Cat, Rocket). Clicking one opens that photo at once. Samples need no backend.
 - **Backend**: the Python program that studies the photo. **Frontend**: the web page.
 - **Static demo** (or hosted demo): a copy of the web page made of plain files, with no backend anywhere. It has the four samples and takes your own photo; only Enhance is off. Its pill is green and reads "demo: runs in your browser".

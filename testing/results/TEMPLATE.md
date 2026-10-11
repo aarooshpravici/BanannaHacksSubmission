@@ -13,6 +13,8 @@ Never write a key, a password or the contents of a `.env` file here.
 - Browser and version:
 - Top-right pill reads (mock / online, mock providers / online / offline / demo):
 - Shading line (click the GEOMETRY row at the bottom of the sidebar and copy its last grey line, for example "shading: graphics chip, full quality"; write "none" if there is no such line. Also copy any grey note above the photo):
+- Depth line (GEOMETRY, own photo, no backend: copy the small grey line that starts "depth:", for example "depth: this browser, graphics chip (WebGPU)"; write "none" if you only used samples or the backend):
+- Console lines that start "Relight:" (case P-14 says how to open the browser's console; normally there is one, and it starts "Relight: the graphics chip"; copy each whole line, with its numbers; write "none" if there is no such line, and "phone" on a phone):
 - What I ran (smoke test / share A / share B / share C / group H demo / other):
 
 ## Setup
@@ -90,6 +92,9 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | P-11 | | |
 | P-12 | | |
 | P-13 | | |
+| P-14 | | |
+| P-15 | | |
+| P-16 | | |
 | L-01 | | |
 | L-02 | | |
 | L-03 | | |

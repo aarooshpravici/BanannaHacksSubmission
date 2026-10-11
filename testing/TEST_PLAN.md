@@ -13,7 +13,7 @@ Every test case has an ID (for example `L-03`), numbered steps, the expected res
 - **The x and y numbers.** x 0.00 is the photo's left edge and 1.00 its right edge; y 0.00 is the top and 1.00 the bottom. Numbers below 0 or above 1 mean the light is outside the photo. **A preset always gives the same numbers**, on every window and every photo: **Left** x -0.10, y 0.40; **Right** x 1.10, y 0.40; **Top** x 0.50, y -0.15. If that point lies beyond the edge of the stage, the sun is drawn at the stage's edge and the readout still shows the preset's numbers. A drag or an arrow key is different: it stops at the stage's edge, and the readout shows where it stopped.
 - **Where an Enhance error shows.** On a window 1024 pixels wide or more, a failed Enhance shows a red bar **above the photo**. On a narrower window (a phone) the same message is a red box inside the ENHANCE panel, under the button. The cases say "above the photo"; on a phone look in the ENHANCE panel (R-21).
 - **GEOMETRY is folded.** The GEOMETRY panel at the bottom of the sidebar starts as a single row. Where a case says "open GEOMETRY", click that row.
-- **The size line and the shading line.** The opened GEOMETRY panel ends with two small grey lines in typewriter letters, under the **Detailed normals** switch. The first is the **size line**, for example "512 x 512 px, relief 0.3". The second is the **shading line**. It starts with "shading:" and says what is drawing the lit picture on your device, for example "shading: graphics chip, full quality". It appears once the lit picture is on screen. Its possible wordings, and what each means, are in the table at the top of [group F](#f-shading-paths). For a photo whose shape was worked out in your browser there is a third line between those two, the **depth line**: "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)" (P-12). **Copy the shading line into every report, and the depth line when there is one.**
+- **The size line and the shading line.** The opened GEOMETRY panel ends with two small grey lines in typewriter letters, under the **Detailed normals** switch. The first is the **size line**, for example "512 x 512 px, relief 0.3". The second is the **shading line**. It starts with "shading:" and says what is drawing the lit picture on your device, for example "shading: graphics chip, full quality". It appears once the lit picture is on screen. Its possible wordings, and what each means, are in the table at the top of [group F](#f-shading-paths). For a photo whose shape was worked out in your browser there is a third line between those two, the **depth line**: "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)" (P-12). Since the depth check update of Oct 11 the words after "processor" can also give a reason, for example "(the graphics chip failed a check)": P-14 lists every wording. **Copy the shading line into every report, and the depth line when there is one.**
 - **"How it works".** The words "How it works" in the top bar, left of the pill, open a card that explains the app. Group G tests it. It is on every page.
 - **Known issues** are listed near the top of [PENDING.md](PENDING.md#already-known-no-need-to-report), under "Already known: no need to report". Read that list once before you start. Do not report those again unless they are worse than described.
 - **Test photos** are in the `testing/photos` folder of the project. Where that is on your disk: see the top of the smoke test in [README.md](README.md#10-minute-smoke-test).
@@ -353,7 +353,7 @@ A FAIL is any of these: no bar and no photo; the old bar "That file is not an im
 
 ## P. Scene preparation
 
-"Scene preparation" is the wait after choosing a photo, while the backend works out the photo's shape. With no backend (Plan B, the static demo, or the **Analyse in this browser** button) your browser works it out by itself: cases P-10 to P-13, new in the late night update of Oct 10.
+"Scene preparation" is the wait after choosing a photo, while the backend works out the photo's shape. With no backend (Plan B, the static demo, or the **Analyse in this browser** button) your browser works it out by itself: cases P-10 to P-13, new in the late night update of Oct 10. Before it does, the page now tests the graphics chip on a picture of its own: cases P-14 to P-16, new in the depth check update of Oct 11.
 
 ### P-01 Loading screen
 
@@ -460,7 +460,7 @@ With no backend, your browser works out the photo's shape by itself. The first t
 - "Working out the shape of your photo…"
 - for an instant, perhaps, "Preparing the shader…"
 
-It never reads "Estimating depth and surface normals…"; those are the backend's words. Then the photo brightens and the sun appears near the left edge, on the flag. Step 3: the left of the face is bright and the right half darker, and the lighting follows the sun at once. There is no red bar, no card and no round dome. The face is a little flatter than on the Portrait sample; that is known (Q-12). Step 4: see P-12.
+It never reads "Estimating depth and surface normals…"; those are the backend's words. Then the photo brightens and the sun appears near the left edge, on the flag. Step 3: the left of the face is bright and the right half darker, and the lighting follows the sun at once. There is no red bar, no card and no round dome. Flat walls are smooth: a regular grid of dimples over them, like hammered metal, is a FAIL (issue 4; since the depth check update of Oct 11 the page tests the graphics chip before your photo, and P-14 and P-15 say what to send us). The face is a little flatter than on the Portrait sample; that is known (Q-12). Step 4: see P-12.
 
 **How long is acceptable.** On the developer's Mac with fast internet: about 3 seconds, or about 5 where the depth line says "processor (WebAssembly)". On home internet the download decides. **Up to 1 minute is acceptable.** More than 2 minutes is a FAIL, and so is a label that stops changing for more than a minute: write down the last words you saw. Write down your time, your internet speed if you know it, the device and the browser. (This has run only in Chrome on one Apple-chip Mac. Every other browser and device is new ground.)
 
@@ -499,7 +499,7 @@ Needs Plan B or the static demo. (In the normal app, after **Analyse in this bro
 - **Detailed normals**: the switch is **off**, dull and greyed. Under it: "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs." (On a window less than 832 pixels high that line is hover text on the switch.)
 - Three small grey lines in typewriter letters: the size line "512 x 512 px, relief 0.3"; the **depth line**, which is new, "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)"; and the shading line (F-01).
 
-**Copy the depth line into your report.** The developer has only ever seen "graphics chip (WebGPU)"; if yours says "processor (WebAssembly)", that is a result we want, with your time from P-10. Step 3: the hover text reads "The depth model ran in this browser. The photo was not sent anywhere." Step 4: the click does nothing: no loading label, no change to the photo. The mouse pointer over the switch is a "not allowed" sign. Tab skips the switch.
+**Copy the depth line into your report.** On its own Mac the developer gets "graphics chip (WebGPU)"; if yours says "processor (WebAssembly)", that is a result we want, with your time from P-10. Since the depth check update of Oct 11 the line can also read "processor (the graphics chip failed a check)", "processor (the graphics chip failed)" or "processor (this graphics chip is known to get the depth model wrong)": P-14 says what each means, and P-16 how to choose the route from the address. Step 3: the hover text reads "The depth model ran in this browser. The photo was not sent anywhere." Step 4: the click does nothing: no loading label, no change to the photo. The mouse pointer over the switch is a "not allowed" sign. Tab skips the switch.
 
 ![P-12 the panel, enlarged](screenshots/172-demo-own-photo-geometry.jpg)
 ![P-12 the switch and its line, enlarged](screenshots/173-demo-own-photo-detailed-normals.jpg)
@@ -527,6 +527,111 @@ The card can show five other lines. The developer has never seen any of them on 
 ![P-13 on the demo](screenshots/174-demo-depth-model-not-downloaded.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
+
+### P-14 The graphics chip is tested before your photo (new on Oct 11: wanted from every computer)
+
+New in the depth check update of Oct 11. Needs Plan B (pill "backend: mock") or the static demo (pill "demo: runs in your browser"). It takes two minutes. The demo online has this only once it has been published again from the new version: P-16 step 1 shows how to tell.
+
+**Why this case exists.** On one tester's Snapdragon laptop, both photos they tried came out covered in a regular grid of dimples, like hammered metal (issue 4). The depth model had run on that laptop's graphics chip with no error and had given a wrong answer. So the page now tests the graphics chip first. Each time the page is loaded, before your first photo, it runs the depth model on a small test picture of its own (a wall, a floor, a ball, a box and a post) and compares the answer with the one a processor gives, which is stored in the page. If the chip's answer is wrong, the processor works out your photo instead: slower, and right. This is about the **depth line** only. The four samples and the shading line have no part in it.
+
+**Why we want one line from you.** The test lets the chip's answer be at most 6 times as rough as the processor's. That limit was set from one healthy chip, an Apple one, which scores 3.27, and we need the scores of other makes (Intel, NVIDIA, AMD and the rest) to know that the limit does not turn a healthy chip away. Your browser writes the scores in its **console**: a panel where a page leaves notes for developers.
+
+**How to open the console.**
+
+- Chrome and Edge: press F12 or Ctrl+Shift+J on Windows, Cmd+Option+J on a Mac. If another tab of the panel is in front, click **Console**.
+- Firefox: Ctrl+Shift+K on Windows, Cmd+Option+K on a Mac.
+- Safari on a Mac: once, open Safari's **Settings**, click **Advanced** and tick "Show features for web developers" (in older versions "Show Develop menu in menu bar"). Then press Cmd+Option+C, or use the menu **Develop**, then **Show JavaScript Console**.
+- A phone has no console. On a phone do steps 3 to 5 only, and send the depth line and your time.
+
+The console may hold many lines. Ours all start with "Relight:". Typing `Relight` into the console's **Filter** box hides the others.
+
+1. Open the page. Open the console. 2. With the console open, reload the page. 3. Choose a photo of your own through the dashed box (or `testing/photos/01-portrait-astronaut.jpg`; not a sample). Count the seconds until the sun appears. 4. Click **Left**. Look at a flat part of the photo: a wall, the sky, a table. 5. Open GEOMETRY. Look at the Depth picture, and copy the small grey line that starts "depth:". 6. In the console, find every line that starts "Relight:". On most computers there is one, and it starts "Relight: the graphics chip". Select each whole line and copy it, or take a screenshot of it.
+
+**Expected:** step 3: the photo is lit as in P-10. Step 4: flat surfaces are smooth, with no regular pattern on them. Steps 5 and 6: one of the five rows below. The first row is the normal one.
+
+| The depth line reads | In the console | What it means |
+| --- | --- | --- |
+| "depth: this browser, graphics chip (WebGPU)" | A line like "Relight: the graphics chip (apple metal-3) passed the depth model's check: agreement 0.9999 (0.99 or more passes), roughness 3.27 times the processor's (6 or less passes), 175 ms." The words in the first brackets name your chip, and the numbers are your chip's. | The chip passed the test and worked out your photo. |
+| "depth: this browser, processor (WebAssembly)" | No line that starts "Relight:". | This browser cannot run the depth model on the graphics chip at all, so there was nothing to test. Not a failure. Write down the browser and its version. |
+| "depth: this browser, processor (the graphics chip failed a check)" | A yellow line that starts "Relight: the depth model failed on webgpu (start). DepthCheckFailed: the graphics chip (…) got the depth model's test picture wrong: agreement …, roughness …". | The chip got the test picture wrong, so the processor worked out your photo. The photo should be smooth. Copy the yellow line whole: it holds your chip's scores. Then read "A FAIL is" below. |
+| "depth: this browser, processor (the graphics chip failed)" | A yellow line that starts "Relight: the depth model failed on webgpu". | The chip gave an error or did not answer, so the processor worked out your photo. The photo should be smooth. Copy the yellow lines whole. |
+| "depth: this browser, processor (this graphics chip is known to get the depth model wrong)" | A yellow line that starts "Relight: the graphics chip (…) is on the list of chips known to get the depth model wrong." | A Qualcomm graphics chip on Windows. The chip was not tried. Do P-15: yours is the laptop we most need to hear from. |
+
+**Write down:** the console line, whole; the depth line; your computer, and its graphics chip if you know it; the browser and its version; and the seconds from step 3.
+
+**A FAIL is:**
+
+- **A regular grid of dimples on any photo**, whatever the depth line says. (It is expected only with `?depth=webgpu` on the address: P-16.) Send a screenshot with GEOMETRY open, and the console line.
+- **"processor (the graphics chip failed a check)" on a device whose pictures are fine.** To find out, add `?depth=webgpu` to the address (P-16) and choose the same photo: that runs the chip without the test. If the photo then has the dimples, the test was right, and this case is a PASS: tell us, with both screenshots. If the photo is smooth, the test turned a healthy chip away. At the normal address your picture is still right, only slower: on the developer's Mac the processor takes about 4 to 5 seconds for the first photo after a reload and about 2 seconds for each later one, against about 0.9 and 0.2 seconds on the graphics chip. Say so, mark FAIL, and send the yellow line: its scores are what the limit has to be corrected with.
+
+(Seen by the developer only in Chrome without a window, on one Apple-chip Mac. Row one: on every load, with these two scores each time. Row two: with WebGPU switched off. Rows three and four: with a fault put in by a program: a spoiled answer for row three; an error, or an answer that is not numbers, for row four. Row five: with a program making the Mac's chip give its name as a Qualcomm one and the browser say it runs on Windows. No other graphics chip has run the test.)
+
+`Result: PASS / FAIL / NOT RUN` Depth line, console line, device, browser and seconds:
+
+### P-15 A Snapdragon (Qualcomm) laptop on Windows: are the dimples gone? (only with such a laptop)
+
+New in the depth check update of Oct 11. **Only for someone with a Windows laptop that has a Qualcomm Snapdragon chip** (its graphics chip is called Adreno). Everyone else: mark NOT RUN and do P-14. If you have such a laptop, this is the most wanted result in the whole plan. Issue 4 was found on one, nobody else on the team has one, and **the developer has never run any of this on a Qualcomm chip**. The fix was built on a Mac, with the fault imitated by a program.
+
+Needs Plan B (pill "backend: mock") at the version named at the top of [TEST_FIRST.md](TEST_FIRST.md) or later; "Getting fixes" in [SETUP.md](SETUP.md#what-to-expect) says how to get it. Or the hosted demo, once it has been published again from that version (P-16 step 1 shows how to tell).
+
+**What was done for this chip.** Two things. (1) A list. The page now takes it as known that a Qualcomm graphics chip on Windows gets the depth model wrong. It does not try the chip at all; the processor works out your photo. (2) A test for every chip, described in P-14. The list exists because nobody could try the test on the real chip. Run 2 below tries it.
+
+**Four runs, each at its own address.** To change the address, click in the address bar, type the option at the end and press Enter. The page loads again.
+
+| Run | On your own computer (Plan B) | On the hosted demo |
+| --- | --- | --- |
+| 1 | `http://localhost:3000/` | `https://aarooshpravici.github.io/BanannaHacksSubmission/` |
+| 2 | `http://localhost:3000/?depth=check` | `https://aarooshpravici.github.io/BanannaHacksSubmission/?depth=check` |
+| 3 | `http://localhost:3000/?depth=webgpu` | `https://aarooshpravici.github.io/BanannaHacksSubmission/?depth=webgpu` |
+| 4 | `http://localhost:3000/?depth=wasm` | `https://aarooshpravici.github.io/BanannaHacksSubmission/?depth=wasm` |
+
+**In every run:** 1. Open the browser's console (P-14 says how), then open the run's address. 2. Choose `testing/photos/01-portrait-astronaut.jpg` through the dashed box (the file, not the Portrait sample). Count the seconds until the sun appears. 3. Click **Left**. Look at the wall and the flag behind the astronaut. 4. Open GEOMETRY. Look at the Depth picture. Copy the small grey line that starts "depth:". 5. Copy every line in the console that starts "Relight:". 6. Take a screenshot of the whole window. In run 4 only: 7. Click **New photo**, choose `02-object-coffee.jpg` and count the seconds again.
+
+**Expected:**
+
+- **Run 1, the normal address.** The wall is smooth: no grid of dimples on the photo and none in the Depth picture. The depth line reads "depth: this browser, processor (this graphics chip is known to get the depth model wrong)". The console has one yellow line: "Relight: the graphics chip (qualcomm adreno-7xx) is on the list of chips known to get the depth model wrong. The processor is used instead. Add ?depth=check to the address to try the chip with the check, or ?depth=webgpu to use it unchecked." How long the photo takes on your laptop is not known: write it down. (On the developer's Mac the processor takes about 4 to 5 seconds for a first photo. If the label read "Downloading the depth model, 19 MB, once…" with a rising number, say so: the download is then most of the wait.)
+- **Run 2, `?depth=check`. The run we need most.** Here the list is set aside, and the test has to catch the chip by itself. The wall is smooth. The depth line reads "depth: this browser, processor (the graphics chip failed a check)". The console has a yellow line that starts "Relight: the depth model failed on webgpu (start). DepthCheckFailed: the graphics chip (qualcomm adreno-7xx) got the depth model's test picture wrong: agreement …, roughness … times the processor's (6 or less passes)". **Copy that line whole.** Its two numbers say whether the test catches this chip, and by how much. For comparison: a healthy Apple chip scores roughness 3.27, the limit is 6, and the fault as imitated on the Mac scored about 95 to 135.
+- **Run 3, `?depth=webgpu`.** The chip is used with no test, so **the dimples are back**: a regular grid over the wall, on the photo and in the Depth picture. The depth line reads "depth: this browser, graphics chip (WebGPU, not checked: ?depth=webgpu)". The console has no line that starts "Relight:". This is the fault shown on purpose. It is **not a FAIL**. It shows that the fault is still in the chip, and that runs 1 and 2 kept clear of it.
+- **Run 4, `?depth=wasm`.** The wall is smooth. The depth line reads "depth: this browser, processor (WebAssembly, asked for with ?depth=wasm)". There is no yellow line. The picture is the same as in run 1. Write down both times: the first photo after the page loaded, and the next photo on the same page. (On the developer's Mac: about 4 to 5 seconds, and about 2 seconds.)
+
+**If run 2 reads "depth: this browser, graphics chip (WebGPU)" and the wall is dimpled, the test missed the fault. That is the most important thing you can report.** The console then has a line "Relight: the graphics chip (…) passed the depth model's check: agreement …, roughness …": copy it whole. (The list of run 1 still covers your laptop. A faulty chip that is not on the list would not be covered.)
+
+Three other results we want to hear about. Run 2 reads "processor (the graphics chip failed)": the chip gave an error or no answer in the test; copy the yellow lines. Run 3 is smooth: the fault has gone, perhaps with a newer browser or a Windows update; say which browser version. Run 1 reads "graphics chip (WebGPU)": the list did not recognise the chip; copy the console lines and name the browser.
+
+**Write down** for each run: the address, the depth line, every console line that starts "Relight:", the seconds, and whether the wall is smooth or dimpled, with the screenshot. Also the laptop, its chip, and the browser with its version. The first report came from the browser built into the Claude desktop app (Chromium 152). If that browser shows no console, do the runs in Edge or Chrome, where F12 opens it, and say which browser you used.
+
+**A FAIL is:** dimples in run 1, 2 or 4; or a card "This photo could not be analysed" in any run (copy its line: P-13 lists them). Dimples in run 3 are expected.
+
+(Nothing in this case has been seen on a Qualcomm chip. All four runs were seen as written on the developer's Mac, in Chrome without a window, on a built copy of the demo and on a Plan B page, but only with a program standing in for your laptop: it made the Mac's healthy chip give its name as "qualcomm adreno-7xx", made the browser say it runs on Windows, and added a grid of bumps to the chip's answers. Whether the real chip's answer fails the test, which is what run 2 asks, nobody has seen.)
+
+`Result: PASS / FAIL / NOT RUN` The four depth lines, the console lines, the times and note:
+
+### P-16 Choosing the route from the address (for testers)
+
+New in the depth check update of Oct 11. Four options on the page's address choose how the depth model is run for a photo of your own. They are tools for testers; a visitor never needs them. Needs Plan B or the static demo. They change nothing for a sample, and nothing for a photo the backend works out (there is no depth line then).
+
+To add an option, click in the address bar, type it at the end of the address and press Enter: for example `http://localhost:3000/?depth=wasm`, or on the hosted demo `https://aarooshpravici.github.io/BanannaHacksSubmission/?depth=wasm`. The page loads again; if it does not, reload it. Then choose the photo again.
+
+1. Open the page with `?depth=wasm` at the end of the address. Choose the astronaut **file** (not the sample). Open GEOMETRY and read the depth line. 2. Change the option to `?depth=check`, press Enter, choose the file again and read the line. 3. The same with `?depth=webgpu`. 4. The same with `?depth=auto`, and then with a word the page does not know: `?depth=banana`.
+
+**Expected:**
+
+| The address ends with | How the depth model is run | The depth line reads |
+| --- | --- | --- |
+| `?depth=wasm` | On the processor, whatever the graphics chip can do. | "depth: this browser, processor (WebAssembly, asked for with ?depth=wasm)" |
+| `?depth=check` | On the graphics chip, after the test of P-14. Also for a chip on the list of chips known to get the model wrong (P-15). | "depth: this browser, graphics chip (WebGPU)" when the chip passes the test; "depth: this browser, processor (the graphics chip failed a check)" when it does not |
+| `?depth=webgpu` | On the graphics chip with **no test**, whether the chip is on the list or not. It is for showing a fault on purpose. | "depth: this browser, graphics chip (WebGPU, not checked: ?depth=webgpu)" |
+| nothing, `?depth=auto`, or any other word | The normal way: on the graphics chip if it can run the model, is not on the list and passes the test. Otherwise on the processor. | one of the five wordings in P-14 |
+
+**Step 1 also tells you whether the page you have open has this update.** With `?depth=wasm`, a page from before the update reads "graphics chip (WebGPU)" or plain "processor (WebAssembly)". If you see that on the hosted demo, the demo has not been published again yet: say so and mark P-14 to P-16 NOT RUN there.
+
+On a healthy chip the photo looks the same in all four steps. Only the line and the time differ: with `?depth=wasm` a photo takes longer (on the developer's Mac about 4 to 5 seconds for the first one and about 2 seconds for each later one). With `?depth=check` and `?depth=auto` the console has the line of P-14; with `?depth=webgpu` and `?depth=wasm` it has none. In a browser that cannot run the model on the graphics chip at all, steps 2 and 3 both read plain "depth: this browser, processor (WebAssembly)". One more case was seen only with the software stand-in for a graphics chip that Chrome carries, never on a real chip: a graphics chip that the browser offers, but that cannot do the kind of sums the model needs, is tried all the same with `?depth=webgpu`, and should end a few seconds later as "depth: this browser, processor (the graphics chip failed)". If you get a card "This photo could not be analysed" there, tell us.
+
+**Write down:** the depth line at each of the five addresses, and how many seconds each photo took.
+
+(Seen by the developer in Chrome without a window, on one Apple-chip Mac, on a built copy of the demo and on a Plan B page: `?depth=wasm`, `?depth=check`, `?depth=webgpu`, `?depth=auto` and `?depth=banana`, with the lines as written. `?depth=check` on a chip from the list was seen only with a program making the Mac's chip give a Qualcomm name: P-15.)
+
+`Result: PASS / FAIL / NOT RUN` Depth lines, times and note:
 
 ---
 
@@ -2029,7 +2134,7 @@ Needs Plan B or the static demo. The Portrait sample and the file `01-portrait-a
 
 **Expected, and known:** both are lit from the same side, with the same numbers (x -0.10, y 0.40 for Left). On the file you chose, the **face is flatter**: the nose, cheeks and chin have less light and shade on them. There is also a **thin light-and-dark outline round the hair and the shoulders**. The sample has neither. The reason: the sample's surface directions come from a second, much larger model (Marigold) that only the Relight server runs. The browser has only the depth map and takes the surface directions from its slope, which is smooth on a face and very steep at the edge of a head. It is the same look as **Detailed normals** off with a backend (K17). The page says so in the GEOMETRY panel and in "How it works". None of this is a FAIL.
 
-A FAIL would be: the light coming from the wrong side; speckle or blotches on a flat wall; blocky squares; a round dome; or a black picture.
+A FAIL would be: the light coming from the wrong side; speckle or blotches on a flat wall; blocky squares; a round dome; or a black picture. A regular grid of dimples over flat walls, like hammered metal, is a FAIL too: it is the graphics chip getting the depth model wrong (issue 4), and P-14 and P-15 say what to copy for us.
 
 **Write down:** a score from 1 to 5 for the photo you chose (1 = fake, 5 = like a real photo), and the same for the sample. Does the outline bother you: (a) not noticeable, (b) noticeable but acceptable, (c) ugly, must not be shown in a demo? Would a judge who tries a selfie be let down after seeing the samples?
 
@@ -2430,7 +2535,7 @@ No demo address? Do this case on your computer in Plan B: it does exactly the sa
 
 1. On your **phone**, on Wi-Fi (the first photo downloads about 25 MB), open the demo address. 2. Tap the dashed box. Take a photo or choose one from the phone's library; a face is best. Count the seconds from choosing it until the sun appears, and read the words on the dimmed photo while you wait. 3. Drag the sun with a finger. Tap **Left**, then **Right**. 4. Scroll down. Tap the **GEOMETRY** row. Copy the three small grey lines at its end. 5. Tap **New photo**. Choose a second photo and count the seconds again. 6. Do steps 1 to 5 on your **computer**, in the browser you normally use.
 
-**Expected:** step 2: the phone offers its camera or its photo library. (An iPhone may hand the page a HEIC photo. Since Oct 11 that is fine: the dashed box may read "Converting your photo…" for a moment first. See H-13.) The photo appears dimmed, the right way up, with a label whose words are listed in P-10: "Downloading the depth model, 19 MB, once…" with a rising number, then "Starting the depth model…", then "Working out the shape of your photo…". Then the photo brightens and the sun appears near its left edge. **Up to 1 minute is acceptable** for this first photo; most of it is the download. Step 3: the lighting follows the sun: the side nearest the sun is the bright side. A face looks a little flatter than on the Portrait sample, with a thin outline round the head; that is known (Q-12). Step 4: GEOMETRY starts with "Depth estimated in your browser by Depth Anything V2 Small…". The **Detailed normals** switch is off and greyed, with "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs." The three lines are the size line (the longer side is 1024 at most), the depth line "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)", and the shading line. Step 5: no download this time. On the developer's Mac the second photo took under a second; on a phone **up to 30 seconds is acceptable**.
+**Expected:** step 2: the phone offers its camera or its photo library. (An iPhone may hand the page a HEIC photo. Since Oct 11 that is fine: the dashed box may read "Converting your photo…" for a moment first. See H-13.) The photo appears dimmed, the right way up, with a label whose words are listed in P-10: "Downloading the depth model, 19 MB, once…" with a rising number, then "Starting the depth model…", then "Working out the shape of your photo…". Then the photo brightens and the sun appears near its left edge. **Up to 1 minute is acceptable** for this first photo; most of it is the download. Step 3: the lighting follows the sun: the side nearest the sun is the bright side. A face looks a little flatter than on the Portrait sample, with a thin outline round the head; that is known (Q-12). Step 4: GEOMETRY starts with "Depth estimated in your browser by Depth Anything V2 Small…". The **Detailed normals** switch is off and greyed, with "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs." The three lines are the size line (the longer side is 1024 at most), the depth line "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)", and the shading line. (Once the demo has been published again from the depth check update of Oct 11, the depth line can also give a reason after "processor", and a photo covered in a regular grid of dimples is the fault of issue 4: P-14 lists the wordings and says which line of the browser's console we want from a computer.) Step 5: no download this time. On the developer's Mac the second photo took under a second; on a phone **up to 30 seconds is acceptable**.
 
 **Report this even if everything works.** For each device: the model and the browser; the two times; the depth line and the shading line, copied; whether the result looks right (yes / partly / no); and a screenshot.
 
