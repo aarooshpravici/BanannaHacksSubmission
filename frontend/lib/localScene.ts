@@ -208,7 +208,8 @@ function run(request: Omit<DepthRequest, "id" | "choice" | "fallback">, onProgre
         worker.onerror = (event) => {
           event.preventDefault();
           console.warn("Relight: the depth Worker failed.", event.message);
-          fail(new Error(failureText("estimate", event.message ?? "")));
+          // A Worker whose own script could not be fetched reports an error with no message: that is the connection, not the browser.
+          fail(new Error(failureText(event.message ? "estimate" : "download", event.message ?? "")));
         };
       }
       if (waiting) watch(current, ESTIMATE_TIMEOUT_MS, failureText("timeout", ""), true);
