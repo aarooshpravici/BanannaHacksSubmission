@@ -233,7 +233,7 @@ export function HowItWorks() {
                 <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-zinc-400">Honest limits</h3>
                 <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[13px] leading-5 text-zinc-300">
                   <li>One photo gives a height field, not real 3D, so shadows are approximate: light from below can look blotchy on a face, and a faint dark column can remain on open sky.</li>
-                  <li>Shading is diffuse only (no shine), and the light already in the photo is not removed. The live shader has been tested on four devices so far: a Mac, two Windows laptops and a phone.</li>
+                  <li>Shading is diffuse only (no shine), and the light already in the photo is not removed. The live shader has been tested on five devices so far: a Mac, two Windows laptops and two phones.</li>
                 </ul>
               </section>
             </div>
