@@ -24,6 +24,60 @@ import { useJob } from "@/lib/useJob";
 const OUTSIDE = 0.5;
 /** How close the middle of the sun may come to the stage's edge, in pixels: close enough to reach past a photo that fills the stage, far enough that most of the sun stays in view. Also read by .light-handle in globals.css. */
 const HANDLE_MARGIN_PX = 18;
+/** Height: how far in front of the subject the light floats, in image widths. The slider's two ends. */
+const HEIGHT_MIN = 0.03;
+const HEIGHT_MAX = 2;
+/**
+ * The sun shows its height, so that the light's distance can be read off the
+ * photo with no words: a light near the surface is a small disc with a tight
+ * glow and its shadow right under it; pulled toward the viewer it grows, its
+ * glow spreads and its shadow falls away below it. Each number is the value at
+ * the lowest and at the highest Height; between them it follows the share of
+ * the way up in equal ratios (heightShare), because 0.03 to 0.06 changes the
+ * picture as much as 1 to 2 does.
+ *
+ * The disc is 40 px at the Height a new photo starts with (0.12, a third of
+ * the way up): 0.64 and 1.72 of that are far enough apart to tell at a glance,
+ * while the small one is still easy to see and the large one hides little of
+ * the photo. The button itself never goes under 40 px, so it stays easy to grab.
+ */
+const HANDLE_PX = 40;
+const SUN_SCALE = [0.64, 1.72];
+/** How far the glow reaches past the disc, and how soft its edge is, in pixels. 24 and 12 at the starting Height, as before the sun showed its height. */
+const SUN_GLOW_REACH_PX = [8, 56];
+const SUN_GLOW_BLUR_PX = [4, 28];
+/** The shadow under the disc: how far below it falls, how soft it is, and how dark. About 3 px, 11 px and 0.7 at the starting Height, much as before. */
+const SUN_SHADOW_DROP_PX = [0, 30];
+const SUN_SHADOW_BLUR_PX = [4, 24];
+const SUN_SHADOW_ALPHA = [0.8, 0.6];
+
+/**
+ * Scrolling over the sun: how much one pixel of scroll changes the Height, as
+ * a power of e. A mouse wheel's notch is about 100 px, so one notch is a
+ * quarter more or less: 13 notches from the starting Height to the top, 6 to
+ * the bottom. Larger and a trackpad's glide overshoots; smaller and a wheel
+ * needs a tiring number of turns.
+ */
+const WHEEL_HEIGHT_PER_PX = 0.0022;
+/** The most one scroll event may count for, in pixels: a wheel that speeds up when spun must not jump the light from one end to the other. */
+const WHEEL_MAX_STEP_PX = 150;
+/** A browser that counts in lines, not pixels (Firefox with a mouse): what one line is worth, so that a notch of three lines matches a notch elsewhere. */
+const WHEEL_LINE_PX = 33;
+/** A trackpad pinch arrives as a scroll with Ctrl held and much smaller numbers: this many times more is made of each. */
+const WHEEL_PINCH_GAIN = 8;
+/** The + and - keys: each press changes the Height by this ratio, like half a wheel notch. */
+const KEY_HEIGHT_RATIO = 1.12;
+/** Two fingers on a touch screen: spreading them to twice as far apart multiplies the Height by 2 to this power. 2.5 reaches either end from the start in one comfortable pinch. */
+const PINCH_POWER = 2.5;
+/** Two fingers closer than this, in pixels, count as this far apart, so that fingers landing side by side do not make a tiny move a huge change. */
+const PINCH_MIN_SPREAD_PX = 24;
+/** A second finger landing within this many milliseconds of the first means a pinch was meant from the start: the light goes back to where it was before the first finger moved it. */
+const PINCH_GRACE_MS = 350;
+/** Shown under the sun while the mouse rests on it. */
+const SUN_HINT = "Scroll to bring the light nearer or push it back";
+const HEIGHT_HINT = "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.";
+const HEIGHT_ENDS: [string, string] = ["close to the surface", "close to you"];
+
 const WARM: [number, number, number] = [1.0, 0.86, 0.68];
 const COOL: [number, number, number] = [0.7, 0.86, 1.0];
 
@@ -101,6 +155,9 @@ const PRESETS: { label: string; light: Partial<LightBase>; warmth?: number }[] =
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const round = (v: number, digits = 3) => Number(v.toFixed(digits));
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
+/** Height: 0 at the slider's low end, 1 at its high end, in equal ratios between. */
+const heightShare = (height: number) => clamp(Math.log(height / HEIGHT_MIN) / Math.log(HEIGHT_MAX / HEIGHT_MIN), 0, 1);
+const between = ([low, high]: number[], t: number) => low + (high - low) * t;
 
 /** Sweep: the light a share `s` (0 to 1) of the way round its loop from `from`: out onto the orbit, once round, and back. */
 function sweepPoint(from: { x: number; y: number }, s: number) {
@@ -227,6 +284,14 @@ export default function RelightPage() {
   const imageBox = useRef<HTMLDivElement>(null);
   const request = useRef(0);
   const sweepFrame = useRef<number | null>(null);
+  // The sun, once it is on the page: scrolling over it needs a listener of its own (below).
+  const [handle, setHandle] = useState<HTMLButtonElement | null>(null);
+  // The Height on screen, for the handlers that change it between two renders. `exact` is where scrolling has got to before rounding to the slider's steps.
+  const heightNow = useRef({ shown: START.height, exact: START.height });
+  // The fingers on the stage, where the light was before the first of them landed, and how a pinch started.
+  const fingers = useRef(new Map<number, { x: number; y: number }>());
+  const beforeTouch = useRef<{ x: number; y: number; at: number } | null>(null);
+  const pinch = useRef<{ spread: number; height: number } | null>(null);
   // The backend's scene id for the sample on screen, once it has been asked for.
   const adopted = useRef<{ scene: RelightScene; id: Promise<string> } | null>(null);
 
@@ -401,6 +466,56 @@ export default function RelightPage() {
     const x = round(clamp((cx - box.left) / box.width, -OUTSIDE, 1 + OUTSIDE));
     const y = round(clamp((cy - box.top) / box.height, -OUTSIDE, 1 + OUTSIDE));
     setBase((b) => ({ ...b, x, y }));
+  };
+
+  // --- the light's distance: scrolling and pinching on the sun ------------------------
+
+  useEffect(() => {
+    // The slider, a preset or Reset moved it: scrolling carries on from there.
+    if (heightNow.current.shown !== base.height) heightNow.current = { shown: base.height, exact: base.height };
+  }, [base.height]);
+
+  /** Set the Height from a scroll, a pinch or a key: kept inside the slider's range and on its steps, so the two always agree. */
+  const setHeight = useCallback((exact: number) => {
+    const next = clamp(exact, HEIGHT_MIN, HEIGHT_MAX);
+    const height = round(next, 2);
+    const changed = height !== heightNow.current.shown;
+    heightNow.current = { shown: height, exact: next };
+    if (changed) setBase((b) => ({ ...b, height }));
+  }, []);
+
+  /**
+   * Scrolling while the pointer is over the sun moves the light toward the
+   * viewer or away. Only over the sun: anywhere else the wheel scrolls the page
+   * as it always did. Scrolling up (or spreading two fingers on a trackpad)
+   * brings the light nearer and the sun grows, the way the same gesture zooms
+   * in on a map. A Sweep in progress carries on at the new Height.
+   * Listened for directly: React's own wheel listener may not stop the page from scrolling.
+   */
+  useEffect(() => {
+    if (!handle) return;
+    const onWheel = (event: WheelEvent) => {
+      // Over the sun the wheel is the light's, at the ends of the range too: the page must not start to scroll when the light stops.
+      event.preventDefault();
+      const unit = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? 1 : WHEEL_LINE_PX;
+      const step = clamp(event.deltaY * unit * (event.ctrlKey ? WHEEL_PINCH_GAIN : 1), -WHEEL_MAX_STEP_PX, WHEEL_MAX_STEP_PX);
+      if (step !== 0) setHeight(heightNow.current.exact * Math.exp(-step * WHEEL_HEIGHT_PER_PX));
+    };
+    handle.addEventListener("wheel", onWheel, { passive: false });
+    return () => handle.removeEventListener("wheel", onWheel);
+  }, [handle, setHeight]);
+
+  /** The + and - keys: one step nearer (1) or further (-1). Always at least one step of the slider, so no press is lost at the low end. */
+  const stepHeight = (direction: 1 | -1) => {
+    const now = heightNow.current.shown;
+    const next = round(now * KEY_HEIGHT_RATIO ** direction, 2);
+    setHeight(next === now ? now + 0.01 * direction : next);
+  };
+
+  /** How far apart the first two fingers on the stage are, in pixels. */
+  const fingerSpread = () => {
+    const [a, b] = [...fingers.current.values()];
+    return Math.max(PINCH_MIN_SPREAD_PX, Math.hypot(a.x - b.x, a.y - b.y));
   };
 
   /**
@@ -598,6 +713,18 @@ export default function RelightPage() {
   // Mock mode, and the browser's analysis failed: the made-up dome is still there for someone working on the page itself.
   const offerDome = MOCK && sceneError !== null && sceneError.route === "browser";
   const enhanceError = enhance.status === "error" ? enhance.error : null;
+  const endPointer = (e: ReactPointerEvent) => {
+    fingers.current.delete(e.pointerId);
+    if (fingers.current.size > 0) return;
+    pinch.current = null;
+    setDragging(false);
+  };
+  // How the sun is drawn at this Height (see SUN_SCALE).
+  const lift = heightShare(light.height);
+  const sunPx = HANDLE_PX * between(SUN_SCALE, lift);
+  const glowReachPx = between(SUN_GLOW_REACH_PX, lift);
+  // The shadow stays under the disc until the light is well off the surface, then falls away quickly.
+  const sunShadow = `0 ${between(SUN_SHADOW_DROP_PX, lift * lift).toFixed(1)}px ${between(SUN_SHADOW_BLUR_PX, lift).toFixed(1)}px rgb(0 0 0 / ${between(SUN_SHADOW_ALPHA, lift).toFixed(2)})`;
   const failedCard = (
     <div role="alert" className="flex max-w-sm animate-rise flex-col items-center gap-2.5 rounded-2xl border border-rose-500/40 bg-ink/90 px-5 py-4 text-center shadow-2xl backdrop-blur max-lg:mx-auto">
       <span className="flex items-center gap-2 text-sm font-semibold text-rose-100">
@@ -663,11 +790,12 @@ export default function RelightPage() {
               <Slider
                 label="Height"
                 value={base.height}
-                min={0.03}
-                max={2}
+                min={HEIGHT_MIN}
+                max={HEIGHT_MAX}
                 step={0.01}
                 onChange={(v) => setBase((b) => ({ ...b, height: v }))}
-                hint="Low grazes the surface and stretches the shadows."
+                hint={HEIGHT_HINT}
+                ends={HEIGHT_ENDS}
               />
               <Slider label="Intensity" value={base.intensity} min={0} max={4} step={0.05} onChange={(v) => setBase((b) => ({ ...b, intensity: v }))} />
               <Slider
@@ -840,16 +968,33 @@ export default function RelightPage() {
           className={cn("absolute inset-0 touch-none", live && canLight && (dragging ? "cursor-grabbing" : "cursor-crosshair"))}
           onPointerDown={(e) => {
             if (!live || !canLight || e.button !== 0) return;
-            stopSweep(); // the user has taken the light
+            // A first pointer means no finger is still down, whatever an earlier touch left behind.
+            if (e.isPrimary) fingers.current.clear();
             e.currentTarget.setPointerCapture(e.pointerId);
+            fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (fingers.current.size === 2) {
+              // A second finger: from here the two set the light's distance, and neither drags it.
+              const before = beforeTouch.current;
+              if (before && e.timeStamp - before.at < PINCH_GRACE_MS) setBase((b) => ({ ...b, x: before.x, y: before.y }));
+              pinch.current = { spread: fingerSpread(), height: heightNow.current.shown };
+              return;
+            }
+            if (fingers.current.size > 2) return;
+            stopSweep(); // the user has taken the light
+            beforeTouch.current = { x: base.x, y: base.y, at: e.timeStamp };
             setDragging(true);
             dragTo(e);
           }}
           onPointerMove={(e) => {
-            if (e.currentTarget.hasPointerCapture(e.pointerId)) dragTo(e);
+            if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+            if (fingers.current.has(e.pointerId)) fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            // Spreading the fingers brings the light nearer, pinching pushes it back. Once a pinch has begun, a finger left on the screen does not drag.
+            if (pinch.current) {
+              if (fingers.current.size >= 2) setHeight(pinch.current.height * (fingerSpread() / pinch.current.spread) ** PINCH_POWER);
+            } else dragTo(e);
           }}
-          onPointerUp={() => setDragging(false)}
-          onPointerCancel={() => setDragging(false)}
+          onPointerUp={endPointer}
+          onPointerCancel={endPointer}
         >
           {/* The margins round the photo. .light-handle (globals.css) reads the two variables to know where the stage ends. */}
           <div className="absolute inset-x-(--stage-inset-x) inset-y-(--stage-inset-y) [--stage-inset-x:1.5rem] [--stage-inset-y:4rem] sm:[--stage-inset-x:3.5rem]">
@@ -880,11 +1025,16 @@ export default function RelightPage() {
 
                 {canLight && (
                   <button
+                    ref={setHandle}
                     type="button"
-                    aria-label={`Light position, x ${light.x.toFixed(2)}, y ${light.y.toFixed(2)}. Use the arrow keys to move.`}
+                    aria-label={`Light position, x ${light.x.toFixed(2)}, y ${light.y.toFixed(2)}, height ${light.height.toFixed(2)}. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back.`}
+                    data-height={light.height.toFixed(2)}
                     onKeyDown={(e) => {
                       const step = e.shiftKey ? 0.1 : 0.02;
-                      if (e.key === "ArrowLeft") nudge(-step, 0);
+                      // With Ctrl or Cmd these two zoom the page: left to the browser.
+                      if (!e.ctrlKey && !e.metaKey && (e.key === "+" || e.key === "=")) stepHeight(1);
+                      else if (!e.ctrlKey && !e.metaKey && (e.key === "-" || e.key === "_")) stepHeight(-1);
+                      else if (e.key === "ArrowLeft") nudge(-step, 0);
                       else if (e.key === "ArrowRight") nudge(step, 0);
                       else if (e.key === "ArrowUp") nudge(0, -step);
                       else if (e.key === "ArrowDown") nudge(0, step);
@@ -892,25 +1042,52 @@ export default function RelightPage() {
                       e.preventDefault();
                     }}
                     className={cn(
-                      "light-handle absolute z-10 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/80",
+                      "light-handle group absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/80",
                       dragging ? "cursor-grabbing" : "cursor-grab",
                     )}
-                    style={{ "--light-x": light.x, "--light-y": light.y, "--photo-ratio": width / height, "--handle-margin": `${HANDLE_MARGIN_PX}px` } as CSSProperties}
+                    style={
+                      {
+                        // As large as the disc, and never smaller than the 40 px that is easy to grab.
+                        width: Math.max(HANDLE_PX, sunPx),
+                        height: Math.max(HANDLE_PX, sunPx),
+                        "--light-x": light.x,
+                        "--light-y": light.y,
+                        "--photo-ratio": width / height,
+                        "--handle-margin": `${HANDLE_MARGIN_PX}px`,
+                      } as CSSProperties
+                    }
                   >
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute -inset-6 rounded-full blur-md"
-                      style={{ background: `radial-gradient(circle, ${cssColor(light.color)} 0%, transparent 65%)`, opacity: 0.25 + 0.15 * Math.min(light.intensity, 3) }}
+                      className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                      style={{
+                        width: sunPx + 2 * glowReachPx,
+                        height: sunPx + 2 * glowReachPx,
+                        filter: `blur(${between(SUN_GLOW_BLUR_PX, lift).toFixed(1)}px)`,
+                        background: `radial-gradient(circle, ${cssColor(light.color)} 0%, transparent 65%)`,
+                        opacity: 0.25 + 0.15 * Math.min(light.intensity, 3),
+                      }}
                     />
                     <span
+                      data-sun
                       className={cn(
-                        "pointer-events-none absolute inset-0 flex items-center justify-center rounded-full border-2 border-white text-black/75 shadow-[0_2px_14px_rgb(0_0_0/0.65)] transition-transform",
+                        "pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white text-black/75 transition-[scale,width,height,box-shadow] motion-reduce:transition-none",
                         dragging && "scale-110",
                       )}
-                      style={{ background: cssColor(light.color) }}
+                      style={{ width: sunPx, height: sunPx, boxShadow: sunShadow, background: cssColor(light.color) }}
                     >
-                      <SunIcon className="h-5 w-5" />
+                      {/* Marked important: the icon's own default size is set the same way, and which class wins otherwise is down to the stylesheet's order. */}
+                      <SunIcon className="h-1/2! w-1/2!" />
                     </span>
+                    {/* Appears when the mouse has rested on the sun for a moment, and never while it is being dragged. */}
+                    {!dragging && (
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/70 px-2 py-0.5 text-[11px] font-medium text-zinc-200 opacity-0 backdrop-blur transition-opacity delay-0 group-hover:opacity-100 group-hover:delay-500 group-focus-visible:opacity-100"
+                      >
+                        {SUN_HINT}
+                      </span>
+                    )}
                   </button>
                 )}
               </FitBox>

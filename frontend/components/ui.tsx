@@ -63,9 +63,11 @@ interface SliderProps {
   /** A CSS background for the whole track, replacing the "filled up to the thumb" look. */
   track?: string;
   hint?: string;
+  /** What the two ends of the track mean, in a few plain words each: [left, right]. Shown under the track where there is room, in place of the hint, which is then only read on a stacked page and in the tooltip. */
+  ends?: [string, string];
 }
 
-export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint }: SliderProps) {
+export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends }: SliderProps) {
   const fill = ((value - min) / (max - min)) * 100;
   return (
     <label className="block" title={hint}>
@@ -84,7 +86,14 @@ export function Slider({ label, value, min, max, step = 0.01, onChange, format, 
         style={(track ? { background: track } : { "--fill": `${fill}%` }) as CSSProperties}
       />
       {/* On a short window the hint moves to the tooltip, so the whole sidebar fits without scrolling. */}
-      {hint && <span className="mt-1.5 hidden text-xs leading-4 text-zinc-500 tall:block">{hint}</span>}
+      {ends && (
+        <span className="mt-1.5 hidden justify-between gap-3 text-xs leading-4 text-zinc-500 tall:flex">
+          <span>{ends[0]}</span>
+          <span className="text-right">{ends[1]}</span>
+        </span>
+      )}
+      {/* Beside the stage the sidebar has one line to spare under a slider, and the end labels take it. A stacked page scrolls, so there both are shown. */}
+      {hint && <span className={cn("hidden text-xs leading-4 text-zinc-500", ends ? "mt-1 max-lg:block" : "mt-1.5 tall:block")}>{hint}</span>}
     </label>
   );
 }
