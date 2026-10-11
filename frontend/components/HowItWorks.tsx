@@ -193,7 +193,7 @@ export function HowItWorks() {
                   who="ours"
                   pictures={
                     <>
-                      <Picture src={picture("diffuse.jpg")} alt="A grey image of the astronaut lit from the left like a plaster cast, with no colour and no cast shadows" caption="Our shading alone, light at the left" />
+                      <Picture src={picture("diffuse.jpg")} alt="A grey image of the astronaut lit from the left like a plaster cast, with no colour and no cast shadows" caption="Our shading by itself, before it is applied to the photo: light at the left" />
                       <div className="hidden min-w-0 flex-1 items-center text-xs leading-5 text-zinc-500 sm:flex">
                         A surface also goes dark gradually as it turns away from the light, not at a hard line, because estimated normals are too noisy for a hard cut.
                       </div>
@@ -233,7 +233,7 @@ export function HowItWorks() {
                 <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-zinc-400">Honest limits</h3>
                 <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[13px] leading-5 text-zinc-300">
                   <li>One photo gives a height field, not real 3D, so shadows are approximate: light from below can look blotchy on a face, and a faint dark column can remain on open sky.</li>
-                  <li>Shading is diffuse only (no shine), and the light already in the photo is not removed. The live shader has been tested in one browser on one computer.</li>
+                  <li>Shading is diffuse only (no shine), and the light already in the photo is not removed. The live shader has been tested on three devices so far: a Mac, a Windows laptop and a phone.</li>
                 </ul>
               </section>
             </div>

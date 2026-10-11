@@ -72,7 +72,7 @@ Without the two pretrained models there is nothing to shade; without our code th
 
 - One photo gives a height field, not real 3D, so shadows are approximate. Light from below looks blotchy on faces, and a faint dark column remains on open sky.
 - Shading is diffuse only: no shine. Light already in the photo is not removed.
-- The live shader has been tested in one browser on one computer (Chrome on an Apple-chip Mac).
+- The live shader has been tested by people on three devices so far: an Apple-chip Mac (Chrome and Safari), a Windows laptop with Intel graphics (Chrome) and one phone.
 - Real Enhance has run once, and it weakened the side lighting. In the default setup (`MOCK_MODE=1`) Enhance returns the preview unchanged.
 - The static demo runs the four pre-computed samples only. Analysing your own photo needs the backend running locally.
 

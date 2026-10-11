@@ -1813,6 +1813,8 @@ The words **How it works** in the top bar open a card that explains, in five ste
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
+*Run by a person:* Aaroosh, Oct 10, Chrome on an Apple M5 MacBook: PASS. No need to repeat it in Chrome.
+
 ### G-02 Read the panel from top to bottom
 
 1. Open "How it works". 2. Scroll slowly to the end and compare each part with the list below and the screenshots.
@@ -1823,12 +1825,12 @@ The words **How it works** in the top bar open a card that explains, in five ste
 - **1 Estimate depth**, blue chip "Pretrained model: Depth Anything V2". Text starts "A pretrained model estimates how near every pixel is to the camera." Two square pictures side by side: the astronaut photo ("The photo") and a grey version with the helmet in front nearly white ("Depth map: lighter is nearer").
 - **2 Estimate surface direction**, blue chip "Pretrained model: Marigold". Text starts "A second pretrained model estimates which way every surface faces." One picture in purple, pink and green ("Normal map: colour is the way a surface faces"). Beside it a grey note: "A depth map is too smooth to shade a face: tilts worked out from it left faces almost flat. That is why there is a second model."
 - **EVERY FRAME, IN YOUR BROWSER**, with the grey line "Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor. If the processor is too slow or cannot do it, the Relight server runs our Python version instead. No AI model is involved in the dragging." (This line was reworded after the screenshots were taken. Screenshots 107 and 108, and 117 and 118 in G-05, still show the earlier sentence, which began "A WebGL2 shader we wrote".)
-- **3 Shade each pixel from the light**, yellow chip "Our code". Text starts "Diffuse shading: a pixel is bright when its surface faces the light." One grey picture of the astronaut like a plaster cast, lit from the left ("Our shading alone, light at the left"). Beside it a grey note that starts "A surface also goes dark gradually as it turns away from the light".
+- **3 Shade each pixel from the light**, yellow chip "Our code". Text starts "Diffuse shading: a pixel is bright when its surface faces the light." One grey picture of the astronaut like a plaster cast, lit from the left ("Our shading by itself, before it is applied to the photo: light at the left"; reworded on Oct 10 after a tester's remark, so screenshots 108 and 118 still show "Our shading alone, light at the left"). Beside it a grey note that starts "A surface also goes dark gradually as it turns away from the light".
 - **4 Trace cast shadows in three layers**, yellow chip "Our code". Text starts "Each pixel walks toward the light across the height field". Two pictures: a white square with a soft grey shadow shape ("Our shadow map for the same light") and the astronaut lit from the left ("Steps 3 and 4 multiplied into the photo").
 - A card with no number: the astronaut lit from the right ("The same maps, light moved to the right") and the note "Moving the light only reruns steps 3 and 4. The stills in this panel were rendered with our Python version of the same maths; the shader is a port of it and the two are kept in agreement."
 - **ONLY IF YOU PRESS ENHANCE**, with the grey line "Off until you ask for it. The app is complete without it."
 - **5 A photoreal pass**, grey chip "Hosted model, optional", no picture: "Our shaded preview is sent to a hosted image model (the Gemini image model, or IC-Light v2 on fal.ai), with a short text prompt, for a more photographic finish. This is the only step that calls a service we did not write or run."
-- **HONEST LIMITS**, two bullets. The first starts "One photo gives a height field, not real 3D". The second reads "Shading is diffuse only (no shine), and the light already in the photo is not removed. The live shader has been tested in one browser on one computer."
+- **HONEST LIMITS**, two bullets. The first starts "One photo gives a height field, not real 3D". The second reads "Shading is diffuse only (no shine), and the light already in the photo is not removed. The live shader has been tested on three devices so far: a Mac, a Windows laptop and a phone." (Screenshots 110 and 120 still show the earlier ending, "tested in one browser on one computer.")
 
 All seven pictures load; none is missing, broken or stretched. Every word is readable and no line is cut off at the card's edge. Report any spelling mistake and any place where the words differ from this list.
 
@@ -1840,15 +1842,19 @@ All seven pictures load; none is missing, broken or stretched. Every word is rea
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
+*Run by a person:* Aaroosh, Oct 10, Chrome on an Apple M5 MacBook: all seven pictures load and no typo was seen, but it was a quick read late at night, not a careful one. One remark: the fourth picture's caption could be better (reworded since). Still wanted: one careful read, word for word.
+
 ### G-03 Closing the panel, and the page behind it
 
 1. Click the **Portrait** sample. Click **Left**. Click "How it works". 2. Click on the dimmed **Right** button in the sidebar behind the card. 3. Open the card again. Press the Escape key. 4. Open it again. Click **Close**. 5. Open it, scroll down to "HONEST LIMITS", click **Close**, and open it again. 6. With the card open, put the mouse over the dimmed page beside the card and scroll the wheel. 7. Click **Sweep**, at once click "How it works", wait three seconds and close the card. 8. Open the card and press the browser's Back button (the arrow left of the address bar).
 
-**Expected:** step 1: the card opens over the photo. The photo, its sun, the sidebar and the top bar are still there behind it, dimmed. Step 2: the click **closes the card and does nothing else**: the light does not jump to the right, and the readout still says x -0.10, y 0.40. A click anywhere on the dimmed page closes the card; nothing behind the card can be pressed while it is open. Steps 3 and 4: Escape closes it; **Close** closes it. After every closing the page is exactly as you left it: the same photo, the same light, the same settings. Step 5: the card opens at the **top** again, at "Two pretrained vision models measure the photo once.", not at "HONEST LIMITS". Step 6: the card stays. The page behind does not move on a normal laptop window, because it has nothing to scroll. On a narrow window, where the page is longer than the screen, the page behind may scroll (known, K46). Step 7: not known. Write down whether the sweep kept running behind the card, and whether the page was in a normal state afterwards. Step 8: the card closes and you are still in the app, with the same photo and the same light; the browser does not go to another page. (New in version `53e2c26`: before that, Back left the app. Checked by the developer in Chrome on a Mac.)
+**Expected:** step 1: the card opens over the photo. The photo, its sun, the sidebar and the top bar are still there behind it, dimmed. Step 2: the click **closes the card and does nothing else**: the light does not jump to the right, and the readout still says x -0.10, y 0.40. A click anywhere on the dimmed page closes the card; nothing behind the card can be pressed while it is open. Steps 3 and 4: Escape closes it; **Close** closes it. After every closing the page is exactly as you left it: the same photo, the same light, the same settings. Step 5: the card opens at the **top** again, at "Two pretrained vision models measure the photo once.", not at "HONEST LIMITS". Step 6: the card stays. The page behind does not move on a normal laptop window, because it has nothing to scroll. On a narrow window, where the page is longer than the screen, the page behind may scroll (known, K46). Step 7: the sweep keeps running behind the card (seen by a tester in Chrome on a Mac). Write down whether the page was in a normal state afterwards: the sun back where it started, and the button reading **Sweep** again. Step 8: the card closes and you are still in the app, with the same photo and the same light; the browser does not go to another page. (New in version `53e2c26`: before that, Back left the app. Checked by the developer in Chrome on a Mac.)
 
 ![G-03 the card over a lit photo](screenshots/111-how-it-works-over-photo.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
+
+*Run by a person:* Aaroosh, Oct 10, Chrome on an Apple M5 MacBook: PASS for steps 1 to 5 and 7. Steps 6 and 8 not run.
 
 ### G-04 The panel with the keyboard
 
@@ -1907,7 +1913,7 @@ A judge who wonders "did they build this, or is it just an AI model?" will read 
 
 **Write down:** (a) every word or phrase you did not understand (for example "pretrained", "height field", "normal map", "diffuse shading", "WebGL2 shader", "a port of it"). (b) Anything that seems **wrong**, or that does not match what you saw the app do. (c) Could you tell which steps are someone else's models and which are our own code? Did the coloured chips help? (d) Do the pictures show what their captions say? (e) Is it too long, too short, or about right? Would a judge with two minutes read it? (f) One thing you would add, and one you would cut. Give a score from 1 (confusing or unconvincing) to 5 (clear and convincing).
 
-No need to report: "The live shader has been tested in one browser on one computer." is the plain truth today; your W-16 results are what will change it. The grey line under "EVERY FRAME, IN YOUR BROWSER" was reworded so that it is true whatever your shading line says. If it does not match what your device did, report that.
+No need to report: the card's last sentence, "The live shader has been tested on three devices so far: a Mac, a Windows laptop and a phone.", is kept up to date from your W-16 results. Until Oct 10, 10:00 PM it read "in one browser on one computer". The grey line under "EVERY FRAME, IN YOUR BROWSER" was reworded so that it is true whatever your shading line says. If it does not match what your device did, report that.
 
 `Result: PASS / FAIL / NOT RUN` Score and note:
 
