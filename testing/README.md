@@ -12,7 +12,7 @@ Short on time? Read [TEST_FIRST.md](TEST_FIRST.md): one page saying what to test
 
 **Cannot get the backend installed?** You can still test most of the app. The four sample photos on the first page need no backend at all. Follow [Plan B in SETUP.md](SETUP.md#plan-b-no-backend-mock-mode): it needs only Node and takes about five minutes.
 
-**Were you given a demo address?** The static demo is a copy of the app on a web address. It needs no setup at all: open the address in a browser, on a computer or a phone. It has only the four samples; uploading and Enhance are switched off there. Test it with group H in [TEST_PLAN.md](TEST_PLAN.md#h-hosted-demo-static-build).
+**The demo is online: https://aarooshpravici.github.io/BanannaHacksSubmission/** The static demo is a copy of the app on a web address. It needs no setup at all: open the address in a browser, on a computer or a phone. It has only the four samples; uploading and Enhance are switched off there. Test it with group H in [TEST_PLAN.md](TEST_PLAN.md#h-hosted-demo-static-build).
 
 ## How long it takes
 

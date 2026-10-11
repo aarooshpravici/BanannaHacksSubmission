@@ -1109,7 +1109,7 @@ It needs no backend: the samples are enough. Plan B in [SETUP.md](SETUP.md#plan-
 
 `Result: PASS / FAIL / NOT RUN` Devices, browsers, shading lines and results:
 
-*Devices reported so far, all "graphics chip, full quality":* an Apple M5 MacBook in Chrome 153 and in Safari; a Dell XPS 15 with Intel UHD graphics in Chrome 154 on Windows 11; and one real phone over Wi-Fi (its model and browser are not yet recorded). **Every other device is still wanted.**
+*Devices reported so far, all "graphics chip, full quality":* an Apple M5 MacBook in Chrome 153 and in Safari; a Dell XPS 15 with Intel UHD graphics in Chrome 154 on Windows 11; and an iPhone 11 in Chrome, over Wi-Fi. **Every other device is still wanted.**
 
 ### W-17 The preset row on narrow phones
 
@@ -1868,7 +1868,7 @@ With "reduced motion" switched on in the computer's settings (how: J-10 step 3),
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
-*Run by a person:* Aaroosh, Oct 10, Chrome on an Apple M5 MacBook: PASS for steps 1 to 3, 5 and 6; step 4 not reported. Still wanted: step 4, and the whole case in Safari or Firefox.
+*Run by a person:* Aaroosh, Oct 10, Chrome on an Apple M5 MacBook: PASS, all steps. In step 4 the arrow keys scrolled the text only after it had been clicked or reached with the Tab key, as the case says. Still wanted: Safari or Firefox.
 
 ### G-05 The panel on a phone
 
@@ -1887,7 +1887,7 @@ Use a real phone if you can (the hosted demo, or W-16 step 8). Otherwise imitate
 
 `Result: PASS / FAIL / NOT RUN` Phone, browser and note:
 
-*Run by a person:* Aaroosh, Oct 10, a real phone over Wi-Fi: PASS for steps 1 to 3. Step 4 found the Back problem that version `53e2c26` fixes. Still wanted: step 4 on a phone with that version, and other phones.
+*Run by a person:* Aaroosh, Oct 10, an iPhone 11 in Chrome, over Wi-Fi: PASS, all steps. Step 4 first showed the Back problem and passes since version `53e2c26`: Back closes the panel. Still wanted: an Android phone.
 
 ### G-06 The top bar on narrow windows, and the panel on a tablet
 
@@ -1917,7 +1917,7 @@ No need to report: the card's last sentence, "The live shader has been tested on
 
 `Result: PASS / FAIL / NOT RUN` Score and note:
 
-*Answers so far:* one, without a score yet (see "Confirmed by testers" in [PENDING.md](PENDING.md#confirmed-by-testers)). **Still wanted from everyone.**
+*Answers so far:* one, 4 out of 5, from a tester who could tell which parts are our code (see "Confirmed by testers" in [PENDING.md](PENDING.md#confirmed-by-testers)). **Still wanted from everyone.**
 
 ---
 
@@ -1925,7 +1925,7 @@ No need to report: the card's last sentence, "The live shader has been tested on
 
 The **static demo** is a copy of the app made of plain files, with no backend anywhere. It can sit on any web host, so a judge can open it from a link. It has only the four sample photos. Uploading and **Enhance** are switched off, and the page says why.
 
-**Which address?** Use the demo address Aaroosh gives you (it ends in `/BanannaHacksSubmission/`). If you were given none, you can build the demo on a Mac with [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) and use `http://localhost:3142/BanannaHacksSubmission/`. If you have neither, mark this group NOT RUN.
+**Which address?** The demo is online at **https://aarooshpravici.github.io/BanannaHacksSubmission/** (since Oct 10, 10:40 PM; built from version `ada3fc2`, so it can be a little behind the newest code). If you were given none, you can build the demo on a Mac with [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) and use `http://localhost:3142/BanannaHacksSubmission/`. If you have neither, mark this group NOT RUN.
 
 **Reporting.** The bug form asks what the top-right pill reads. For this group write "demo". For the version, write "hosted demo" and the address you opened.
 

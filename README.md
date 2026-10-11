@@ -6,7 +6,7 @@ Drag a light around a photo and watch the highlights and shadows follow, live, i
 
 *The Portrait sample with the light on the path the app's Sweep button takes (the small orange dot is the light). These frames were rendered by our Python reference of the shading; the browser runs the same maths in a shader.*
 
-**Live demo: not published yet**
+**Live demo: https://aarooshpravici.github.io/BanannaHacksSubmission/** (the four sample photos, in your browser, nothing to install)
 
 Built for the Banana Hacks hackathon. The app has a "How it works" button in the top bar that shows each step below as a picture.
 

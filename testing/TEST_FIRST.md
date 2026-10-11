@@ -23,7 +23,7 @@ The full plan in [TEST_PLAN.md](TEST_PLAN.md) has 186 cases. You do not need to 
 
 All 103 screenshots were retaken tonight and 49 were added (152). If you tested earlier today, get the update first: "Getting fixes" in [SETUP.md](SETUP.md#what-to-expect).
 
-**The quickest way in.** If Aaroosh has given you a demo address, that needs nothing at all: open it in a browser, on a computer or a phone. If you cannot get the backend installed, do [Plan B in SETUP.md](SETUP.md#plan-b-no-backend-mock-mode): it needs only Node, takes about five minutes, and the four samples work fully in it. Only three things need the backend: uploading your own photo, **Enhance** on the normal setup, and turning **Detailed normals** off.
+**The quickest way in.** The static demo is online at **https://aarooshpravici.github.io/BanannaHacksSubmission/** and needs nothing at all: open it in a browser, on a computer or a phone. If you cannot get the backend installed, do [Plan B in SETUP.md](SETUP.md#plan-b-no-backend-mock-mode): it needs only Node, takes about five minutes, and the four samples work fully in it. Only three things need the backend: uploading your own photo, **Enhance** on the normal setup, and turning **Detailed normals** off.
 
 ## Do these now
 
@@ -61,7 +61,7 @@ Nothing is being rebuilt right now, so no case is about to go out of date. These
 ## Only Aaroosh
 
 - **Real Enhance** (cases E-10, E-12, E-13 and E-18). It needs a private key and each press costs money. Everyone else tests Enhance with the stand-in, which is free. Case E-11 is not on this list: it needs no key and costs nothing, so anyone with no `.env` file in the project folder can do it.
-- **Putting the static demo online** and telling the testers its address.
+- **Keeping the online demo up to date.** It is at https://aarooshpravici.github.io/BanannaHacksSubmission/ and does not update by itself; after an app change, `tools/publish_demo.sh` publishes it again.
 
 ## How to report
 
