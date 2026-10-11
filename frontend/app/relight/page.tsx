@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { BeforeAfter } from "@/components/BeforeAfter";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { CollapsiblePanel } from "@/components/CollapsiblePanel";
@@ -10,11 +10,14 @@ import { UploadDropzone } from "@/components/UploadDropzone";
 import { AlertIcon, DownloadIcon, EyeIcon, OrbitIcon, SparklesIcon, SunIcon, UploadIcon } from "@/components/icons";
 import { RelightCanvas, type ShadingPath } from "@/components/relight/RelightCanvas";
 import { ShadingNote } from "@/components/relight/ShadingNote";
+import { type StartTab, StartTabs } from "@/components/relight/StartTabs";
 import { Button, Segmented, Slider, Toggle } from "@/components/ui";
 import { ApiError, errorMessage, isAbort, relightAdoptScene, relightEnhance, relightRender, relightScene } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { API_URL, DEMO, MOCK } from "@/lib/config";
-import { type LoadedImage, downloadBase64AsPng, downloadCanvas, toDataUrl } from "@/lib/image";
+import { type Draft, draftName, fingerprint, isDraftScene, readDraftScene, saveDraft, smallPicture, useDrafts } from "@/lib/drafts";
+import { HOME_EVENT } from "@/lib/home";
+import { type LoadedImage, downloadBase64AsPng, downloadCanvas, sniffMime, toDataUrl } from "@/lib/image";
 import { type DepthDevice, type LocalProgress, depthDeviceText, isLocalScene, localScene, progressText } from "@/lib/localScene";
 import { SAMPLES, type SamplePhoto, isSampleScene, loadSampleScene, sampleThumbUrl } from "@/lib/samples";
 import type { Light, RelightRender, RelightScene } from "@/lib/types";
@@ -159,6 +162,29 @@ const COOL: [number, number, number] = [0.7, 0.86, 1.0];
 
 type LightBase = Omit<Light, "color">;
 
+/** What a draft holds besides its name and its small picture. Compared with what is on screen to tell whether anything needs saving. */
+interface DraftContent {
+  scene: RelightScene;
+  base: LightBase;
+  warmth: number;
+  shadows: boolean;
+  detail: boolean;
+}
+
+/** The user's own photo, as a draft (lib/drafts.ts). A sample is never one: it opens at once as it is. */
+interface OwnPhoto {
+  /** The photo this is about. A draft is only saved while this is the photo on screen. */
+  photo: LoadedImage;
+  /** The draft's id: a fingerprint of the picture, which takes a moment to work out. */
+  id: Promise<string>;
+  name: string;
+  createdAt: number;
+  /** What the browser's storage has been given for it, null before the first save and after a failed one. */
+  kept: DraftContent | null;
+  /** The scene whose first save has been started: later ones wait for the light to rest (DRAFT_SAVE_MS). */
+  begun: RelightScene | null;
+}
+
 /**
  * The light a fresh scene (and Reset) starts with. The API's own default
  * (x 0.20, y 0.20, height 0.25) lights a photo so evenly that testers read it
@@ -219,6 +245,15 @@ const DEMO_ENHANCE_NOTE = "Enhance needs the Relight server, which this demo run
 const CPU_SLOW_MS = 1200;
 /** Shown in the prompt box. Short enough for one line of the sidebar at every window size, so it is never cut off. */
 const PROMPT_PLACEHOLDER = "Optional: a mood, such as golden hour";
+/**
+ * Drafts (lib/drafts.ts): how long after the light or a switch was last touched
+ * the draft is brought up to date, in milliseconds. Long enough that a drag or
+ * a Sweep is one save and not hundreds, short enough to have happened before
+ * the tab is closed.
+ */
+const DRAFT_SAVE_MS = 800;
+/** On the Drafts tab, when the browser's storage would not give a draft back. */
+const DRAFT_UNREADABLE = "That draft could not be opened.";
 
 const PRESETS: { label: string; light: Partial<LightBase>; warmth?: number }[] = [
   { label: "Left", light: { x: -0.1, y: 0.4, height: 0.35, intensity: 1.3 } },
@@ -335,8 +370,14 @@ export default function RelightPage() {
   const [progress, setProgress] = useState<LocalProgress | null>(null);
   // How the depth model was run for the scene on screen, when the browser worked it out.
   const [depthDevice, setDepthDevice] = useState<DepthDevice | null>(null);
-  const [picking, setPicking] = useState<string | null>(null); // sample being fetched
+  const [picking, setPicking] = useState<string | null>(null); // sample being fetched, or draft being read
   const [sampleError, setSampleError] = useState<string | null>(null);
+  // The first page's two tabs. Kept here, not in the tabs, so New photo comes back to the one the photo was opened from.
+  const [startTab, setStartTab] = useState<StartTab>("samples");
+  const drafts = useDrafts();
+  const [draftNote, setDraftNote] = useState<string | null>(null);
+  // For a scene opened from a draft: the Geometry panel's words for how its depth was made, as they were when it was saved.
+  const [draftDepth, setDraftDepth] = useState<{ scene: RelightScene; text: string } | null>(null);
 
   const [base, setBase] = useState<LightBase>(START);
   const [warmth, setWarmth] = useState(0);
@@ -364,6 +405,8 @@ export default function RelightPage() {
   const [snapshot, setSnapshot] = useState<string | null>(null);
 
   const canvas = useRef<HTMLCanvasElement>(null);
+  // The photo as it came, under the canvas: a draft's small picture is taken from it when there is no lit one.
+  const original = useRef<HTMLImageElement>(null);
   // Resolves when the canvas holds the finished picture for the current light (the processor shades a quick preview first).
   const settle = useRef<(() => Promise<void>) | null>(null);
   const surface = useRef<HTMLDivElement>(null);
@@ -380,11 +423,16 @@ export default function RelightPage() {
   const pinch = useRef<{ spread: number; height: number } | null>(null);
   // The backend's scene id for the sample on screen, once it has been asked for.
   const adopted = useRef<{ scene: RelightScene; id: Promise<string> } | null>(null);
+  // The user's own photo on screen, as a draft.
+  const own = useRef<OwnPhoto | null>(null);
+  // What a draft is made from, as last drawn: read when one is saved from outside a render.
+  const shown = useRef<(Omit<DraftContent, "scene"> & { photo: LoadedImage | null; scene: RelightScene | null; depthDevice: DepthDevice | null; depthText: string | null; drawn: boolean; lit: boolean }) | null>(null);
 
   const withBackendScene = useCallback<WithBackendScene>(async (scene, offlineMessage, call) => {
     // A scene the browser worked out is sent the same way. The backend analyses the photo again with detailed normals,
     // so its renders are a little more detailed than the live preview of such a scene.
-    if (!isSampleScene(scene) && !isLocalScene(scene)) return call(scene.scene_id);
+    // So is a scene opened from a draft: the server that made it may have forgotten it since.
+    if (!isSampleScene(scene) && !isLocalScene(scene) && !isDraftScene(scene)) return call(scene.scene_id);
     const sceneId = () => {
       if (adopted.current?.scene !== scene) {
         const id = relightAdoptScene(scene);
@@ -499,7 +547,9 @@ export default function RelightPage() {
         return true;
       } catch (e) {
         if (request.current !== id || isAbort(e)) return true;
-        if (keep) setError(`${errorMessage(e)} ${scene !== null && isLocalScene(scene) ? "The photo keeps the shape worked out in this browser." : "The sample keeps the geometry it came with."}`);
+        // What stays on screen, and where it came from.
+        const kept = scene === null ? "" : isLocalScene(scene) ? "The photo keeps the shape worked out in this browser." : isDraftScene(scene) ? "The draft keeps the geometry it was saved with." : "The sample keeps the geometry it came with.";
+        if (keep) setError(`${errorMessage(e)} ${kept}`);
         else setSceneError({ message: errorMessage(e), route, offline: e instanceof ApiError && e.status === 0 });
         return false;
       } finally {
@@ -534,7 +584,135 @@ export default function RelightPage() {
     }
   };
 
+  // --- drafts: the user's own photos, kept on this device (lib/drafts.ts) ------------
+
+  // The photo has been lit, or never will be here (canShade, below): from then on it is a draft.
+  const drawn = scene !== null && (ready || localProblem !== null);
+  const depthSaid = draftDepth !== null && draftDepth.scene === scene ? draftDepth.text : null;
+  useEffect(() => {
+    shown.current = {
+      photo,
+      scene,
+      base,
+      warmth,
+      shadows,
+      detail,
+      depthDevice,
+      depthText: depthSaid ?? (depthDevice ? depthDeviceText(depthDevice) : null),
+      drawn,
+      lit: showCanvas && ready,
+    };
+  });
+
+  /**
+   * Keep the photo on screen as a draft, if it is the user's own, has been lit
+   * and is not already kept as it is now. The small picture is taken from the
+   * canvas as it is at this moment, so this is called before a photo is taken
+   * off the page, not after. `urgent`: the page itself is going away.
+   */
+  const keepDraft = useCallback((urgent = false) => {
+    const mine = own.current;
+    const now = shown.current;
+    if (!mine || !now || mine.photo !== now.photo || now.scene === null || !now.drawn) return;
+    const { scene, base, warmth, shadows, detail, depthDevice, depthText } = now;
+    const before = mine.kept;
+    if (before && before.scene === scene && before.base === base && before.warmth === warmth && before.shadows === shadows && before.detail === detail) return;
+    const kept: DraftContent = { scene, base, warmth, shadows, detail };
+    mine.kept = kept;
+    // The lit picture. If there is none to be had (nothing on this device can shade), the photo itself.
+    const lit = now.lit && canvas.current ? smallPicture(canvas.current, scene.width, scene.height) : null;
+    const thumb = lit ?? (original.current ? smallPicture(original.current, scene.width, scene.height) : null) ?? "";
+    const { name, createdAt } = mine;
+    const updatedAt = Date.now();
+    void mine.id
+      // The maps are only written when they are new: moving the light writes the small record alone.
+      .then((id) => saveDraft({ id, name, createdAt, updatedAt, light: base, warmth, shadows, detail, depthDevice, depthText, thumb }, before?.scene === scene ? null : scene, urgent))
+      .then((saved) => {
+        // Not kept: the next change sends the whole draft again.
+        if (!saved && mine.kept === kept) mine.kept = null;
+      });
+  }, []);
+
+  // A draft is made as soon as the user's own photo is first lit, and brought up to date a moment after the light or a switch was last touched.
+  useEffect(() => {
+    const mine = own.current;
+    if (!mine || mine.photo !== photo || scene === null || !drawn) return;
+    let stale = false;
+    const timer = setTimeout(
+      async () => {
+        mine.begun = scene;
+        await settle.current?.(); // not the quick preview
+        if (!stale) keepDraft();
+      },
+      mine.begun === scene ? DRAFT_SAVE_MS : 0,
+    );
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
+  }, [photo, scene, drawn, base, warmth, shadows, detail, keepDraft]);
+
+  // The page is being closed, reloaded or put in the background: keep the draft now, as far as a browser lets a page that is going away do anything. Nothing waits for it.
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") keepDraft(true);
+    };
+    const onLeave = () => keepDraft(true);
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", onLeave);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", onLeave);
+    };
+  }, [keepDraft]);
+
+  /** A photo of the user's own, from the drop box. It becomes a draft once it has been lit; if the same picture is one already, it takes that draft's place. */
+  const loadOwn = (image: LoadedImage) => {
+    own.current = { photo: image, id: fingerprint(image.base64), name: draftName(image.name), createdAt: Date.now(), kept: null, begun: null };
+    void load(image, detail);
+  };
+
+  /** A draft: the photo, its maps and the light as they were left. All of it is read from this device: nothing is worked out again and no server is asked. */
+  const openDraft = async (draft: Draft) => {
+    const id = ++request.current;
+    setPicking(draft.id);
+    setSampleError(null);
+    setDraftNote(null);
+    const result = await readDraftScene(draft.id);
+    if (request.current !== id) return;
+    setPicking(null);
+    if (!result) {
+      setDraftNote(DRAFT_UNREADABLE);
+      return;
+    }
+    const image: LoadedImage = { base64: result.image, mime: sniffMime(result.image) === "image/jpeg" ? "image/jpeg" : "image/png", width: result.width, height: result.height, name: draft.name };
+    // Kept inside what the controls can show, whatever the record says.
+    const light: LightBase = {
+      x: clamp(draft.light.x, -OUTSIDE, 1 + OUTSIDE),
+      y: clamp(draft.light.y, -OUTSIDE, 1 + OUTSIDE),
+      height: clamp(draft.light.height, HEIGHT_MIN, HEIGHT_MAX),
+      intensity: clamp(draft.light.intensity, 0, 4),
+      ambient: clamp(draft.light.ambient, 0, 1),
+    };
+    const colour = clamp(draft.warmth, -1, 1);
+    // As kept already: opening a draft does not count as changing it.
+    own.current = { photo: image, id: Promise.resolve(draft.id), name: draft.name, createdAt: draft.createdAt, kept: { scene: result, base: light, warmth: colour, shadows: draft.shadows, detail: draft.detail }, begun: result };
+    clearResults();
+    setPhoto(image);
+    resetShading();
+    setDetail(draft.detail);
+    setDepthDevice(draft.depthDevice);
+    setDraftDepth(draft.depthText === null ? null : { scene: result, text: draft.depthText });
+    setBase(light);
+    setWarmth(colour);
+    setShadows(draft.shadows);
+    setScene(result);
+  };
+
   const startOver = () => {
+    // While the lit picture is still on the page.
+    keepDraft();
+    own.current = null;
     request.current++;
     stopSweep();
     setPhoto(null);
@@ -546,6 +724,7 @@ export default function RelightPage() {
     setSceneError(null);
     setPicking(null);
     setSampleError(null);
+    setDraftNote(null);
     // A new photo starts clean: nothing set for the last one carries over.
     setBase(START);
     setWarmth(0);
@@ -556,6 +735,22 @@ export default function RelightPage() {
     setSnapshot(null);
     enhance.reset();
   };
+
+  // The logo in the top bar (lib/home.ts): the first page as it is on arrival, in place. Whatever was going on is abandoned the way New photo abandons it.
+  const showFirstPage = useEffectEvent(() => {
+    startOver();
+    setStartTab("samples");
+    window.scrollTo(0, 0);
+  });
+  useEffect(() => {
+    const onHome = (event: Event) => {
+      // "Done here": the logo's link is not followed, so nothing is loaded again.
+      event.preventDefault();
+      showFirstPage();
+    };
+    window.addEventListener(HOME_EVENT, onHome);
+    return () => window.removeEventListener(HOME_EVENT, onHome);
+  }, []);
 
   // --- dragging the light ---------------------------------------------------------
 
@@ -745,12 +940,12 @@ export default function RelightPage() {
         }
       >
         <UploadDropzone
-          onImage={(image) => void load(image, detail)}
+          onImage={loadOwn}
           title="Drop a photo here"
           footer={
             <>
               {BROWSER_ONLY && <p className="mt-3 text-sm leading-5 text-zinc-400">{BROWSER_PRIVACY_NOTE}</p>}
-              {samples}
+              <StartTabs tab={startTab} onTab={setStartTab} samples={samples} drafts={drafts} opening={picking} onOpen={(draft) => void openDraft(draft)} note={draftNote} />
             </>
           }
         />
@@ -1049,8 +1244,8 @@ export default function RelightPage() {
                 checked={BROWSER_ONLY ? sampleScene : detail}
                 disabled={BROWSER_ONLY}
                 onChange={(next) => {
-                  // A sample, or a photo analysed in the browser, already works without the backend: keep it on screen unless the new analysis succeeds.
-                  const keep = sampleScene || localShape;
+                  // A sample, a photo analysed in the browser, or one opened from a draft, already works without the backend: keep it on screen unless the new analysis succeeds.
+                  const keep = sampleScene || localShape || (scene !== null && isDraftScene(scene));
                   setDetail(next);
                   void load(photo, next, keep, "backend").then((ok) => {
                     if (!ok && keep) setDetail(!next);
@@ -1063,7 +1258,7 @@ export default function RelightPage() {
                 {scene.width} x {scene.height} px, relief {scene.relief}
                 {depthDevice && (
                   <span className="mt-0.5 block" data-depth-device={depthDevice} title="The depth model ran in this browser. The photo was not sent anywhere.">
-                    depth: this browser, {depthDeviceText(depthDevice)}
+                    depth: this browser, {depthSaid ?? depthDeviceText(depthDevice)}
                   </span>
                 )}
                 {shadingLine && (
@@ -1124,7 +1319,7 @@ export default function RelightPage() {
             <div className={cn("absolute inset-0", !live && "invisible")}>
               <FitBox width={width} height={height} raise={canLight}>
                 <div ref={imageBox} className="absolute inset-0 overflow-hidden rounded-lg bg-black shadow-2xl ring-1 ring-white/10">
-                  <img src={photoUrl} alt="Original photo" draggable={false} className={cn("absolute inset-0 h-full w-full", failed && "opacity-30 grayscale")} />
+                  <img ref={original} src={photoUrl} alt="Original photo" draggable={false} className={cn("absolute inset-0 h-full w-full", failed && "opacity-30 grayscale")} />
                   {scene && showCanvas && (
                     <RelightCanvas
                       scene={scene}

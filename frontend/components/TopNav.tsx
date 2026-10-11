@@ -7,6 +7,7 @@ import { BananaMark } from "./icons";
 import { BACKEND_UNREACHABLE_EVENT, getHealth, isAbort } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { API_URL, DEMO, MOCK } from "@/lib/config";
+import { goHome } from "@/lib/home";
 import type { Health } from "@/lib/types";
 
 type Status = { kind: "demo" } | { kind: "mock" } | { kind: "checking" } | { kind: "online"; health: Health } | { kind: "offline" };
@@ -89,7 +90,15 @@ function BackendStatus() {
 export function TopNav() {
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-white/[0.08] bg-ink/80 px-4 backdrop-blur-xl">
-      <Link href="/" className="mr-auto flex shrink-0 items-center gap-2 rounded-lg py-1 pr-2 text-sm font-semibold tracking-tight text-white">
+      {/* The logo is the way home. The page on screen goes back to its first page in place (lib/home.ts), so nothing is loaded again and the depth model stays set up; the link is only followed where no such page is listening, which is the "not found" page. A click with Ctrl or Cmd held never comes through here, and opens a new tab as on any link. */}
+      <Link
+        href="/"
+        data-home
+        onNavigate={(e) => {
+          if (goHome()) e.preventDefault();
+        }}
+        className="mr-auto flex shrink-0 items-center gap-2 rounded-lg py-1 pr-2 text-sm font-semibold tracking-tight text-white"
+      >
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-black">
           <BananaMark className="h-4 w-4" />
         </span>

@@ -5,6 +5,7 @@ import { XIcon } from "./icons";
 import { Button } from "./ui";
 import { cn } from "@/lib/cn";
 import { BASE_PATH, DEMO } from "@/lib/config";
+import { goHome } from "@/lib/home";
 import { SAMPLES, sampleThumbUrl } from "@/lib/samples";
 
 // The pictures are the Portrait sample at each stage. The photo is the sample's
@@ -103,7 +104,11 @@ export function HowItWorks() {
   };
   // The panel's content fills the dialog edge to edge, so a click that lands on the dialog element itself is on the backdrop.
   const closeOnBackdrop = (e: MouseEvent<HTMLDialogElement>) => {
-    if (e.target === e.currentTarget) close();
+    if (e.target !== e.currentTarget) return;
+    close();
+    // While the panel is open the top bar is out of reach, so a click on the logo arrives here as a click on the backdrop. It still means "home".
+    const logo = document.querySelector("[data-home]")?.getBoundingClientRect();
+    if (logo && e.clientX >= logo.left && e.clientX <= logo.right && e.clientY >= logo.top && e.clientY <= logo.bottom) goHome();
   };
 
   return (
