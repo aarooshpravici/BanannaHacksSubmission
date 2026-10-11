@@ -2426,6 +2426,8 @@ The first photo you give the demo downloads a depth model (about 25 MB), so the 
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
+*Run by a person:* Aaroosh, Oct 11, an Apple M5 MacBook in Chrome, on the hosted demo: PASS for steps 1 to 3 (click, drop, paste). Step 4, the keyboard, was not run.
+
 ### H-03 A sample in the demo: the light, Sweep, compare and export
 
 1. Click the **Portrait** thumbnail. 2. Drag the sun. Click **Left**, **Right**, **Top**, **Low and warm**, **Reset light**. 3. Move each of the four sliders. Switch **Cast shadows** off and on. 4. Click **Sweep** and let it finish. 5. Hold **Hold to see original**. 6. Click **Export PNG** and open the file. 7. Click **New photo** (top right of the stage). Do steps 1 and 2 quickly with **Coffee cup**, **Cat** and **Rocket**.
@@ -2435,6 +2437,8 @@ The first photo you give the demo downloads a depth model (about 25 MB), so the 
 ![H-03](screenshots/99-demo-sample.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
+
+*Run by a person:* Aaroosh, Oct 11, an Apple M5 MacBook in Chrome, on the hosted demo: PASS for steps 3, 4 and 6: the sliders, a steady Sweep, and a saved PNG that matches the screen. (Steps 1, 2, 5 and 7 were run on a Windows laptop: see PENDING.)
 
 ### H-04 The demo's ENHANCE and GEOMETRY panels
 
@@ -2563,7 +2567,7 @@ If it goes wrong, these are the results we most need:
 
 `Result: PASS / FAIL / NOT RUN` Devices, browsers, times, depth lines and note:
 
-*Run by a person:* Aaroosh, Oct 11, an iPhone 11 in Chrome, on the hosted demo: PASS for the phone (steps 1 to 5). A few seconds for the photo; "768 x 1024 px, relief 0.3", "depth: this browser, graphics chip (WebGPU)", "shading: graphics chip, full quality". Run again on Oct 11 at 12:40 PM on the build from version `39abe26`, which tests the graphics chip first: about 8 seconds for an outdoor photo, and the depth line still reads "graphics chip (WebGPU)". Still wanted: step 6 on a computer, an Android phone, and an older phone.
+*Run by a person:* Aaroosh, Oct 11, an iPhone 11 in Chrome, on the hosted demo: PASS for the phone (steps 1 to 5). A few seconds for the photo; "768 x 1024 px, relief 0.3", "depth: this browser, graphics chip (WebGPU)", "shading: graphics chip, full quality". Run again on Oct 11 at 12:40 PM on the build from version `39abe26`, which tests the graphics chip first: about 8 seconds for an outdoor photo, and the depth line still reads "graphics chip (WebGPU)". Step 6 on a computer: PASS on an Apple M5 MacBook in Chrome, "a few seconds" (Aaroosh, Oct 11, 3:50 PM; the depth line was not sent). Still wanted: a Windows or Linux computer by hand, and an older phone.
 
 ### H-13 A HEIC photo in the demo
 
