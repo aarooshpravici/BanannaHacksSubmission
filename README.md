@@ -8,7 +8,7 @@ Drag a light around a photo and watch the highlights and shadows follow, live, i
 
 **Live demo: https://aarooshpravici.github.io/BanannaHacksSubmission/** (the four sample photos or your own, in your browser, nothing to install)
 
-Built for the Banana Hacks hackathon. The app has a "How it works" button in the top bar that shows each step below as a picture.
+Built for the Banana Hacks hackathon. The app has a "How it works" button in the top bar that shows the same pipeline in pictures (it folds step 5 into step 4).
 
 The sun on the photo is the light. Drag it to move the light. Scroll on it (or pinch with two fingers on a touch screen, or press + and - with it selected) to bring the light nearer or push it back: the sun grows as the light comes nearer, and the Height slider follows.
 
@@ -51,11 +51,15 @@ flowchart LR
 ```
 
 1. **Depth, once per photo (pretrained: Depth Anything V2 Small).** How near each pixel is to the camera. We scale it into a height field.
-2. **Surface normals, once per photo (pretrained: Marigold).** Which way each surface faces. Normals worked out from the depth map alone left faces almost unshaded, so a second model does this.
+2. **Surface normals, once per photo (pretrained: Marigold, a generative diffusion model fine-tuned from Stable Diffusion 2).** Which way each surface faces. Normals worked out from the depth map alone left faces almost unshaded, so a second model does this.
 3. **Diffuse shading, every frame (ours).** Each pixel is lit by how squarely its surface faces the light, easing to dark as it turns away. Distance falloff is measured against the centre of the scene, so moving the light changes where it falls and not the overall exposure.
 4. **Cast shadows, every frame (ours).** Each pixel walks toward the light across the height field. Whatever blocks it is sorted into a near, mid or far layer by how far in front of the receiving surface it stands, and each layer is blurred by a different amount: a contact shadow stays crisp, a shadow on a far background spreads and fades.
 5. **Into the photo, every frame (ours).** The shading is multiplied into the photo in linear light. From 80% of white upward the result eases toward white, so highlights roll off softly instead of clipping.
-6. **Enhance, only on request (hosted: the Gemini image model, or IC-Light v2 on fal.ai).** Sends the shaded preview for a more photographic finish. The app is complete without it.
+6. **Enhance, only on request (hosted: the Gemini image model; a second route, IC-Light v2 on fal.ai, is coded but has never been run).** Sends the shaded preview for a more photographic finish. The app is complete without it.
+
+![Three panels of the Portrait sample: the original photo, our preview with the light at the left, and the result of Enhance](proofs/live/relight_enhance.jpg)
+
+*The one real Enhance run (Gemini's image model), on an earlier version of our preview: cleaner, but it undid most of our lighting. Placing the light is the part a prompt cannot do, which is why the dragging is ours and Enhance is an extra.*
 
 Steps 3 to 5 exist three times and are kept in agreement: `backend/app/ideas/relight.py` (the Python reference), `frontend/lib/relightMath.ts` (a CPU port) and `frontend/lib/relightGL.ts` (the shader you watch).
 
@@ -66,7 +70,7 @@ If a device cannot run the shader, the page falls back by itself: first to the s
 | | |
 | --- | --- |
 | **Ours** | All of the lighting: the diffuse shading, the exposure-steady falloff, the soft edge where a surface turns from the light, the ray-marched shadows and their three layers, the linear-light mix, written three times (Python, TypeScript, GLSL). The server that runs the two models once and hands the browser the maps, and the port of its depth-to-maps step to the browser (`sceneGeometry.ts`). The self-test that compares a graphics chip's answer from the depth model with the processor's before a photo is trusted to it (`depthCheck.ts`). The page. |
-| **Not ours** | The depth model (Depth Anything V2 Small) and the normals model (Marigold): pretrained, downloaded, run as they are. We trained nothing. The optional Enhance model is a hosted service we call. The decoder for iPhone HEIC photos (libheif-js, LGPL-3.0), which the browser fetches from jsDelivr only when such a photo arrives. |
+| **Not ours** | The depth model (Depth Anything V2 Small, Apache-2.0) and the normals model (Marigold normals v1-1, a diffusion model fine-tuned from Stable Diffusion 2, CreativeML Open RAIL++-M): pretrained, downloaded, run as they are. We trained nothing. The optional Enhance model is a hosted service we call. The libraries that run the models and the page (PyTorch, transformers, diffusers and OpenCV on the server; transformers.js, Apache-2.0, and ONNX Runtime Web, MIT, in the browser; Next.js, React and Tailwind). The decoder for iPhone HEIC photos (libheif-js, LGPL-3.0), which the browser fetches from jsDelivr only when such a photo arrives. The four sample photos, public domain or CC0, from scikit-image's sample data (`testing/photos/README.md`). |
 
 Without the two pretrained models there is nothing to shade; without our code there is nothing to drag. Dragging the light never calls a model.
 
@@ -74,19 +78,27 @@ Without the two pretrained models there is nothing to shade; without our code th
 
 - One photo gives a height field, not real 3D, so shadows are approximate. Light from below looks blotchy on faces, and a faint dark column remains on open sky.
 - Shading is diffuse only: no shine. Light already in the photo is not removed.
-- The live shader has been tested by people on four devices so far: an Apple-chip Mac (Chrome and Safari), a Windows laptop with Intel graphics (Chrome), a Windows laptop with a Snapdragon chip (Chromium) and one phone (an iPhone 11).
-- Real Enhance has run once, and it weakened the side lighting. In the default setup (`MOCK_MODE=1`) Enhance returns the preview unchanged.
-- With no backend (the static demo, mock mode, or the backend not answering), your own photo is analysed in the browser: the same depth model (an ONNX build, `onnx-community/depth-anything-v2-small`, Apache-2.0, run by transformers.js on WebGPU or WebAssembly; about 25 MB downloaded once from Hugging Face and jsDelivr, the photo itself is not uploaded). The normals model is too large for a browser, so those scenes take their normals from the slope of the depth map and faces shade flatter. Tested by the developer in Chrome on one Apple-chip Mac only. On one tester's Snapdragon laptop (a Qualcomm Adreno graphics chip, on Windows) the model ran on WebGPU without an error and gave a depth map covered in a regular grid of dimples. So before the first photo the page now runs the model on a built-in test picture and compares the result with the processor's answer to that picture, which is stored in the code; it uses the processor (WebAssembly, slower) when the graphics chip gets the picture wrong, when it throws, or when it is that chip family on Windows. The test's limit was set from one healthy chip, an Apple one, so a healthy chip of another make may be turned away to the slower route, and the fix has not yet been confirmed on the faulty laptop.
-- iPhone photos (`.heic`, `.heif`, as AirDrop delivers them) are accepted everywhere a photo is. Safari decodes them itself. Chrome, Edge and Firefox cannot, so there the page fetches a decoder when the first such photo arrives: [`libheif-js`](https://www.npmjs.com/package/libheif-js) 1.23.5, which is libheif with the libde265 HEVC decoder built to WebAssembly, licensed LGPL-3.0. It is not part of this repository or of the site: the browser downloads that one pinned file (2 MB, checked against a fingerprint) from jsDelivr, so a HEIC photo needs the internet the first time. The photo itself is converted on the device and is not uploaded for that. The developer tested it in Chrome on one Apple-chip Mac with files made by macOS. The owner has since tried it by hand and reports that it works; which browser, and whether the photo came straight from an iPhone, was not recorded. Not tried in Firefox or on Windows.
-- Scrolling on the sun was built with a program doing the scrolling, in Chrome on one Mac. The owner has since tried it by hand on that Mac and reports that it works and that the speed is right. Nobody else has, a two-finger pinch on a touch screen has only been driven by a program, and in Safari on a Mac the trackpad pinch on the sun does nothing (two-finger scrolling on it works).
+- The live shader has run on four real devices so far: an Apple-chip Mac (Chrome and Safari), a Windows laptop with Intel graphics (Chrome), a Windows laptop with a Snapdragon chip (Chromium) and one phone (an iPhone 11).
+- Real Enhance has run once, and it weakened the side lighting. In the default setup (`MOCK_MODE=1`) Enhance returns the preview unchanged, and with no backend at all (`npm run dev` on its own) it is a contrast-and-glow filter made in the browser. Neither is a model.
+- With no backend (the static demo, mock mode, or the backend not answering), your own photo is analysed in the browser by the same depth model (an ONNX build, `onnx-community/depth-anything-v2-small`, Apache-2.0, run by transformers.js on WebGPU or WebAssembly; about 25 MB downloaded once from Hugging Face and jsDelivr; the photo itself is not uploaded). The normals model is too large for a browser, so these scenes take their normals from the slope of the depth map and faces shade flatter. This has worked on an Apple-chip Mac and on an iPhone 11 (both in Chrome). On one tester's Snapdragon laptop (Qualcomm Adreno graphics, Windows) the model ran on WebGPU without an error and gave a depth map covered in a grid of dimples, so the page now tests each graphics chip on a built-in picture before trusting it and uses the processor (slower, correct) when the answer is wrong, and for that chip family on Windows without trying. That test has passed on one healthy Apple chip, so a healthy chip of another make may be turned away to the slower route; the fix has not yet been confirmed on the faulty laptop. Details: `frontend/README.md`.
+- A photo of your own is worked on at no more than 1024 pixels on its longer side, and Export PNG saves that size. The four samples are exported at their own size.
+- iPhone photos (`.heic`, `.heif`) are accepted. Safari decodes them itself; Chrome, Edge and Firefox fetch a decoder the first time one arrives ([`libheif-js`](https://www.npmjs.com/package/libheif-js) 1.23.5, LGPL-3.0: one pinned 2 MB file from jsDelivr, checked against a fingerprint, not part of this repository). The photo is converted on the device and not uploaded. Tried on one Mac only, with files made by macOS and once by hand by a team member; not in Firefox or on Windows.
+- Changing the light's distance on the photo has been tried by hand by scrolling on one Mac. The two-finger pinch on a touch screen has only been driven by a program, and in Safari on a Mac the trackpad pinch does nothing (two-finger scrolling works).
 
 `testing/PENDING.md` is the full list of what has not been verified.
 
 ## Run it
 
+You need git and Node.js 22 or newer; the backend also needs Python 3.12. The commands on this page are for macOS and Linux. On Windows follow `testing/SETUP.md`, which has the PowerShell versions.
+
+```bash
+git clone --branch relight https://github.com/aarooshpravici/BanannaHacksSubmission.git
+cd BanannaHacksSubmission
+```
+
 Three ways, shortest first:
 
-- **No backend:** `cd frontend && npm install && npm run dev`, then open http://localhost:3000 and click a sample or upload your own photo (its depth is estimated in the browser). See "Frontend".
+- **No backend:** `cd frontend && npm install && npm run dev`, then open http://localhost:3000 and click a sample or upload your own photo (its depth is estimated in the browser). The pill in the top-right corner then reads `backend: mock`, and Enhance is a stand-in in this mode: a contrast-and-glow filter made in the browser, not a model. See "Frontend".
 - **Everything, including detailed normals and Enhance:** start the backend ("Backend"), then the frontend with `NEXT_PUBLIC_MOCK=0`.
 - **A static folder for a web host:** see "Static demo".
 
@@ -107,6 +119,7 @@ frontend/   Next.js app. One page, served at / and /relight
   out/                        the static demo, written by `npm run build:demo` (see "Static demo")
   public/samples/             the four sample scenes: photo, depth, normals, thumbnail (written by make_samples.py)
   public/how-it-works/        the stills in the "How it works" panel (written by docs/make_explainer_images.py)
+  app/, components/           the page (app/relight/page.tsx) and the parts it is built from
   lib/                        relightGL.ts (the shader), relightMath.ts (the CPU port), and the CPU fallback that runs it:
                               relightCPU.ts, relightCpuCore.ts, relightCpu.worker.js
                               localScene.ts, depth.worker.js, sceneGeometry.ts (a photo's depth and normals worked out in
@@ -118,14 +131,15 @@ frontend/   Next.js app. One page, served at / and /relight
 docs/       relight-sweep.gif and the script that renders it; submission/ holds the write-up drafts
 proofs/     output images from the scripts
 testing/    what to test and how, written for the testers
-tools/      check_secrets.py (keeps keys out of the repository), screenshots.mjs (retakes the tester kit's screenshots)
+tools/      check_secrets.py (keeps keys out of the repository), screenshots.mjs (retakes the tester kit's screenshots),
+            publish_demo.sh (builds the static demo and pushes it to the gh-pages branch)
 ```
 
 ## Backend
 
 ```bash
 cd backend
-conda create -y -p .venv python=3.12
+conda create -y -p .venv python=3.12   # no conda? use: python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 cp ../.env.example ../.env        # never commit .env
 .venv/bin/uvicorn app.main:app --port 8000
@@ -157,7 +171,7 @@ This writes a plain static site to `frontend/out/`, for a host with no server of
 
 ## Sample scenes
 
-The four samples on the first page (Portrait, Coffee cup, Cat, Rocket) are static files under `frontend/public/samples/<name>/`, so they open with no backend running. Enhance on a sample still needs the backend. To bake them again from `testing/photos` after changing the depth or normals code:
+The four samples on the first page (Portrait, Coffee cup, Cat, Rocket) are static files under `frontend/public/samples/<name>/`, so they open with no backend running. Real Enhance on a sample still needs the backend. To bake them again from `testing/photos` after changing the depth or normals code:
 
 ```bash
 cd backend
@@ -181,7 +195,7 @@ MOCK_MODE=1 .venv/bin/python -m pytest -q            # fast tests
 MOCK_MODE=1 .venv/bin/python -m pytest -q --models   # also the tests that load the local models
 
 cd ../frontend
-npm run lint && npx tsc --noEmit && npm run build
+npm run lint && npm run build && npx tsc --noEmit
 ```
 
 The tests never call a paid service. `backend/scripts/live_checks.py` does (one image call), so run it only on purpose.

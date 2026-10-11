@@ -366,7 +366,7 @@ npm ci
 NEXT_PUBLIC_BASE_PATH=/BanannaHacksSubmission npm run build:demo
 ```
 
-It takes a minute or two. It must end without a line containing `Error` or `Failed`. Afterwards there is a new folder named `out` inside `frontend` (about 2.3 MB). That folder is the whole demo.
+It takes a minute or two. It must end without a line containing `Error` or `Failed`. Afterwards there is a new folder named `out` inside `frontend` (about 3 MB). That folder is the whole demo.
 
 A demo only works at the address it was built for. This one was built for a folder named `BanannaHacksSubmission`, so put it in a folder of that name and start a small web server one level above it:
 

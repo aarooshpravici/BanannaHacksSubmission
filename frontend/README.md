@@ -29,7 +29,7 @@ npm run build:demo                                             # served from the
 NEXT_PUBLIC_BASE_PATH=/BanannaHacksSubmission npm run build:demo   # served from a sub-folder
 ```
 
-This writes a plain static site to `out/` (about 3.3 MB). Upload the contents of that folder to any
+This writes a plain static site to `out/` (about 3 MB). Upload the contents of that folder to any
 static host. In it the four sample photos and your own photos work fully in the browser: drag, sliders,
 presets, Sweep, hold to compare, Export PNG and the Geometry maps. Nothing calls a backend: the status
 pill reads `demo: runs in your browser`, an uploaded photo is analysed in the browser (next section),
@@ -93,7 +93,8 @@ until it has passed a check.
   healthy chip measured, an Apple one in Chrome 155, scores 0.9999 and 3.27 on every run. Grid noise added by
   a program is rejected from about 0.1% to 0.3% of the depth range, which is about where it first shows on a
   blank wall under a low side light; at 3% it scored about 95 to 135. The check is one more run of the model:
-  150 to 250 ms on that Mac, once per page load, on WebGPU only. The chip gets `CHECK_TIMEOUT_MS` (20 s) to
+  150 to 250 ms on that Mac (up to about 0.75 s the very first time in a new browser profile), once per page
+  load, on WebGPU only. The chip gets `CHECK_TIMEOUT_MS` (20 s) to
   answer.
 - **What happens on a failure.** After a failed check the Worker releases the WebGPU model and uses
   WebAssembly for this photo and the later ones. After a throw on WebGPU (setting the model up, in the check
@@ -222,6 +223,6 @@ its first lines).
 
 ```bash
 npm run lint
-npx tsc --noEmit
 npm run build
+npx tsc --noEmit
 ```
