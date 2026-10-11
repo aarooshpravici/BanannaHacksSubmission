@@ -75,16 +75,19 @@ export function FitBox({
   height,
   className,
   style,
+  raise = false,
   children,
 }: {
   width: number;
   height: number;
   className?: string;
   style?: CSSProperties;
+  /** Draw this box above the stage's own buttons (z-30), so that a sun dragged under one stays on top and can be grabbed. */
+  raise?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className="absolute inset-0" style={{ containerType: "size" }}>
+    <div className={cn("absolute inset-0", raise && "z-35")} style={{ containerType: "size" }}>
       <div
         className={cn("absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2", className)}
         style={{ width: `min(100cqw, ${width / height} * 100cqh)`, aspectRatio: `${width} / ${height}`, ...style }}

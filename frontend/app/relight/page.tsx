@@ -1035,7 +1035,7 @@ export default function RelightPage() {
           <div className="absolute inset-x-(--stage-inset-x) inset-y-(--stage-inset-y) [--stage-inset-x:1.5rem] [--stage-inset-y:4rem] sm:[--stage-inset-x:3.5rem]">
             {/* Live preview. Stays mounted behind the Enhanced tab so the scene it has loaded survives. */}
             <div className={cn("absolute inset-0", !live && "invisible")}>
-              <FitBox width={width} height={height}>
+              <FitBox width={width} height={height} raise={canLight}>
                 <div ref={imageBox} className="absolute inset-0 overflow-hidden rounded-lg bg-black shadow-2xl ring-1 ring-white/10">
                   <img src={photoUrl} alt="Original photo" draggable={false} className={cn("absolute inset-0 h-full w-full", failed && "opacity-30 grayscale")} />
                   {scene && showCanvas && (
