@@ -30,6 +30,11 @@
 //     cd frontend && NEXT_PUBLIC_MOCK=0 NEXT_PUBLIC_API_URL=http://localhost:8123 npm run dev -- --port 3123
 //   The shots named "mock-..." need the frontend alone in its own mock mode (pill reads "mock"):
 //     cd frontend && NEXT_PUBLIC_MOCK=1 npm run dev -- --port 3123
+//   Next.js refuses a second "npm run dev" in a folder where one is already running. Then build and
+//   serve instead, with the same variables on the build (they are read at build time), one setup at a time:
+//     cd frontend && NEXT_PUBLIC_MOCK=0 NEXT_PUBLIC_API_URL=http://localhost:8123 npm run build && npx next start --port 3123
+//     cd frontend && NEXT_PUBLIC_MOCK=1 npm run build && npx next start --port 3123
+//   and finish with a plain "npm run build", so the build folder is not left set up for port 8123 or mock mode.
 //   The shots named "demo-..." need the static demo build (pill reads "demo: runs in your browser",
 //   or just "demo" on a phone),
 //   served from a folder that matches the base path it was built for (see frontend/README.md):
@@ -38,6 +43,8 @@
 //     node tools/screenshots.mjs http://localhost:3199
 //   The tool reads the status pill first and skips the shots that do not fit, saying so.
 //   The four built-in sample photos come from static files, so their shots work in either setup.
+//   The shots of a photo analysed in the browser download the open depth model from huggingface.co
+//   (19 MB) and the code that runs it from cdn.jsdelivr.net, so they need the internet.
 //
 // HOW THE SPECIAL STATES ARE PRODUCED (nothing here changes the app or the backend)
 //   - "Backend offline": the browser's requests to the backend are refused inside Chrome.
@@ -55,6 +62,14 @@
 //       no 2D canvas either       canvas.getContext("2d") returns null as well     -> nothing here can shade: the red bar
 //     A slow processor is made with Chrome's own CPU throttle, and a graphics chip that stops
 //     responding with WebGL's own "lose context" test hook.
+//   - A photo analysed in the browser, stopped part of the way: the depth model runs in a Worker that
+//     tells the page how far it has got. From one chosen message on, the tool keeps those messages
+//     back until the picture is taken, so the page stays on that line. The Worker itself is not slowed.
+//   - "The depth model cannot be downloaded": requests to huggingface.co are refused inside Chrome,
+//     after this browser's stored copy of the model has been deleted.
+//   - An image dragged from another web site: a real drop, made by Chrome itself, of the address of
+//     a picture on a small web server that the tool starts on another port for that one shot. That
+//     server answers the way a site does that lets no other page read its pictures (most do not).
 //   - A tooltip (the text that appears when the mouse rests on a control) cannot be photographed
 //     headless. Where one matters, its text is read from the page into manifest.json instead.
 //
@@ -63,6 +78,7 @@
 // ("shading": webgl, cpu, server or none; "shadingPath": the exact path, such as gpu-packed).
 
 import { spawn } from "node:child_process";
+import { createServer } from "node:http";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -235,7 +251,9 @@ const IN_PAGE = `
   const statusPill = () => document.querySelector("header div[title]");
   const ACCENT = "rgb(251, 209, 61)"; // --color-accent in globals.css, as getComputedStyle reports it
   const shadingNote = () => [...document.querySelectorAll('p[role="status"]')].map((e) => e.textContent.trim()).find((x) => x.startsWith("Shading on this device") || x.startsWith("This device's processor")) ?? null;
-  const shadingLine = () => document.querySelector("aside p.font-mono span[title]");
+  const shadingLine = () => [...document.querySelectorAll("aside p.font-mono span[title]")].find((e) => e.textContent.trim().startsWith("shading:")) ?? null;
+  const depthLine = () => document.querySelector("aside p.font-mono span[data-depth-device]");
+  const busyText = () => photoBox()?.querySelector('svg[role="status"]')?.parentElement.innerText.trim() ?? null; // the line beside the spinner on the photo
   const howPanel = () => document.querySelector("header dialog");
   const alerts = () => [...document.querySelectorAll('[role="alert"]')].filter((e) => e.offsetParent !== null).map((e) => e.querySelector("p")?.textContent.trim() ?? e.textContent.trim());
 `;
@@ -445,7 +463,7 @@ class Page {
       `(() => {
         const text = document.body.innerText;
         if (text.includes("Estimating depth") || text.includes("Preparing the shader")) return false;
-        if (!photoBox()) return false;
+        if (!photoBox() || busyText()) return false; // busyText: the lines shown while the browser analyses a photo itself
         const unavailable = text.includes("Live shading is unavailable");
         if (alerts().length && !unavailable) return "error";
         if (unavailable || text.includes("so the server draws the photo instead")) return document.querySelector('img[alt="Relit photo"]')?.complete ? "server" : false;
@@ -553,6 +571,16 @@ class Page {
     await this.painted();
   }
 
+  /**
+   * Drop something on a point of the page, the way a drag from another window
+   * ends. `items` is what the drag carries: [{ mimeType, data }], for example
+   * the "text/uri-list" and "text/html" a picture dragged out of a web page has.
+   */
+  async drop(x, y, items) {
+    const data = { items, dragOperationsMask: 1 }; // 1 = copy
+    for (const type of ["dragEnter", "dragOver", "drop"]) await this.send("Input.dispatchDragEvent", { type, x, y, data });
+  }
+
   // --- pictures ------------------------------------------------------------------------
 
   /**
@@ -583,6 +611,8 @@ class Page {
       params.clip = { scale: 1, ...clip };
     }
     const { data } = await this.send("Page.captureScreenshot", params);
+    // No file name: the picture is handed back instead, for a shot that is put together from two (sideBySide).
+    if (file === null) return data;
     writeFileSync(file, Buffer.from(data, "base64"));
   }
 
@@ -785,6 +815,150 @@ const unroute = (t, fragment) => void (t.page.rules = t.page.rules.filter((r) =>
 
 /** The requests made to the backend while a rule was in force, without the status pill's own /health checks. */
 const backendRequests = (t) => t.page.seen.filter((line) => line.includes(t.api) && !line.includes("/health")).map((line) => line.replace(t.api, ""));
+
+// ----- A photo analysed in the browser (the static demo, mock mode, or the normal app when its backend cannot be reached). -----
+
+/** Where the depth model is downloaded from. */
+const MODEL_HOST = "huggingface.co";
+
+/** Delete this browser's stored copy of the depth model, so that the next photo downloads it the way a first visit does. Call it once the page is open. */
+const forgetDepthModel = (t) => t.page.js(`caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name)))).then(() => true)`);
+
+/**
+ * How far the download is let run before the page is kept still for its
+ * picture, as a share of the model file. Any value from 0.01 to 0.99 shows the
+ * same line with another number; this one is far enough in to be plainly "part
+ * of the way".
+ */
+const DOWNLOAD_HOLD_SHARE = 0.42;
+
+/** The messages from the depth Worker (frontend/lib/depth.worker.js) at which a picture is wanted, as expressions over the message `d`. */
+const DEPTH_MESSAGE = {
+  downloading: `d.type === "progress" && d.stage === "download" && !d.cached && d.total > 0 && d.loaded / d.total >= ${DOWNLOAD_HOLD_SHARE}`,
+  loadingStored: `d.type === "progress" && d.stage === "download" && d.cached === true`,
+  starting: `d.type === "progress" && d.stage === "start"`,
+  estimating: `d.type === "progress" && d.stage === "estimate"`,
+};
+
+/**
+ * Keep the page on one line of the analysis. From the first Worker message for
+ * which `when` is true, every later message waits until releaseDepth(), so the
+ * page goes on showing what that message made it show. The Worker itself runs on.
+ * Set before the page loads.
+ */
+const holdDepthAt = (t, when) =>
+  beforeLoad(
+    t,
+    `const Real = window.Worker; const waiting = []; let holding = false, watching = true;
+     window.Worker = class extends Real {
+       set onmessage(heard) {
+         super.onmessage = heard && ((event) => {
+           if (holding) return void waiting.push(() => heard.call(this, event));
+           heard.call(this, event);
+           const d = event.data;
+           if (watching && d && (${when})) holding = true;
+         });
+       }
+       get onmessage() { return super.onmessage; }
+     };
+     window.__depthHeld = () => holding;
+     window.__releaseDepth = () => { watching = false; holding = false; for (const pass of waiting.splice(0)) pass(); return true; };`,
+  );
+const releaseDepth = (t) => t.page.js(`window.__releaseDepth()`);
+
+/** What the GEOMETRY panel says about a photo the browser analysed, for the manifest: its first sentence, the "depth:" line and that line's tooltip. */
+async function readDepth(t) {
+  t.note.geometryIntro = await t.page.js(`[...document.querySelectorAll("aside button[aria-expanded]")].find((b) => b.textContent.includes("Geometry")).closest("section").querySelector("p")?.textContent.trim() ?? null`);
+  t.note.depthLine = await t.page.js(`depthLine()?.textContent.trim() ?? null`);
+  t.note.depthTooltip = await t.page.js(`depthLine()?.title ?? null`);
+}
+
+/** Choose a photo and stop on the failed-load card ("This photo could not be analysed"). Its words and buttons go into the manifest. */
+async function failedCard(t, timeout = 120_000) {
+  await t.page.waitFor(`alerts().length > 0 && !!photoBox() && !!byText("button", "Retry")`, "the failed-load card on the photo", timeout);
+  t.note.error = (await t.page.js("alerts()"))[0];
+  t.note.card = await t.page.js(`(() => { const card = [...document.querySelectorAll('[role="alert"]')].find((e) => e.offsetParent !== null); return { lines: [...card.querySelectorAll("p")].map((p) => p.textContent.trim()), buttons: [...card.querySelectorAll("button")].map((b) => b.textContent.trim()), yellowButton: [...card.querySelectorAll("button")].find((b) => getComputedStyle(b).backgroundColor === ACCENT)?.textContent.trim() ?? null }; })()`);
+}
+
+/** For a shot that clicks its way past the card: its words are kept as what the card said, not as an error in the picture. */
+function cardIsGone(t) {
+  t.note.cardBeforeTheClick = t.note.card;
+  delete t.note.card;
+  delete t.note.error;
+}
+
+// ----- A picture dragged in from another web site. -----
+
+/**
+ * A small web site on another port, for one shot. It answers the ways real sites do:
+ *   /closed/...  a picture, with no leave for other pages to read it (what most sites send)
+ *   /open/...    the same picture, with that leave
+ *   /page        a web page, not a picture
+ *   /slow/...    never answers
+ *   anything else: 404
+ * Returns its address. It is closed again when the shot ends.
+ */
+async function otherSite(t) {
+  const picture = readFileSync(join(t.photos, PHOTO.portrait));
+  const readable = { "Access-Control-Allow-Origin": "*" };
+  const server = createServer((request, response) => {
+    if (request.url.startsWith("/closed/")) response.writeHead(200, { "Content-Type": "image/jpeg" }).end(picture);
+    else if (request.url.startsWith("/open/")) response.writeHead(200, { "Content-Type": "image/jpeg", ...readable }).end(picture);
+    else if (request.url === "/page") response.writeHead(200, { "Content-Type": "text/html", ...readable }).end("<p>A web page.</p>");
+    else if (!request.url.startsWith("/slow/")) response.writeHead(404, { "Content-Type": "text/plain", ...readable }).end("Not found");
+  });
+  await new Promise((listening) => server.listen(0, "127.0.0.1", listening));
+  t.cleanup.push(() => {
+    server.closeAllConnections();
+    server.close();
+  });
+  return `http://127.0.0.1:${server.address().port}`;
+}
+
+/** What a browser puts in a drag when a picture is pulled out of a web page: the picture's address and the page's HTML for it, never the picture itself. */
+const draggedPicture = (address) => [
+  { mimeType: "text/uri-list", data: address },
+  { mimeType: "text/html", data: `<img src="${address}" alt="">` },
+  { mimeType: "text/plain", data: address },
+];
+
+/** Open the first page and drop `items` on the dashed drop box. */
+async function dropOnBox(t, items) {
+  await t.page.goto(t.url + "/");
+  const c = await t.page.centre(`document.querySelector('div[role="button"]')`, "the drop box");
+  await t.page.drop(c.x, c.y, items);
+}
+
+/** A close-up of the first page from the drop box down to the red bar under the thumbnails. */
+const dropBoxClip = (t) => t.page.clipOf(`document.querySelector('div[role="button"]').parentElement`, "the drop box and what is under it", { pad: 16, scale: 1.5 });
+
+/** How much of the dark stage the side-by-side picture keeps beside the photo, in CSS pixels: enough for a sun that a preset has put just outside it. */
+const SUN_MARGIN_PX = 120;
+/** And on the photo's other three sides: a thin frame, small enough to stay clear of the top bar. */
+const PHOTO_MARGIN_PX = 20;
+
+/**
+ * One file out of two pictures, side by side, each under a line of text.
+ * `parts` is [{ label, jpeg }] with the picture as capture(null, ...) hands it back.
+ */
+async function sideBySide(t, parts) {
+  const sheet = await t.page.browser.newPage({ width: 1700, height: 600, scale: 1, mobile: false });
+  try {
+    await sheet.js(`(() => {
+      document.body.style.cssText = "margin:0;padding:16px;background:#0b0b0d;color:#e4e4e7;font:15px/1.4 system-ui,sans-serif;display:flex;gap:16px";
+      for (const part of ${JSON.stringify(parts)}) {
+        const figure = document.createElement("figure"); figure.style.cssText = "margin:0;flex:1;min-width:0";
+        const caption = document.createElement("figcaption"); caption.textContent = part.label; caption.style.cssText = "margin-bottom:8px";
+        const img = document.createElement("img"); img.src = "data:image/jpeg;base64," + part.jpeg; img.style.cssText = "display:block;width:100%";
+        figure.append(caption, img); document.body.append(figure);
+      }
+      return Promise.all([...document.images].map((i) => i.decode())).then(() => true);
+    })()`);
+    await sheet.capture(t.file, { fullPage: true });
+  } finally {
+    await sheet.close();
+  }
+}
 
 // ----- The "How it works" panel -----
 
@@ -1186,13 +1360,12 @@ const SHOTS = [
   {
     name: "backend-offline-upload",
     needs: "backend",
-    about: "A photo chosen while the backend is not running (the failed-load state): the photo is grey and dim under a red-bordered card with \"Retry\" and \"Choose another photo\".",
+    about: "A photo chosen while the backend is not running (the failed-load state): the photo is grey and dim under a red-bordered card that offers \"Analyse in this browser\", \"Retry\" and \"Choose another photo\".",
     async run(t) {
       await t.page.route(t.api, "fail");
       await t.page.goto(t.url + "/");
       await t.page.upload(join(t.photos, PHOTO.portrait));
-      await t.page.waitFor(`alerts().length > 0 && !!photoBox() && !!byText("button", "Retry")`, "the failed-load card on the photo");
-      t.note.error = (await t.page.js("alerts()"))[0];
+      await failedCard(t);
       await t.snap();
     },
   },
@@ -1332,10 +1505,12 @@ const SHOTS = [
   {
     name: "mock-scene",
     needs: "mock",
-    about: "Frontend mock mode with the portrait photo and the \"Left\" preset: the shading is a made-up round dome, not the real face.",
+    about: "Frontend mock mode with the portrait photo uploaded and the \"Left\" preset: the photo was analysed in the browser, so the shading follows the real face. No dome and no note about one.",
     async run(t) {
       await openScene(t);
       await t.page.clickButton("Left");
+      t.note.domeNoteShown = await t.page.js(`document.body.innerText.includes("made-up dome")`);
+      if (t.note.domeNoteShown) throw new Error("Mock mode lit the upload as its stand-in dome without being asked.");
       await t.snap();
     },
   },
@@ -1354,7 +1529,7 @@ const SHOTS = [
   {
     name: "mock-enhance-done",
     needs: "mock",
-    about: "Frontend mock mode after Enhance finished: the right half has more contrast and a soft glow.",
+    about: "Frontend mock mode after Enhance finished on an uploaded photo that the browser analysed: the right half has more contrast and a soft glow.",
     async run(t) {
       await openEnhanced(t);
       await t.snap({ sidebar: "bottom" });
@@ -1616,8 +1791,7 @@ const SHOTS = [
       await t.page.route(t.api, "fail");
       await t.page.goto(t.url + "/", { settleStatus: false });
       await t.page.upload(join(t.photos, PHOTO.wide));
-      await t.page.waitFor(`alerts().length > 0 && !!photoBox() && !!byText("button", "Retry")`, "the failed-load card on the photo");
-      t.note.error = (await t.page.js("alerts()"))[0];
+      await failedCard(t);
       t.note.stageHeight = await t.page.js(`Math.round(document.querySelector(".stage-hug").getBoundingClientRect().height)`);
       t.note.cardIsUnderStage = await t.page.js(`[...document.querySelectorAll('[role="alert"]')].find((e) => e.offsetParent !== null).getBoundingClientRect().top >= document.querySelector(".stage-hug").getBoundingClientRect().bottom`);
       await t.snap();
@@ -1836,25 +2010,27 @@ const SHOTS = [
   {
     name: "demo-landing",
     needs: "demo",
-    about: "The static demo build: the first page. A note card stands where the drop box is in the normal app.",
+    about: "The static demo build: the first page, with a working drop box and a line under it that says the photo stays on this device.",
     async run(t) {
       await t.page.goto(t.url + "/");
       await t.page.waitFor(`[...document.querySelectorAll('button[aria-label^="Sample photo"] img')].length === 4 && [...document.querySelectorAll('button[aria-label^="Sample photo"] img')].every((i) => i.complete && i.naturalWidth > 0)`, "the four thumbnails");
       t.note.fileInputOnPage = await t.page.js(`!!document.querySelector('input[type="file"]')`);
+      t.note.intro = await t.page.js(`document.querySelector("h1").parentElement.querySelector("p:not(:first-child)")?.textContent.trim() ?? null`);
       await t.snap();
     },
   },
   {
-    name: "demo-upload-note",
+    // This number was "demo-upload-note", the card that stood where the drop box now is.
+    name: "demo-drop-box",
     needs: "demo",
-    about: "The static demo build: close-up of the note card on the first page, which says why uploading is missing and links to the code.",
+    about: "The static demo build: close-up of the drop box on the first page and the line under it about where the photo goes.",
     async run(t) {
       await t.page.goto(t.url + "/");
-      const card = `byText("p", "This is the in-browser demo.")?.parentElement`;
-      await t.page.waitFor(`!!${card}`, "the note card");
-      t.note.text = await t.page.js(`${card}.innerText.replace(/\\s+/g, " ").trim()`);
-      t.note.link = await t.page.js(`${card}.querySelector("a").href`);
-      await t.snap(await t.page.clipOf(card, "the note card", { pad: 16, scale: 2 }));
+      const box = `document.querySelector('div[role="button"]')`;
+      t.note.box = await t.page.js(`[...${box}.querySelectorAll("span > span")].map((e) => e.textContent.trim())`);
+      t.note.lineUnderIt = await t.page.js(`${box}.nextElementSibling.textContent.trim()`);
+      const r = await t.page.js(`(() => { const a = rectOf(${box}), b = rectOf(${box}.nextElementSibling); return { x: a.x, y: a.y, w: a.w, h: b.y + b.h - a.y }; })()`);
+      await t.snap({ clip: { x: r.x - 16, y: r.y - 16, width: r.w + 32, height: r.h + 32, scale: 2 } });
     },
   },
   {
@@ -1870,7 +2046,7 @@ const SHOTS = [
   {
     name: "demo-sample",
     needs: "demo",
-    about: "The static demo build with the \"Portrait\" sample loaded, nothing else touched: the top-right stage button reads \"Other samples\" and the Enhance button is greyed out.",
+    about: "The static demo build with the \"Portrait\" sample loaded, nothing else touched: the top-right stage button reads \"New photo\" and the Enhance button is greyed out.",
     async run(t) {
       await openSample(t, "Portrait");
       t.note.enhance = await t.page.js(`({ buttonDisabled: byText("button", "Enhance").disabled, promptBoxOnPage: !!document.querySelector("textarea"), tooltip: byText("button", "Enhance").title })`);
@@ -2534,6 +2710,323 @@ const SHOTS = [
       await t.snap();
     },
   },
+  // ----- Added for the fourth round: a photo analysed in the browser (the static demo takes uploads, mock mode
+  // ----- no longer lights them as a dome, the normal app offers it when its backend is gone), and a picture
+  // ----- dragged in from another web site. At the end again, so no older number changes.
+  {
+    name: "drop-web-image-blocked",
+    about: "A picture dragged from another web site onto the drop box, when that site does not let other pages read its pictures (most do not): a red bar under the thumbnails says so and gives the two ways that always work.",
+    async run(t) {
+      const site = await otherSite(t);
+      await dropOnBox(t, draggedPicture(`${site}/closed/photo.jpg`));
+      await t.page.waitFor(`alerts().length > 0`, "the red bar");
+      t.note.error = (await t.page.js("alerts()"))[0];
+      t.note.how = "A real drop, made by Chrome, of the address of a picture on a second web server the tool runs on another port. That server sends the picture without the header that lets other pages read it.";
+      await t.snap();
+    },
+  },
+  ...[
+    ["drop-web-image-404", "/missing.jpg", "the site answers that the picture is not there (404)", 10_000],
+    ["drop-web-image-too-slow", "/slow/photo.jpg", "the site does not answer within 15 seconds", 30_000],
+    ["drop-web-page", "/page", "the address is a web page, not a picture", 10_000],
+  ].map(([name, path, what, timeout]) => ({
+    name,
+    about: `Close-up of the drop box and the red bar under the thumbnails after dragging an address from another web site, when ${what}.`,
+    async run(t) {
+      const site = await otherSite(t);
+      const started = Date.now();
+      await dropOnBox(t, draggedPicture(site + path));
+      await t.page.waitFor(`alerts().length > 0`, "the red bar", timeout);
+      t.note.secondsUntilTheBar = Number(((Date.now() - started) / 1000).toFixed(1));
+      t.note.error = (await t.page.js("alerts()"))[0];
+      await t.snap(await dropBoxClip(t));
+    },
+  })),
+  {
+    name: "drop-nothing-an-image",
+    about: "Close-up of the drop box and the red bar after dropping something that holds no picture and no picture's address (a few words of text dragged from another page).",
+    async run(t) {
+      await dropOnBox(t, [{ mimeType: "text/plain", data: "just some words" }]);
+      await t.page.waitFor(`alerts().length > 0`, "the red bar");
+      t.note.error = (await t.page.js("alerts()"))[0];
+      await t.snap(await dropBoxClip(t));
+    },
+  },
+  {
+    name: "drop-unreadable-address",
+    about: "Close-up of the drop box and the red bar after dropping a picture that a page holds inside its own address (a \"data:\" address) and that is damaged.",
+    async run(t) {
+      await dropOnBox(t, draggedPicture("data:image/png;base64,@@@"));
+      await t.page.waitFor(`alerts().length > 0`, "the red bar");
+      t.note.error = (await t.page.js("alerts()"))[0];
+      await t.snap(await dropBoxClip(t));
+    },
+  },
+  {
+    name: "drop-web-image-accepted",
+    about: "A picture dragged from another web site that does let other pages read it: it is taken like a dropped file. \"Left\" preset.",
+    async run(t) {
+      const site = await otherSite(t);
+      await dropOnBox(t, draggedPicture(`${site}/open/photo.jpg`));
+      t.note.shading = await t.page.sceneReady();
+      await t.page.clickButton("Left");
+      t.note.redBars = await t.page.js("alerts()");
+      t.note.how = "The same second web server, this time sending the picture with the header that lets other pages read it.";
+      await t.snap();
+    },
+  },
+  {
+    name: "backend-offline-analyse-in-browser",
+    needs: "backend",
+    stopped: true,
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "The backend is not running, a photo was chosen and \"Analyse in this browser\" clicked on the failed-load card: the photo is lit all the same. \"Left\" preset, GEOMETRY open.",
+    async run(t) {
+      await t.page.route(t.api, "fail");
+      await t.page.goto(t.url + "/", { settleStatus: false });
+      await t.page.upload(join(t.photos, PHOTO.portrait));
+      await failedCard(t);
+      cardIsGone(t);
+      const started = Date.now();
+      await t.page.clickButton("Analyse in this browser");
+      t.note.shading = await t.page.sceneReady();
+      t.note.sceneSeconds = Number(((Date.now() - started) / 1000).toFixed(1));
+      await t.page.clickButton("Left");
+      await openGeometry(t);
+      await readDepth(t);
+      await readShading(t);
+      t.note.detailedNormals = await detailSwitch(t);
+      t.note.askedOfBackend = backendRequests(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "browser-scene-detailed-normals-backend-stopped",
+    needs: "backend",
+    stopped: true,
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "The same photo, analysed in the browser, after turning Detailed normals on while the backend is still not running: a red bar above the stage, the photo keeps its shape and the switch goes back off.",
+    async run(t) {
+      await t.page.route(t.api, "fail");
+      await t.page.goto(t.url + "/", { settleStatus: false });
+      await t.page.upload(join(t.photos, PHOTO.portrait));
+      await failedCard(t);
+      cardIsGone(t);
+      await t.page.clickButton("Analyse in this browser");
+      t.note.shading = await t.page.sceneReady();
+      await t.page.clickButton("Left");
+      await openGeometry(t);
+      await t.page.toggle("Detailed normals");
+      await t.page.waitFor(`alerts().some((a) => a.includes("The photo keeps the shape worked out in this browser.")) && document.querySelector('button[role="switch"][aria-label="Detailed normals"]').getAttribute("aria-checked") === "false"`, "the red bar and the switch back off");
+      t.note.error = (await t.page.js("alerts()"))[0];
+      await readDepth(t);
+      t.note.detailedNormals = await detailSwitch(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "browser-scene-detailed-normals-from-server",
+    needs: "backend",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "The same photo, analysed in the browser, after the backend has come back and Detailed normals was turned on: the backend's scene has taken the place of the browser's. \"Left\" preset, GEOMETRY open.",
+    async run(t) {
+      await t.page.route(t.api, "fail");
+      await t.page.goto(t.url + "/", { settleStatus: false });
+      await t.page.upload(join(t.photos, PHOTO.portrait));
+      await failedCard(t);
+      cardIsGone(t);
+      await t.page.clickButton("Analyse in this browser");
+      t.note.shading = await t.page.sceneReady();
+      await openGeometry(t);
+      t.note.before = { ...(await detailSwitch(t)), depthLine: await t.page.js(`depthLine()?.textContent.trim() ?? null`) };
+      await t.page.release(); // the backend answers again
+      // The pill asks the backend how it is every ten seconds (HEALTH_POLL_MS in frontend/components/TopNav.tsx), so it says "offline" a little longer.
+      await t.page.waitFor(`!statusPill().textContent.includes("offline")`, "the status pill to notice that the backend is back", 30_000);
+      await t.page.toggle("Detailed normals");
+      await t.page.waitFor(`!depthLine() && !busyText() && !document.body.innerText.includes("Estimating depth") && document.querySelector('button[role="switch"][aria-label="Detailed normals"]').getAttribute("aria-checked") === "true"`, "the backend's scene", 240_000);
+      t.note.shading = await t.page.sceneReady();
+      await t.page.clickButton("Left");
+      await openGeometry(t);
+      await readDepth(t);
+      t.note.detailedNormals = await detailSwitch(t);
+      t.note.redBars = await t.page.js("alerts()");
+      await t.snap();
+    },
+  },
+  {
+    name: "mock-analysis-failed",
+    needs: "mock",
+    about: "Frontend mock mode, a photo chosen when the depth model cannot be downloaded: the failed-load card, which in mock mode alone has the extra button \"Use a stand-in dome\".",
+    async run(t) {
+      await t.page.route(MODEL_HOST, "fail");
+      await t.page.goto(t.url + "/");
+      await forgetDepthModel(t);
+      await t.page.upload(join(t.photos, PHOTO.portrait));
+      await failedCard(t);
+      t.note.domeButtonTooltip = await t.page.js(`byText("button", "Use a stand-in dome")?.title ?? null`);
+      t.note.how = `Requests to ${MODEL_HOST} were refused inside Chrome after the stored copy of the model was deleted.`;
+      await t.snap();
+    },
+  },
+  {
+    name: "mock-stand-in-dome",
+    needs: "mock",
+    about: "The same after clicking \"Use a stand-in dome\", with the \"Left\" preset: the photo is lit as a made-up round dome and a grey note above the stage says so.",
+    async run(t) {
+      await t.page.route(MODEL_HOST, "fail");
+      await t.page.goto(t.url + "/");
+      await forgetDepthModel(t);
+      await t.page.upload(join(t.photos, PHOTO.portrait));
+      await failedCard(t);
+      cardIsGone(t);
+      await t.page.clickButton("Use a stand-in dome");
+      t.note.shading = await t.page.sceneReady();
+      await t.page.clickButton("Left");
+      t.note.domeNote = await t.page.js(`[...document.querySelectorAll('p[role="status"]')].map((e) => e.textContent.trim()).find((x) => x.includes("made-up dome")) ?? null`);
+      await t.snap();
+    },
+  },
+  ...[
+    ["demo-depth-downloading", "downloading", "the first photo on this browser, part of the way through downloading the depth model", /^Downloading the depth model, \d+ MB, once… \d+%$/],
+    ["demo-depth-starting", "starting", "the depth model has arrived and is being started", /^Starting the depth model…$/],
+    ["demo-depth-working-out-shape", "estimating", "the depth model is running on the photo", /^Working out the shape of your photo…$/],
+  ].map(([name, at, what, line]) => ({
+    name,
+    needs: "demo",
+    about: `The static demo build just after choosing a photo, held still: ${what}.`,
+    async run(t) {
+      await holdDepthAt(t, DEPTH_MESSAGE[at]);
+      await t.page.goto(t.url + "/");
+      await forgetDepthModel(t);
+      await t.page.upload(join(t.photos, PHOTO.portrait));
+      await t.page.waitFor(`window.__depthHeld() && ${line}.test(busyText() ?? "")`, `the line ${line}`, 180_000);
+      t.note.line = await t.page.js(`busyText()`);
+      t.note.how = "The messages the depth model's Worker sends the page were kept back from this one on until the picture was taken. In normal use the line changes by itself.";
+      await t.snap();
+      await releaseDepth(t);
+      t.note.shading = await t.page.sceneReady();
+    },
+  })),
+  {
+    name: "demo-depth-loading-stored",
+    needs: "demo",
+    about: "The static demo build just after choosing a photo, held still, on a browser that already has the depth model from an earlier photo: no download, only \"Loading the depth model…\".",
+    async run(t) {
+      // Once without holding anything, so that this browser has the model.
+      await openScene(t);
+      await holdDepthAt(t, DEPTH_MESSAGE.loadingStored);
+      await t.page.goto(t.url + "/");
+      await t.page.upload(join(t.photos, PHOTO.object));
+      await t.page.waitFor(`window.__depthHeld() && busyText() === "Loading the depth model…"`, "the line Loading the depth model…", 60_000);
+      t.note.line = await t.page.js(`busyText()`);
+      t.note.how = "The page was loaded a second time; the first photo had stored the model. The Worker's messages were kept back from this one on until the picture was taken.";
+      await t.snap();
+      await releaseDepth(t);
+      t.note.shading = await t.page.sceneReady();
+    },
+  },
+  {
+    name: "demo-own-photo-left",
+    needs: "demo",
+    about: "The static demo build with an uploaded photo (the astronaut portrait) analysed in the browser, \"Left\" preset. Compare with the next picture.",
+    async run(t) {
+      await openScene(t);
+      await t.page.clickButton("Left");
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-sample-portrait-left",
+    needs: "demo",
+    about: "The static demo build with the built-in \"Portrait\" sample, which is the same photograph, at the same light (\"Left\" preset): its maps were made ahead of time by the server's two models.",
+    async run(t) {
+      await openSample(t, "Portrait");
+      await t.page.clickButton("Left");
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-own-photo-vs-sample",
+    needs: "demo",
+    about: "The two pictures before this one side by side: left, the uploaded portrait analysed in the browser; right, the built-in \"Portrait\" sample. Same photograph, same light (\"Left\" preset).",
+    async run(t) {
+      // The photo, with room on its left for the sun, which the Left preset puts outside the picture.
+      const stage = async () => {
+        const r = await t.page.js(`rectOf(photoBox())`);
+        return { clip: { x: r.x - SUN_MARGIN_PX, y: r.y - PHOTO_MARGIN_PX, width: r.w + SUN_MARGIN_PX + PHOTO_MARGIN_PX, height: r.h + 2 * PHOTO_MARGIN_PX, scale: 1 } };
+      };
+      await openScene(t);
+      await t.page.clickButton("Left");
+      t.note.light = await t.page.light();
+      const own = await t.page.capture(null, await stage());
+      await t.page.clickButton("New photo");
+      await clickSample(t, "Portrait");
+      await t.page.sceneReady();
+      await t.page.clickButton("Left");
+      t.note.sampleLight = await t.page.light();
+      const sample = await t.page.capture(null, await stage());
+      await sideBySide(t, [
+        { label: "Your own photo, analysed in this browser (depth model only)", jpeg: own },
+        { label: "The built-in Portrait sample (depth and detailed normals, made ahead of time)", jpeg: sample },
+      ]);
+    },
+  },
+  {
+    name: "demo-own-photo-geometry",
+    needs: "demo",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "The static demo build: close-up of the open GEOMETRY panel for an uploaded photo analysed in the browser. It says how the maps were made, and has a new \"depth:\" line.",
+    async run(t) {
+      await openScene(t);
+      await openGeometry(t);
+      await readDepth(t);
+      await readShading(t);
+      t.note.detailedNormals = await detailSwitch(t);
+      await t.snap({ sidebar: "bottom", ...(await geometryClip(t)) });
+    },
+  },
+  {
+    name: "demo-own-photo-detailed-normals",
+    needs: "demo",
+    viewport: { width: 1440, height: 1300, scale: 1, mobile: false },
+    about: "The static demo build: close-up of the Detailed normals switch for an uploaded photo. It is off, greyed out and cannot be clicked.",
+    async run(t) {
+      await openScene(t);
+      await openGeometry(t);
+      t.note.detailedNormals = await detailSwitch(t);
+      if (t.note.detailedNormals.on || !t.note.detailedNormals.disabled) throw new Error(`Expected the switch off and disabled: ${JSON.stringify(t.note.detailedNormals)}`);
+      await t.snap({ sidebar: "bottom", ...(await t.page.clipOf(`document.querySelector('button[role="switch"][aria-label="Detailed normals"]').closest("label")`, "the Detailed normals switch", { pad: 14, scale: 3, block: "end" })) });
+    },
+  },
+  {
+    name: "demo-depth-model-not-downloaded",
+    needs: "demo",
+    about: "The static demo build, a photo chosen when the depth model cannot be downloaded (no connection to the site that holds it): the failed-load card on the grey photo.",
+    async run(t) {
+      await t.page.route(MODEL_HOST, "fail");
+      await t.page.goto(t.url + "/");
+      await forgetDepthModel(t);
+      const started = Date.now();
+      await t.page.upload(join(t.photos, PHOTO.portrait));
+      await failedCard(t);
+      t.note.secondsUntilTheCard = Number(((Date.now() - started) / 1000).toFixed(1));
+      t.note.how = `Requests to ${MODEL_HOST} were refused inside Chrome after the stored copy of the model was deleted.`;
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-phone-own-photo-full-page",
+    needs: "demo",
+    viewport: PHONE,
+    about: "The static demo build on a phone with an uploaded photo (the coffee cup) analysed in the browser, photographed from top to bottom with GEOMETRY opened.",
+    async run(t) {
+      await openScene(t, PHOTO.object);
+      await openGeometry(t);
+      await readDepth(t);
+      await t.page.js(`(window.scrollTo(0, 0), true)`);
+      await t.snap({ fullPage: true });
+    },
+  },
 ];
 
 // What a tester should see in each picture, written after looking at it: where the light is,
@@ -2581,7 +3074,7 @@ const SEE = {
   "huge-photo": "The portrait again; it looks the same as 06-preset-left, because the app shrinks a 3000 px photo before using it. Readouts x -0.10, y 0.40.",
   "error-not-an-image": "The first page is still showing. Under the four thumbnails is a red bar: \"That file is not an image.\" with an x to close it.",
   "backend-offline": "The first page. Top right pill: red dot, \"backend: offline\". The four sample thumbnails are still there and still work.",
-  "backend-offline-upload": "The photo is grey and dim. A red-bordered card in the middle reads \"This photo could not be analysed\", then \"Cannot reach the backend at http://localhost:8123. Is it running?\", with a yellow \"Retry\" button and a \"Choose another photo\" button. The sidebar is faded, \"Hold to see original\" and \"Export PNG\" are greyed out, and the pill reads \"offline\".",
+  "backend-offline-upload": "The photo is grey and dim. A red-bordered card in the middle reads \"This photo could not be analysed\", then \"Cannot reach the backend at http://localhost:8123. Is it running?\", then in lighter letters \"Or analyse it in this browser: a depth model of about 25 MB downloads once, and the photo stays on this device. Surfaces shade a little flatter than with the server's detailed normals.\" Under that a yellow \"Analyse in this browser\" button with a plain \"Retry\" beside it, and \"Choose another photo\" on a line of its own. The sidebar is faded, \"Hold to see original\" and \"Export PNG\" are greyed out, and the pill reads \"offline\".",
   "enhance-error": "The live preview is still there (Left preset). Above the photo, across the top of the stage column, a red bar reads \"Cannot reach the backend at http://localhost:8123. Is it running?\" with an x to close it. Nothing red is in the ENHANCE panel, the yellow button reads \"Enhance\" again, and the pill reads \"offline\".",
   "phone-scene": "One column. Top bar: \"Relight\", \"How it works\" and a short pill that reads only \"online\" (amber dot; no word \"backend:\" and no \"mock providers\" at this width). Then the photo with the sun on the flag, \"Hold to see original\" and \"Export PNG\", and the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The helper lines under Height and Ambient show.",
   "phone-full-page": "The whole phone page: stage, LIGHT (the five buttons Left, Right, Top, Low and warm, Reset light on one line), ENHANCE with its helper line and a two-row box that reads \"Optional: a mood, such as golden hour\", and the one-row GEOMETRY panel at the bottom.",
@@ -2592,11 +3085,11 @@ const SEE = {
   "status-offline": "The right end of the top bar, enlarged: \"How it works\", then the pill with a red dot and \"backend: offline\".",
   "no-webgl-fallback": "No red bar. Above the stage a grey note with a thin grey outline, no x and no \"Retry\": \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The photo is lit for the Left preset (x -0.10, y 0.40) exactly as in 06-preset-left, a little smaller because the note takes two lines. The sun, the sliders, \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. The page asked the backend for nothing but the photo's analysis.",
   "not-found-page": "A black page with \"404\" and \"This page could not be found.\" in the middle, under the normal top bar, which has \"How it works\" and the status pill here too.",
-  "mock-landing": "The first page with a yellow dot and \"backend: mock\" in the pill, and \"How it works\" to its left. Everything else is the same as 01-landing.",
+  "mock-landing": "The first page with a yellow dot and \"backend: mock\" in the pill, and \"How it works\" to its left. The text under the heading starts \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser\". Under the dashed drop box are two grey lines: \"Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.\" Then \"Or try a sample photo:\" and the four thumbnails.",
   "mock-status": "The right end of the top bar, enlarged: \"How it works\", then the pill with a yellow dot and \"backend: mock\".",
-  "mock-scene": "An uploaded portrait in frontend mock mode with the Left preset (x -0.10, y 0.40). The shading is one big round dome over the middle of the picture, bright on its left and dark on its right. It does not follow the face.",
+  "mock-scene": "An uploaded portrait in frontend mock mode with the Left preset (x -0.10, y 0.40), analysed in the browser. The shading follows the real face and suit: the left of the face is a little brighter and the right of the picture darker, much as in 06-preset-left but flatter. There is no round dome, and no note above the stage. A thin light and dark outline runs round the hair and shoulders. The GEOMETRY row shows two tiny thumbnails of the real shape.",
   "mock-enhance-running": "Frontend mock mode: tabs \"Live preview\" and \"Enhancing…\", the pill \"Enhancing in the background, keep dragging\" at the bottom left, and the dimmed \"Enhancing…\" button.",
-  "mock-enhance-done": "Frontend mock mode: the Enhanced tab with the divider in the middle. The right half (\"Enhanced\") has more contrast and a soft glow; the left half is the live preview.",
+  "mock-enhance-done": "Frontend mock mode, on an uploaded photo the browser analysed: the Enhanced tab with the divider in the middle. The right half (\"Enhanced\") has more contrast and a soft glow; the left half is the live preview. The button reads \"Enhance again\" with the download button beside it.",
   "sample-thumbnails": "The line \"Or try a sample photo:\" and four thumbnails in a row, each with its name under it: Portrait (astronaut), Coffee cup, Cat, Rocket.",
   "sample-loading": "The first page with the Portrait thumbnail at full brightness and the other three dimmed. In normal use this lasts a fraction of a second.",
   "sample-coffee": "The coffee cup sample (600 x 400). Sun on the table at the left, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The left of the cup and saucer is bright; the inside of the cup and the area to its right are in shadow.",
@@ -2619,7 +3112,7 @@ const SEE = {
   "window-1440x820-scene": "The sidebar fits without scrolling. There are no grey helper lines under Height, Ambient or Cast shadows, but the line \"A photoreal pass over this lighting. Takes a few seconds.\" under ENHANCE is there and the Enhance box has two rows.",
   "phone-sample": "The coffee cup sample on a phone: the top bar with \"How it works\" and the pill \"online\", a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35 and the helper lines showing.",
   "phone-sample-full-page": "The whole phone page with GEOMETRY opened at the bottom: Depth and Normals pictures side by side, the Detailed normals switch on, \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
-  "phone-load-failed-wide": "On a phone: the stage is short and holds only the grey, dimmed photo with \"New photo\" above it and the two greyed-out buttons below it. Under the stage, in its own red-bordered card: \"This photo could not be analysed\", \"Cannot reach the backend at http://localhost:8123. Is it running?\", a yellow \"Retry\" and \"Choose another photo\". The LIGHT panel under the card is faded. Pill: \"offline\".",
+  "phone-load-failed-wide": "On a phone: the stage is short and holds only the grey, dimmed photo with \"New photo\" above it and the two greyed-out buttons below it. Under the stage, in its own red-bordered card: \"This photo could not be analysed\", \"Cannot reach the backend at http://localhost:8123. Is it running?\", the four-line offer that starts \"Or analyse it in this browser:\", a yellow \"Analyse in this browser\" with a plain \"Retry\" beside it, and \"Choose another photo\" under them. The LIGHT panel under the card is faded. Pill: \"offline\".",
   "tablet-768x1024-sample": "One column, wider: the cat sample in a stage across the top, then the LIGHT panel at full width with long sliders. Readouts x 0.12, y 0.35. The helper lines show.",
   "no-webgl-backend-stopped-sample": "Pill: red dot, \"backend: offline\". No red bar: only the grey note \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit with the Right preset (sun right of the photo, x 1.10, y 0.40, right side of the face bright). The LIGHT panel is at full brightness and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. The page asked the backend for nothing.",
   "mock-sample": "Frontend mock mode (pill \"mock\") with the Cat sample and the Left preset (x -0.10, y 0.40). The shading follows the cat's face, as in 35-cat-side-light: left side bright, right side in shade.",
@@ -2634,17 +3127,17 @@ const SEE = {
   "phone-enhance-error": "The page is scrolled down to the ENHANCE panel. Under the yellow \"Enhance\" button a red box reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. There is no red bar above the photo on a phone. Pill: \"offline\".",
   "no-webgl-render-lost": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with \"Retry\" at its right end and no x. The photo still shows the last picture the server sent (the Left preset), with no sun. The readout already says x 1.10, y 0.40. The LIGHT panel is faded and \"Sweep\" and \"Enhance\" are greyed out; \"Hold to see original\" and \"Export PNG\" still work on that last picture. Pill: \"offline\". You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
   "mock-sample-detailed-normals": "The light has not been moved: the sun is at the left of the photo, where it starts. The sidebar is scrolled to the bottom, GEOMETRY open: grey Depth and purple Normals pictures of the cat, then \"Detailed normals\" with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\" Its switch is on but dull (dark yellow) and does nothing when clicked. Then \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\". Pill: \"mock\".",
-  "demo-landing": "Top right: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". The text under the heading starts \"Pick a sample photo. Its depth and surface normals were estimated ahead of time\". There is no dashed drop box: in its place a card \"This is the in-browser demo.\" with a yellow link. Then \"Pick a sample photo:\" and the four thumbnails.",
-  "demo-upload-note": "The card, enlarged: \"This is the in-browser demo.\" in white, then in grey \"Uploading your own photo needs the Relight server, which this demo runs without. To try your own photos, run it on your computer:\" and the yellow link \"github.com/aarooshpravici/BanannaHacksSubmission\".",
+  "demo-landing": "Top right: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". The text under the heading reads \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly.\" Then the same dashed drop box as the normal app (\"Drop a photo here\", \"or click to browse, or paste an image or its address\"), two grey lines under it that start \"Your photo stays on this device:\", then \"Or try a sample photo:\" and the four thumbnails. The card \"This is the in-browser demo.\" is gone.",
+  "demo-drop-box": "Enlarged: the dashed box with the upload icon, \"Drop a photo here\" in white and \"or click to browse, or paste an image or its address\" in grey. Under the box, in grey on two lines: \"Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.\"",
   "demo-status": "The right end of the top bar, enlarged: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". It never reads \"checking\" or \"offline\".",
-  "demo-sample": "The portrait lit live, sun on the flag, x 0.12, y 0.35. The top-right stage button reads \"Other samples\" and has no icon. ENHANCE holds only the line \"Enhance needs the Relight server, which this demo runs without.\" and a dull, greyed-out \"Enhance\" button; there is no text box. LIGHT, \"Sweep\", \"Hold to see original\" and \"Export PNG\" are all available.",
+  "demo-sample": "The portrait lit live, sun on the flag, x 0.12, y 0.35. The top-right stage button reads \"New photo\" with the upload icon, as in the normal app. ENHANCE holds only the line \"Enhance needs the Relight server, which this demo runs without.\" and a dull, greyed-out \"Enhance\" button; there is no text box. LIGHT, \"Sweep\", \"Hold to see original\" and \"Export PNG\" are all available.",
   "demo-all-panels": "Coffee cup, Right preset (x 1.10, y 0.40; the sun is at the right edge of the stage). The whole sidebar shows: LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open with Depth and Normals pictures, a dull Detailed normals switch with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\", then \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
-  "demo-phone-landing": "One column. Top bar: \"Relight\", \"How it works\" and a pill that reads only \"demo\" with a green dot. Heading, the \"Pick a sample photo. Its depth...\" text, the demo card (the yellow link breaks onto a second line), \"Pick a sample photo:\" and the four thumbnails in one row.",
-  "demo-phone-sample-full-page": "The whole phone page with the cat: the top bar with the pill \"demo\", a short stage with \"Other samples\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch, \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
+  "demo-phone-landing": "One column. Top bar: \"Relight\", \"How it works\" and a pill that reads only \"demo\" with a green dot. Heading on two lines, the \"Upload a photo or pick a sample.\" text on five lines, the dashed drop box (its grey hint wraps onto two lines), the three grey lines that start \"Your photo stays on this device:\", \"Or try a sample photo:\" and the four thumbnails in one row.",
+  "demo-phone-sample-full-page": "The whole phone page with the cat: the top bar with the pill \"demo\", a short stage with \"New photo\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch, \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
   "demo-no-webgl": "No red bar. Above the stage the grey note \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" It has no x and no \"Retry\". The portrait is lit for the Left preset (sun left of the photo, x -0.10, y 0.40, left of the face bright). The LIGHT panel is at full brightness and \"Sweep\", \"Hold to see original\" and \"Export PNG\" are available. \"Enhance\" is greyed out as it always is in the demo.",
   "how-it-works-button": "Enlarged: the words \"How it works\" in light grey with no box round them (a faint box appears when the mouse is on them), and right of them the status pill, here \"backend: online, mock providers\" with an amber dot.",
-  "how-it-works-open": "The first page is dimmed almost to black. In the middle of the window a dark card about half the window wide and most of its height, with a thin border and rounded corners. Top row: \"How Relight works\" and a \"Close\" button with an x. Then three lines that start \"Two pretrained vision models measure the photo once.\", three small chips (\"Pretrained model\" in blue, \"Our code\" in yellow, \"Hosted model, optional\" in grey), the heading \"ONCE PER PHOTO\" with a grey line that starts \"Done by the Relight server when you upload a photo.\", and step 1 \"Estimate depth\" with the blue chip \"Pretrained model: Depth Anything V2\" and two pictures: \"The photo\" and \"Depth map: lighter is nearer\". The top of step 2 shows at the bottom edge; the card scrolls.",
-  "how-it-works-step-1": "The card alone. \"ONCE PER PHOTO\" and its grey line, then step 1: a round \"1\", \"Estimate depth\", the blue chip \"Pretrained model: Depth Anything V2\", two lines that start \"A pretrained model estimates how near every pixel is to the camera.\", and two square pictures side by side: the astronaut photo (\"The photo\") and the same in greys with the helmet in front nearly white (\"Depth map: lighter is nearer\"). Step 2 starts below.",
+  "how-it-works-open": "The first page is dimmed almost to black. In the middle of the window a dark card about half the window wide and most of its height, with a thin border and rounded corners. Top row: \"How Relight works\" and a \"Close\" button with an x. Then three lines that start \"Two pretrained vision models measure the photo once.\", three small chips (\"Pretrained model\" in blue, \"Our code\" in yellow, \"Hosted model, optional\" in grey), the heading \"ONCE PER PHOTO\" with three grey lines that start \"Done by the Relight server when you upload a photo.\" and end \"With no server, the depth model runs in your browser instead and the normals are taken from the slope of the depth map, which shades faces flatter.\", and step 1 \"Estimate depth\" with the blue chip \"Pretrained model: Depth Anything V2\" and two pictures: \"The photo\" and \"Depth map: lighter is nearer\". The top of step 2 shows at the bottom edge; the card scrolls.",
+  "how-it-works-step-1": "The card alone. \"ONCE PER PHOTO\" and its three grey lines (\"Done by the Relight server when you upload a photo. For the four samples it was done ahead of time and the two maps ship with the page. With no server, the depth model runs in your browser instead and the normals are taken from the slope of the depth map, which shades faces flatter.\"), then step 1: a round \"1\", \"Estimate depth\", the blue chip \"Pretrained model: Depth Anything V2\", two lines that start \"A pretrained model estimates how near every pixel is to the camera.\", and two square pictures side by side: the astronaut photo (\"The photo\") and the same in greys with the helmet in front nearly white (\"Depth map: lighter is nearer\"). Step 2 starts below.",
   "how-it-works-step-2": "Step 2: \"Estimate surface direction\", the blue chip \"Pretrained model: Marigold\", two lines that start \"A second pretrained model estimates which way every surface faces.\", then one picture in purple, pink and green (\"Normal map: colour is the way a surface faces\") and, to its right, the grey note \"A depth map is too smooth to shade a face: tilts worked out from it left faces almost flat. That is why there is a second model.\" Under it the heading \"EVERY FRAME, IN YOUR BROWSER\" with the grey line \"Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor. If the processor is too slow or cannot do it, the Relight server runs our Python version instead. No AI model is involved in the dragging.\", and the start of step 3.",
   "how-it-works-step-3": "\"EVERY FRAME, IN YOUR BROWSER\" and its grey line, then step 3: \"Shade each pixel from the light\" with the yellow chip \"Our code\", three lines that start \"Diffuse shading: a pixel is bright when its surface faces the light.\", one grey picture of the astronaut like a plaster cast lit from the left (\"Our shading alone, light at the left\") and, to its right, the grey note \"A surface also goes dark gradually as it turns away from the light, not at a hard line, because estimated normals are too noisy for a hard cut.\" Step 4 starts below.",
   "how-it-works-step-4": "Step 4: \"Trace cast shadows in three layers\" with the yellow chip \"Our code\", three lines that start \"Each pixel walks toward the light across the height field\", and two pictures: a white square with a soft grey shadow shape (\"Our shadow map for the same light\") and the astronaut lit from the left (\"Steps 3 and 4 multiplied into the photo\"). Under it a card with no number: the astronaut lit from the right and the note \"Moving the light only reruns steps 3 and 4. The stills in this panel were rendered with our Python version of the same maths; the shader is a port of it and the two are kept in agreement.\"",
@@ -2654,7 +3147,7 @@ const SEE = {
   "phone-top-bar": "Enlarged, the whole width of a 390 px phone: the yellow square logo and \"Relight\" at the left (no \"Banana Hacks 2026\" at this width), then at the right \"How it works\" and a short pill: amber dot, \"online\". The full text (\"Backend at ... \") is still in the pill's tooltip, which a phone does not show.",
   "phone-320-top-bar": "Enlarged, the whole width of a 320 px phone: logo and \"Relight\", \"How it works\", and the pill \"online\". They fit on one line with a small gap between each; nothing is cut off and the page does not scroll sideways.",
   "phone-how-it-works-open": "The panel covers the whole screen: no dimmed page round it, no rounded corners, and the top bar is hidden behind it. \"How Relight works\" and \"Close\" at the top, the opening text on four lines, the three chips on one line, \"ONCE PER PHOTO\" and step 1, where the blue chip \"Pretrained model: Depth Anything V2\" sits on its own line under \"Estimate depth\". The two pictures are side by side, each about 150 px.",
-  "phone-how-it-works-step-1": "\"ONCE PER PHOTO\", its grey line on three lines, and step 1 with its two small pictures side by side; the caption \"Depth map: lighter is nearer\" wraps onto two lines. Step 2 starts below.",
+  "phone-how-it-works-step-1": "\"ONCE PER PHOTO\", its grey text on five lines, ending \"which shades faces flatter.\", and step 1 with its two small pictures side by side; the caption \"Depth map: lighter is nearer\" wraps onto two lines. Step 2 starts below.",
   "phone-how-it-works-step-2": "Step 2 with one picture, the normal map, as wide as the card. The grey note that sits beside it on a wider screen (\"A depth map is too smooth...\") is not shown on a phone. Then \"EVERY FRAME, IN YOUR BROWSER\" and the start of step 3.",
   "phone-how-it-works-step-3": "\"EVERY FRAME, IN YOUR BROWSER\", then step 3 with one picture, the grey shading, as wide as the card. The grey note beside it on a wider screen (\"A surface also goes dark gradually...\") is not shown on a phone. Step 4 starts below, with its yellow chip on a line of its own.",
   "phone-how-it-works-step-4": "Step 4 with its two small pictures side by side (captions on two lines each), then the un-numbered card: a small picture \"The same maps, light moved to the right\" with the note about Python beside it in a narrow column of seven lines. \"ONLY IF YOU PRESS ENHANCE\" and the top of step 5 show at the bottom.",
@@ -2683,14 +3176,37 @@ const SEE = {
   "no-shading-at-all-backend-stopped": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with the word \"Retry\" at its right end and no x. The photo is the plain original with no sun on it. The LIGHT panel is faded, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. Pill: \"offline\".",
   "demo-top-bar": "The right end of the demo's top bar, enlarged: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\".",
   "demo-phone-top-bar": "Enlarged, the whole width of a 390 px phone: logo and \"Relight\" at the left, \"How it works\" and a short pill at the right: green dot, \"demo\".",
-  "demo-how-it-works-open": "The same card as in 105-how-it-works-open over the dimmed demo page. One line differs: under \"ONCE PER PHOTO\" it reads \"For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.\"",
+  "demo-how-it-works-open": "The same card as in 105-how-it-works-open over the dimmed demo page. The grey text under \"ONCE PER PHOTO\" differs: \"For the four samples this was done ahead of time and the two maps ship with the page. For your own photo, this demo runs the depth model in your browser and takes the normals from the slope of the depth map, which shades faces flatter: the normals model is too large for a browser. The photo is not uploaded.\"",
   "demo-how-it-works-step-5-and-limits": "The end of the card in the demo. Under \"ONLY IF YOU PRESS ENHANCE\" the grey line reads \"Switched off in this demo, because it needs the server.\" Step 5 and \"HONEST LIMITS\" are word for word as in 110-how-it-works-step-5-and-limits.",
-  "demo-phone-how-it-works-open": "The panel covers the whole phone screen. Under \"ONCE PER PHOTO\" the demo's own line: \"For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.\" Step 1 and the top of step 2 follow.",
-  "demo-no-float-colour-buffers": "The demo with no note above the stage: the portrait lit for the Left preset (x -0.10, y 0.40), the top-right stage button \"Other samples\", and GEOMETRY open, ending \"512 x 512 px, relief 0.3\" and \"shading: graphics chip, compatibility mode\".",
+  "demo-phone-how-it-works-open": "The panel covers the whole phone screen. Under \"ONCE PER PHOTO\" the demo's own text, on six lines: \"For the four samples this was done ahead of time and the two maps ship with the page. For your own photo, this demo runs the depth model in your browser and takes the normals from the slope of the depth map, which shades faces flatter: the normals model is too large for a browser. The photo is not uploaded.\" Step 1 and the top of step 2 follow.",
+  "demo-no-float-colour-buffers": "The demo with no note above the stage: the portrait lit for the Left preset (x -0.10, y 0.40), the top-right stage button \"New photo\", and GEOMETRY open, ending \"512 x 512 px, relief 0.3\" and \"shading: graphics chip, compatibility mode\".",
   "demo-no-float-filtering": "The demo exactly as on a computer with every ability: no note, the portrait lit for the Left preset, and the last line of GEOMETRY \"shading: graphics chip, full quality\".",
   "demo-no-webgl-all-panels": "The demo with the grey two-line processor note above the stage, the coffee cup lit with the Right preset (x 1.10, y 0.40), the short ENHANCE panel with its greyed-out button, and GEOMETRY open, ending \"600 x 400 px, relief 0.3\" and \"shading: processor, in the background\".",
-  "demo-phone-no-webgl": "The demo on a phone: the pill \"demo\", then the grey note on four lines, then the stage with \"Other samples\" and the cat lit from the left (sun by the ear, x 0.12, y 0.35), \"Hold to see original\" and \"Export PNG\" available, and the LIGHT panel under it at full brightness.",
-  "demo-no-shading-at-all": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.\" It has no \"Retry\" and no x. The photo is the plain original with no sun. The LIGHT panel is faded and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. \"Other samples\" still works. You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
+  "demo-phone-no-webgl": "The demo on a phone: the pill \"demo\", then the grey note on four lines, then the stage with \"New photo\" and the cat lit from the left (sun by the ear, x 0.12, y 0.35), \"Hold to see original\" and \"Export PNG\" available, and the LIGHT panel under it at full brightness.",
+  "demo-no-shading-at-all": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.\" It has no \"Retry\" and no x. The photo is the plain original with no sun. The LIGHT panel is faded and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. \"New photo\" still works. You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
+  "drop-web-image-blocked": "The first page is still showing, nothing has loaded. Under the four thumbnails a red bar on three lines, with an x: \"That image's site does not let other pages read it. This is a browser security rule, not a fault in the image. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.\" This is what most pictures dragged from another web site give.",
+  "drop-web-image-404": "Enlarged: the drop box, the thumbnails and under them a red bar with an x: \"That image's site answered 404, so it could not be loaded. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.\" The number is whatever the site answered.",
+  "drop-web-image-too-slow": "Enlarged: the drop box, the thumbnails and under them a red bar with an x: \"That image took too long to load. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.\" It appears 15 seconds after the drop; until then the drop box shows a spinner and \"Reading image…\".",
+  "drop-web-page": "Enlarged: the drop box, the thumbnails and under them a red bar with an x: \"That address is a web page, not an image. Drag the picture itself, or save it and drop the file here.\"",
+  "drop-nothing-an-image": "Enlarged: the drop box, the thumbnails and under them a red bar with an x: \"Nothing in that drop was an image. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.\"",
+  "drop-unreadable-address": "Enlarged: the drop box, the thumbnails and under them a one-line red bar with an x: \"That image could not be read. Save it and drop the file here.\"",
+  "drop-web-image-accepted": "No red bar. The dropped picture (the astronaut portrait) has loaded like a dropped file and is lit with the Left preset: sun left of the photo, x -0.10, y 0.40, exactly as 06-preset-left. Pill: \"online, mock providers\".",
+  "backend-offline-analyse-in-browser": "Pill: red dot, \"backend: offline\". No red bar and no card: the portrait is lit with the Left preset (x -0.10, y 0.40), a little flatter on the face than 06-preset-left, with a thin light and dark outline round the hair and shoulders. The Enhance button is bright yellow. GEOMETRY is open: the grey text \"Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.\", a grey Depth picture, a smooth lilac Normals picture with coloured edges, the Detailed normals switch OFF (grey, but it can be clicked) with \"Off: this photo was analysed in your browser. Turn on to ask the Relight server for detailed normals.\", then three small lines: \"512 x 512 px, relief 0.3\", \"depth: this browser, graphics chip (WebGPU)\" (or \"processor (WebAssembly)\" on a device without WebGPU) and \"shading: graphics chip, full quality\".",
+  "browser-scene-detailed-normals-backend-stopped": "A red bar above the stage with an x: \"Cannot reach the backend at http://localhost:8123. Is it running? The photo keeps the shape worked out in this browser.\" The portrait is still lit (Left preset, x -0.10, y 0.40), a little lower to make room for the bar. GEOMETRY is unchanged from 160: the \"Depth estimated in your browser\" text, the smooth Normals picture, the Detailed normals switch back OFF, and the \"depth: this browser\" line still there.",
+  "browser-scene-detailed-normals-from-server": "Pill: amber dot, \"backend: online, mock providers\". No red bar. The same portrait, Left preset (x -0.10, y 0.40), now with the server's scene: the face has more modelling (nose, cheeks) than in 160. GEOMETRY reads \"What the models recovered from the photo. The shader lights these.\", the Normals picture is the detailed rainbow-coloured one, the Detailed normals switch is ON (yellow) with \"Slower to analyse, much better surface detail.\", and there are only two small lines: \"512 x 512 px, relief 0.3\" and \"shading: graphics chip, full quality\". The \"depth: this browser\" line is gone.",
+  "mock-analysis-failed": "Pill: \"backend: mock\". The photo is grey and dim under a red-bordered card: \"This photo could not be analysed\", \"The depth model could not be downloaded. Check your connection and try again. The sample photos work without it.\", a yellow \"Retry\", a plain \"Use a stand-in dome\" beside it, and \"Choose another photo\" on a line of its own. The dome button exists in mock mode only. Its tooltip (not in the picture): \"Mock mode only: lights the photo as a made-up dome, not its real shape.\"",
+  "mock-stand-in-dome": "Above the stage a grey note on two lines: \"No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or start the backend to light your own photo properly.\" The portrait (Left preset, x -0.10, y 0.40) has one big round shape over its middle, brighter inside the circle, with a clear round edge across the flag and the wall. It does not follow the face. The GEOMETRY row's two tiny thumbnails are a round blob each.",
+  "demo-depth-downloading": "The photo is dimmed and slightly blurred, with a pill in the middle: a spinner and \"Downloading the depth model, 19 MB, once… 42%\". The number counts up as you watch. The sidebar is faded, \"Sweep\", \"Hold to see original\" and \"Export PNG\" are greyed out, GEOMETRY has no thumbnails, and there is no sun. \"New photo\" stays available.",
+  "demo-depth-starting": "The same dimmed photo and faded sidebar; the pill reads \"Starting the depth model…\". It follows the download and usually lasts a second or two.",
+  "demo-depth-working-out-shape": "The same dimmed photo and faded sidebar; the pill reads \"Working out the shape of your photo…\". On a laptop it lasts from a fraction of a second to a couple of seconds.",
+  "demo-depth-loading-stored": "The coffee cup, dimmed, with the pill \"Loading the depth model…\". No size and no percentage: the model is read from this browser's own store. This is what every photo after the first shows in place of the download lines.",
+  "demo-own-photo-left": "The demo with an uploaded portrait, Left preset: sun left of the photo, x -0.10, y 0.40, Height 0.35, Intensity 1.30. The left of the face and suit is a little brighter, the wall on the right darker. The face is lit more evenly (flatter) than the sample in the next picture, and a thin light and dark outline runs round the hair and the shoulders. Top right of the stage: \"New photo\". The Enhance button is greyed out, as always in the demo.",
+  "demo-sample-portrait-left": "The demo with the built-in Portrait sample at the same light (x -0.10, y 0.40). The face has clear modelling: the left cheek is bright and the right side of the nose and the right cheek are in shadow. No outline round the hair.",
+  "demo-own-photo-vs-sample": "Two pictures of the photo and its sun, side by side, each under a line of text. Left, \"Your own photo, analysed in this browser (depth model only)\": evenly lit face, a thin outline round the hair and shoulders. Right, \"The built-in Portrait sample (depth and detailed normals, made ahead of time)\": the same photograph with a shadow down the right side of the nose and cheek and more shape in the suit's folds. Both have the sun in the same place, left of the photo.",
+  "demo-own-photo-geometry": "The open GEOMETRY panel, enlarged. Grey text on five lines: \"Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.\" A grey Depth picture (the helmet in front nearly white) and a Normals picture that is smooth lilac with thin coloured lines along the edges, with no detail in the face. The Detailed normals switch is off and dull, with \"Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs.\" Then three small lines: \"512 x 512 px, relief 0.3\", \"depth: this browser, graphics chip (WebGPU)\" (new; \"processor (WebAssembly)\" on a device without WebGPU) and \"shading: graphics chip, full quality\". The tooltip on the depth line (not in the picture): \"The depth model ran in this browser. The photo was not sent anywhere.\"",
+  "demo-own-photo-detailed-normals": "Enlarged: \"Detailed normals\", under it in grey \"Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs.\", and at the right the switch: off (knob on the left), dull, and it does not react to a click.",
+  "demo-depth-model-not-downloaded": "The photo is grey and dim under a red-bordered card: \"This photo could not be analysed\", \"The depth model could not be downloaded. Check your connection and try again. The sample photos work without it.\", a yellow \"Retry\" and \"Choose another photo\". No third button in the demo. The sidebar is faded.",
+  "demo-phone-own-photo-full-page": "The whole phone page with an uploaded coffee cup: the pill \"demo\", a short stage with \"New photo\" and the sun at the left of the photo (x 0.12, y 0.35), LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open: the five-line \"Depth estimated in your browser\" text, Depth and Normals pictures of the cup, the dull Detailed normals switch (off) with its three-line reason, then \"600 x 400 px, relief 0.3\", \"depth: this browser, graphics chip (WebGPU)\" and \"shading: graphics chip, full quality\".",
 };
 
 const numbered = SHOTS.map((shot, i) => ({ ...shot, needs: shot.needs ?? "any", file: `${String(i + 1).padStart(2, "0")}-${shot.name}.jpg` }));
@@ -2789,10 +3305,13 @@ async function main() {
       }
       const page = await browser.newPage(shot.viewport ?? DESKTOP);
       const note = {};
+      const cleanup = []; // what a shot started outside the browser, to be stopped when it ends
       const started = Date.now();
       try {
         const t = {
           page,
+          file,
+          cleanup,
           url: args.url,
           api,
           mode,
@@ -2827,6 +3346,7 @@ async function main() {
         results.push({ file: shot.file, name: shot.name, status: "failed", error: error.message, console: page.console.slice() });
       }
       if (page.console.length) for (const line of [...new Set(page.console)]) console.log(`        page ${line}`);
+      for (const stopIt of cleanup) stopIt();
       await page.release().catch(() => {});
       await page.close();
     }

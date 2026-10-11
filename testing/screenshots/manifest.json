@@ -924,11 +924,23 @@
     "file": "43-backend-offline-upload.jpg",
     "name": "backend-offline-upload",
     "status": "ok",
-    "about": "A photo chosen while the backend is not running (the failed-load state): the photo is grey and dim under a red-bordered card with \"Retry\" and \"Choose another photo\".",
-    "see": "The photo is grey and dim. A red-bordered card in the middle reads \"This photo could not be analysed\", then \"Cannot reach the backend at http://localhost:8123. Is it running?\", with a yellow \"Retry\" button and a \"Choose another photo\" button. The sidebar is faded, \"Hold to see original\" and \"Export PNG\" are greyed out, and the pill reads \"offline\".",
+    "about": "A photo chosen while the backend is not running (the failed-load state): the photo is grey and dim under a red-bordered card that offers \"Analyse in this browser\", \"Retry\" and \"Choose another photo\".",
+    "see": "The photo is grey and dim. A red-bordered card in the middle reads \"This photo could not be analysed\", then \"Cannot reach the backend at http://localhost:8123. Is it running?\", then in lighter letters \"Or analyse it in this browser: a depth model of about 25 MB downloads once, and the photo stays on this device. Surfaces shade a little flatter than with the server's detailed normals.\" Under that a yellow \"Analyse in this browser\" button with a plain \"Retry\" beside it, and \"Choose another photo\" on a line of its own. The sidebar is faded, \"Hold to see original\" and \"Export PNG\" are greyed out, and the pill reads \"offline\".",
     "viewport": "1440x900",
     "appMode": "backend",
     "error": "Cannot reach the backend at http://localhost:8123. Is it running?",
+    "card": {
+      "lines": [
+        "Cannot reach the backend at http://localhost:8123. Is it running?",
+        "Or analyse it in this browser: a depth model of about 25 MB downloads once, and the photo stays on this device. Surfaces shade a little flatter than with the server's detailed normals."
+      ],
+      "buttons": [
+        "Analyse in this browser",
+        "Retry",
+        "Choose another photo"
+      ],
+      "yellowButton": "Analyse in this browser"
+    },
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -940,7 +952,6 @@
       "detailedNormals": true
     },
     "console": [
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
     ]
@@ -1131,7 +1142,7 @@
     "name": "mock-landing",
     "status": "ok",
     "about": "Frontend mock mode (no backend): the first page, status pill yellow \"mock\".",
-    "see": "The first page with a yellow dot and \"backend: mock\" in the pill, and \"How it works\" to its left. Everything else is the same as 01-landing.",
+    "see": "The first page with a yellow dot and \"backend: mock\" in the pill, and \"How it works\" to its left. The text under the heading starts \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser\". Under the dashed drop box are two grey lines: \"Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.\" Then \"Or try a sample photo:\" and the four thumbnails.",
     "viewport": "1440x900",
     "appMode": "mock",
     "light": null,
@@ -1153,12 +1164,13 @@
     "file": "56-mock-scene.jpg",
     "name": "mock-scene",
     "status": "ok",
-    "about": "Frontend mock mode with the portrait photo and the \"Left\" preset: the shading is a made-up round dome, not the real face.",
-    "see": "An uploaded portrait in frontend mock mode with the Left preset (x -0.10, y 0.40). The shading is one big round dome over the middle of the picture, bright on its left and dark on its right. It does not follow the face.",
+    "about": "Frontend mock mode with the portrait photo uploaded and the \"Left\" preset: the photo was analysed in the browser, so the shading follows the real face. No dome and no note about one.",
+    "see": "An uploaded portrait in frontend mock mode with the Left preset (x -0.10, y 0.40), analysed in the browser. The shading follows the real face and suit: the left of the face is a little brighter and the right of the picture darker, much as in 06-preset-left but flatter. There is no round dome, and no note above the stage. A thin light and dark outline runs round the hair and shoulders. The GEOMETRY row shows two tiny thumbnails of the real shape.",
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 1.1,
+    "sceneSeconds": 2.5,
+    "domeNoteShown": false,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1167,7 +1179,7 @@
       "ambient": "0.06",
       "colour": "neutral",
       "shadows": true,
-      "detailedNormals": true
+      "detailedNormals": false
     },
     "shadingPath": "gpu-full",
     "console": []
@@ -1181,7 +1193,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 1.4,
+    "sceneSeconds": 0.8,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1190,7 +1202,7 @@
       "ambient": "0.06",
       "colour": "neutral",
       "shadows": true,
-      "detailedNormals": true
+      "detailedNormals": false
     },
     "shadingPath": "gpu-full",
     "console": []
@@ -1199,12 +1211,12 @@
     "file": "58-mock-enhance-done.jpg",
     "name": "mock-enhance-done",
     "status": "ok",
-    "about": "Frontend mock mode after Enhance finished: the right half has more contrast and a soft glow.",
-    "see": "Frontend mock mode: the Enhanced tab with the divider in the middle. The right half (\"Enhanced\") has more contrast and a soft glow; the left half is the live preview.",
+    "about": "Frontend mock mode after Enhance finished on an uploaded photo that the browser analysed: the right half has more contrast and a soft glow.",
+    "see": "Frontend mock mode, on an uploaded photo the browser analysed: the Enhanced tab with the divider in the middle. The right half (\"Enhanced\") has more contrast and a soft glow; the left half is the live preview. The button reads \"Enhance again\" with the download button beside it.",
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 1.2,
+    "sceneSeconds": 0.9,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1213,7 +1225,7 @@
       "ambient": "0.06",
       "colour": "neutral",
       "shadows": true,
-      "detailedNormals": true
+      "detailedNormals": false
     },
     "shadingPath": "gpu-full",
     "console": []
@@ -1746,10 +1758,22 @@
     "name": "phone-load-failed-wide",
     "status": "ok",
     "about": "A phone-sized window, a wide photo chosen while the backend is not running: the failed-load card sits under the stage, not on the photo.",
-    "see": "On a phone: the stage is short and holds only the grey, dimmed photo with \"New photo\" above it and the two greyed-out buttons below it. Under the stage, in its own red-bordered card: \"This photo could not be analysed\", \"Cannot reach the backend at http://localhost:8123. Is it running?\", a yellow \"Retry\" and \"Choose another photo\". The LIGHT panel under the card is faded. Pill: \"offline\".",
+    "see": "On a phone: the stage is short and holds only the grey, dimmed photo with \"New photo\" above it and the two greyed-out buttons below it. Under the stage, in its own red-bordered card: \"This photo could not be analysed\", \"Cannot reach the backend at http://localhost:8123. Is it running?\", the four-line offer that starts \"Or analyse it in this browser:\", a yellow \"Analyse in this browser\" with a plain \"Retry\" beside it, and \"Choose another photo\" under them. The LIGHT panel under the card is faded. Pill: \"offline\".",
     "viewport": "390x844",
     "appMode": "backend",
     "error": "Cannot reach the backend at http://localhost:8123. Is it running?",
+    "card": {
+      "lines": [
+        "Cannot reach the backend at http://localhost:8123. Is it running?",
+        "Or analyse it in this browser: a depth model of about 25 MB downloads once, and the photo stays on this device. Surfaces shade a little flatter than with the server's detailed normals."
+      ],
+      "buttons": [
+        "Analyse in this browser",
+        "Retry",
+        "Choose another photo"
+      ],
+      "yellowButton": "Analyse in this browser"
+    },
     "stageHeight": 231,
     "cardIsUnderStage": true,
     "light": {
@@ -1838,7 +1862,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Cat",
     "light": {
       "x": -0.1,
@@ -2235,24 +2259,28 @@
     "file": "96-demo-landing.jpg",
     "name": "demo-landing",
     "status": "ok",
-    "about": "The static demo build: the first page. A note card stands where the drop box is in the normal app.",
-    "see": "Top right: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". The text under the heading starts \"Pick a sample photo. Its depth and surface normals were estimated ahead of time\". There is no dashed drop box: in its place a card \"This is the in-browser demo.\" with a yellow link. Then \"Pick a sample photo:\" and the four thumbnails.",
+    "about": "The static demo build: the first page, with a working drop box and a line under it that says the photo stays on this device.",
+    "see": "Top right: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". The text under the heading reads \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly.\" Then the same dashed drop box as the normal app (\"Drop a photo here\", \"or click to browse, or paste an image or its address\"), two grey lines under it that start \"Your photo stays on this device:\", then \"Or try a sample photo:\" and the four thumbnails. The card \"This is the in-browser demo.\" is gone.",
     "viewport": "1440x900",
     "appMode": "demo",
-    "fileInputOnPage": false,
+    "fileInputOnPage": true,
+    "intro": "Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly.",
     "light": null,
     "console": []
   },
-  "97-demo-upload-note.jpg": {
-    "file": "97-demo-upload-note.jpg",
-    "name": "demo-upload-note",
+  "97-demo-drop-box.jpg": {
+    "file": "97-demo-drop-box.jpg",
+    "name": "demo-drop-box",
     "status": "ok",
-    "about": "The static demo build: close-up of the note card on the first page, which says why uploading is missing and links to the code.",
-    "see": "The card, enlarged: \"This is the in-browser demo.\" in white, then in grey \"Uploading your own photo needs the Relight server, which this demo runs without. To try your own photos, run it on your computer:\" and the yellow link \"github.com/aarooshpravici/BanannaHacksSubmission\".",
+    "about": "The static demo build: close-up of the drop box on the first page and the line under it about where the photo goes.",
+    "see": "Enlarged: the dashed box with the upload icon, \"Drop a photo here\" in white and \"or click to browse, or paste an image or its address\" in grey. Under the box, in grey on two lines: \"Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.\"",
     "viewport": "1440x900",
     "appMode": "demo",
-    "text": "This is the in-browser demo. Uploading your own photo needs the Relight server, which this demo runs without. To try your own photos, run it on your computer: github.com/aarooshpravici/BanannaHacksSubmission",
-    "link": "https://github.com/aarooshpravici/BanannaHacksSubmission",
+    "box": [
+      "Drop a photo here",
+      "or click to browse, or paste an image or its address"
+    ],
+    "lineUnderIt": "Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.",
     "light": null,
     "console": []
   },
@@ -2264,7 +2292,7 @@
     "see": "The right end of the top bar, enlarged: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". It never reads \"checking\" or \"offline\".",
     "viewport": "1440x900",
     "appMode": "demo",
-    "tooltip": "Static demo: the sample photos are shaded entirely in your browser and no server is contacted. Uploading your own photo and Enhance need the Relight server.",
+    "tooltip": "Static demo: everything runs in your browser. Your own photo is analysed on this device and is not uploaded; the depth model for that is downloaded once from Hugging Face. Enhance needs the Relight server.",
     "light": null,
     "console": []
   },
@@ -2272,19 +2300,19 @@
     "file": "99-demo-sample.jpg",
     "name": "demo-sample",
     "status": "ok",
-    "about": "The static demo build with the \"Portrait\" sample loaded, nothing else touched: the top-right stage button reads \"Other samples\" and the Enhance button is greyed out.",
-    "see": "The portrait lit live, sun on the flag, x 0.12, y 0.35. The top-right stage button reads \"Other samples\" and has no icon. ENHANCE holds only the line \"Enhance needs the Relight server, which this demo runs without.\" and a dull, greyed-out \"Enhance\" button; there is no text box. LIGHT, \"Sweep\", \"Hold to see original\" and \"Export PNG\" are all available.",
+    "about": "The static demo build with the \"Portrait\" sample loaded, nothing else touched: the top-right stage button reads \"New photo\" and the Enhance button is greyed out.",
+    "see": "The portrait lit live, sun on the flag, x 0.12, y 0.35. The top-right stage button reads \"New photo\" with the upload icon, as in the normal app. ENHANCE holds only the line \"Enhance needs the Relight server, which this demo runs without.\" and a dull, greyed-out \"Enhance\" button; there is no text box. LIGHT, \"Sweep\", \"Hold to see original\" and \"Export PNG\" are all available.",
     "viewport": "1440x900",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "enhance": {
       "buttonDisabled": true,
       "promptBoxOnPage": false,
       "tooltip": "Enhance needs the Relight server, which this demo runs without."
     },
-    "stageButton": "Other samples",
+    "stageButton": "New photo",
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -2332,7 +2360,7 @@
     "name": "demo-phone-landing",
     "status": "ok",
     "about": "The static demo build: the first page in a phone-sized window. The pill is shortened to \"demo\".",
-    "see": "One column. Top bar: \"Relight\", \"How it works\" and a pill that reads only \"demo\" with a green dot. Heading, the \"Pick a sample photo. Its depth...\" text, the demo card (the yellow link breaks onto a second line), \"Pick a sample photo:\" and the four thumbnails in one row.",
+    "see": "One column. Top bar: \"Relight\", \"How it works\" and a pill that reads only \"demo\" with a green dot. Heading on two lines, the \"Upload a photo or pick a sample.\" text on five lines, the dashed drop box (its grey hint wraps onto two lines), the three grey lines that start \"Your photo stays on this device:\", \"Or try a sample photo:\" and the four thumbnails in one row.",
     "viewport": "390x844",
     "appMode": "demo",
     "light": null,
@@ -2343,11 +2371,11 @@
     "name": "demo-phone-sample-full-page",
     "status": "ok",
     "about": "The static demo build on a phone with the \"Cat\" sample, photographed from top to bottom with GEOMETRY opened.",
-    "see": "The whole phone page with the cat: the top bar with the pill \"demo\", a short stage with \"Other samples\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch, \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
+    "see": "The whole phone page with the cat: the top bar with the pill \"demo\", a short stage with \"New photo\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch, \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
     "viewport": "390x844",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Cat",
     "light": {
       "x": 0.12,
@@ -2397,7 +2425,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new S (http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:10740"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:413)\n    at http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:10740"
     ]
   },
   "104-how-it-works-button.jpg": {
@@ -2425,13 +2453,13 @@
     "name": "how-it-works-open",
     "status": "ok",
     "about": "The first page straight after clicking \"How it works\": a card in the middle of the window over the dimmed page.",
-    "see": "The first page is dimmed almost to black. In the middle of the window a dark card about half the window wide and most of its height, with a thin border and rounded corners. Top row: \"How Relight works\" and a \"Close\" button with an x. Then three lines that start \"Two pretrained vision models measure the photo once.\", three small chips (\"Pretrained model\" in blue, \"Our code\" in yellow, \"Hosted model, optional\" in grey), the heading \"ONCE PER PHOTO\" with a grey line that starts \"Done by the Relight server when you upload a photo.\", and step 1 \"Estimate depth\" with the blue chip \"Pretrained model: Depth Anything V2\" and two pictures: \"The photo\" and \"Depth map: lighter is nearer\". The top of step 2 shows at the bottom edge; the card scrolls.",
+    "see": "The first page is dimmed almost to black. In the middle of the window a dark card about half the window wide and most of its height, with a thin border and rounded corners. Top row: \"How Relight works\" and a \"Close\" button with an x. Then three lines that start \"Two pretrained vision models measure the photo once.\", three small chips (\"Pretrained model\" in blue, \"Our code\" in yellow, \"Hosted model, optional\" in grey), the heading \"ONCE PER PHOTO\" with three grey lines that start \"Done by the Relight server when you upload a photo.\" and end \"With no server, the depth model runs in your browser instead and the normals are taken from the slope of the depth map, which shades faces flatter.\", and step 1 \"Estimate depth\" with the blue chip \"Pretrained model: Depth Anything V2\" and two pictures: \"The photo\" and \"Depth map: lighter is nearer\". The top of step 2 shows at the bottom edge; the card scrolls.",
     "viewport": "1440x900",
     "appMode": "backend",
     "panel": {
       "title": "How Relight works",
       "sections": [
-        "Once per photo | Done by the Relight server when you upload a photo. For the four samples it was done ahead of time and the two maps ship with the page.",
+        "Once per photo | Done by the Relight server when you upload a photo. For the four samples it was done ahead of time and the two maps ship with the page. With no server, the depth model runs in your browser instead and the normals are taken from the slope of the depth map, which shades faces flatter.",
         "Every frame, in your browser | Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor. If the processor is too slow or cannot do it, the Relight server runs our Python version instead. No AI model is involved in the dragging.",
         "Only if you press Enhance | Off until you ask for it. The app is complete without it.",
         "Honest limits | "
@@ -2447,7 +2475,7 @@
         "The photo",
         "Depth map: lighter is nearer",
         "Normal map: colour is the way a surface faces",
-        "Our shading alone, light at the left",
+        "Our shading by itself, before it is applied to the photo: light at the left",
         "Our shadow map for the same light",
         "Steps 3 and 4 multiplied into the photo",
         "The same maps, light moved to the right"
@@ -2467,7 +2495,7 @@
     "name": "how-it-works-step-1",
     "status": "ok",
     "about": "The \"How it works\" panel alone, enlarged, scrolled to step 1.",
-    "see": "The card alone. \"ONCE PER PHOTO\" and its grey line, then step 1: a round \"1\", \"Estimate depth\", the blue chip \"Pretrained model: Depth Anything V2\", two lines that start \"A pretrained model estimates how near every pixel is to the camera.\", and two square pictures side by side: the astronaut photo (\"The photo\") and the same in greys with the helmet in front nearly white (\"Depth map: lighter is nearer\"). Step 2 starts below.",
+    "see": "The card alone. \"ONCE PER PHOTO\" and its three grey lines (\"Done by the Relight server when you upload a photo. For the four samples it was done ahead of time and the two maps ship with the page. With no server, the depth model runs in your browser instead and the normals are taken from the slope of the depth map, which shades faces flatter.\"), then step 1: a round \"1\", \"Estimate depth\", the blue chip \"Pretrained model: Depth Anything V2\", two lines that start \"A pretrained model estimates how near every pixel is to the camera.\", and two square pictures side by side: the astronaut photo (\"The photo\") and the same in greys with the helmet in front nearly white (\"Depth map: lighter is nearer\"). Step 2 starts below.",
     "viewport": "1440x900",
     "appMode": "backend",
     "light": null,
@@ -2526,7 +2554,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "escapeCloses": true,
     "focusAfterClosing": "How it works",
@@ -2619,7 +2647,7 @@
     "name": "phone-how-it-works-step-1",
     "status": "ok",
     "about": "A phone-sized window, the \"How it works\" panel scrolled to step 1.",
-    "see": "\"ONCE PER PHOTO\", its grey line on three lines, and step 1 with its two small pictures side by side; the caption \"Depth map: lighter is nearer\" wraps onto two lines. Step 2 starts below.",
+    "see": "\"ONCE PER PHOTO\", its grey text on five lines, ending \"which shades faces flatter.\", and step 1 with its two small pictures side by side; the caption \"Depth map: lighter is nearer\" wraps onto two lines. Step 2 starts below.",
     "viewport": "390x844",
     "appMode": "backend",
     "sideNoteShown": false,
@@ -3422,7 +3450,7 @@
       "buttonRightPx": 296,
       "pillLeftPx": 304
     },
-    "tooltip": "Static demo: the sample photos are shaded entirely in your browser and no server is contacted. Uploading your own photo and Enhance need the Relight server.",
+    "tooltip": "Static demo: everything runs in your browser. Your own photo is analysed on this device and is not uploaded; the depth model for that is downloaded once from Hugging Face. Enhance needs the Relight server.",
     "light": null,
     "console": []
   },
@@ -3431,13 +3459,13 @@
     "name": "demo-how-it-works-open",
     "status": "ok",
     "about": "The static demo build straight after clicking \"How it works\": the same panel, with the demo's own grey line under \"Once per photo\".",
-    "see": "The same card as in 105-how-it-works-open over the dimmed demo page. One line differs: under \"ONCE PER PHOTO\" it reads \"For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.\"",
+    "see": "The same card as in 105-how-it-works-open over the dimmed demo page. The grey text under \"ONCE PER PHOTO\" differs: \"For the four samples this was done ahead of time and the two maps ship with the page. For your own photo, this demo runs the depth model in your browser and takes the normals from the slope of the depth map, which shades faces flatter: the normals model is too large for a browser. The photo is not uploaded.\"",
     "viewport": "1440x900",
     "appMode": "demo",
     "panel": {
       "title": "How Relight works",
       "sections": [
-        "Once per photo | For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.",
+        "Once per photo | For the four samples this was done ahead of time and the two maps ship with the page. For your own photo, this demo runs the depth model in your browser and takes the normals from the slope of the depth map, which shades faces flatter: the normals model is too large for a browser. The photo is not uploaded.",
         "Every frame, in your browser | Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor. No AI model is involved in the dragging.",
         "Only if you press Enhance | Switched off in this demo, because it needs the server.",
         "Honest limits | "
@@ -3453,7 +3481,7 @@
         "The photo",
         "Depth map: lighter is nearer",
         "Normal map: colour is the way a surface faces",
-        "Our shading alone, light at the left",
+        "Our shading by itself, before it is applied to the photo: light at the left",
         "Our shadow map for the same light",
         "Steps 3 and 4 multiplied into the photo",
         "The same maps, light moved to the right"
@@ -3478,7 +3506,7 @@
     "name": "demo-phone-how-it-works-open",
     "status": "ok",
     "about": "The static demo build on a phone straight after tapping \"How it works\": the panel fills the whole screen.",
-    "see": "The panel covers the whole phone screen. Under \"ONCE PER PHOTO\" the demo's own line: \"For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo.\" Step 1 and the top of step 2 follow.",
+    "see": "The panel covers the whole phone screen. Under \"ONCE PER PHOTO\" the demo's own text, on six lines: \"For the four samples this was done ahead of time and the two maps ship with the page. For your own photo, this demo runs the depth model in your browser and takes the normals from the slope of the depth map, which shades faces flatter: the normals model is too large for a browser. The photo is not uploaded.\" Step 1 and the top of step 2 follow.",
     "viewport": "390x844",
     "appMode": "demo",
     "light": null,
@@ -3489,7 +3517,7 @@
     "name": "demo-no-float-colour-buffers",
     "status": "ok",
     "about": "The static demo build on a graphics chip that cannot draw into floating-point buffers, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: no note, and the last line of GEOMETRY reads \"graphics chip, compatibility mode\".",
-    "see": "The demo with no note above the stage: the portrait lit for the Left preset (x -0.10, y 0.40), the top-right stage button \"Other samples\", and GEOMETRY open, ending \"512 x 512 px, relief 0.3\" and \"shading: graphics chip, compatibility mode\".",
+    "see": "The demo with no note above the stage: the portrait lit for the Left preset (x -0.10, y 0.40), the top-right stage button \"New photo\", and GEOMETRY open, ending \"512 x 512 px, relief 0.3\" and \"shading: graphics chip, compatibility mode\".",
     "viewport": "1440x1300",
     "appMode": "demo",
     "shading": "webgl",
@@ -3521,7 +3549,7 @@
     "viewport": "1440x1300",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "shadingLine": "shading: graphics chip, full quality",
     "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)), at full quality.",
@@ -3568,7 +3596,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new S (http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:10740"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:413)\n    at http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:10740"
     ]
   },
   "151-demo-phone-no-webgl.jpg": {
@@ -3576,7 +3604,7 @@
     "name": "demo-phone-no-webgl",
     "status": "ok",
     "about": "The static demo build on a phone without WebGL2, \"Cat\" sample: the four-line grey note above the photo, and the photo lit by the processor.",
-    "see": "The demo on a phone: the pill \"demo\", then the grey note on four lines, then the stage with \"Other samples\" and the cat lit from the left (sun by the ear, x 0.12, y 0.35), \"Hold to see original\" and \"Export PNG\" available, and the LIGHT panel under it at full brightness.",
+    "see": "The demo on a phone: the pill \"demo\", then the grey note on four lines, then the stage with \"New photo\" and the cat lit from the left (sun by the ear, x 0.12, y 0.35), \"Hold to see original\" and \"Export PNG\" available, and the LIGHT panel under it at full brightness.",
     "viewport": "390x844",
     "appMode": "demo",
     "shading": "cpu",
@@ -3599,7 +3627,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new S (http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:10740"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:413)\n    at http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:10740"
     ]
   },
   "152-demo-no-shading-at-all.jpg": {
@@ -3607,7 +3635,7 @@
     "name": "demo-no-shading-at-all",
     "status": "ok",
     "about": "The static demo build in a browser in which neither the graphics chip nor the processor can shade: the red bar above the plain photo, no sun, and everything that would change the light greyed out.",
-    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.\" It has no \"Retry\" and no x. The photo is the plain original with no sun. The LIGHT panel is faded and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. \"Other samples\" still works. You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
+    "see": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari.\" It has no \"Retry\" and no x. The photo is the plain original with no sun. The LIGHT panel is faded and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. \"New photo\" still works. You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
     "viewport": "1440x900",
     "appMode": "demo",
     "shadingLine": null,
@@ -3636,7 +3664,628 @@
     },
     "shading": "none",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new S (http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1-6bjovx13cwh.js:179:10740"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:413)\n    at http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:10740"
     ]
+  },
+  "153-drop-web-image-blocked.jpg": {
+    "file": "153-drop-web-image-blocked.jpg",
+    "name": "drop-web-image-blocked",
+    "status": "ok",
+    "about": "A picture dragged from another web site onto the drop box, when that site does not let other pages read its pictures (most do not): a red bar under the thumbnails says so and gives the two ways that always work.",
+    "see": "The first page is still showing, nothing has loaded. Under the four thumbnails a red bar on three lines, with an x: \"That image's site does not let other pages read it. This is a browser security rule, not a fault in the image. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.\" This is what most pictures dragged from another web site give.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "error": "That image's site does not let other pages read it. This is a browser security rule, not a fault in the image. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.",
+    "how": "A real drop, made by Chrome, of the address of a picture on a second web server the tool runs on another port. That server sends the picture without the header that lets other pages read it.",
+    "light": null,
+    "console": [
+      "log.error: Access to fetch at 'http://127.0.0.1:60376/closed/photo.jpg' from origin 'http://localhost:3123' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. http://localhost:3123/",
+      "log.error: Failed to load resource: net::ERR_FAILED http://127.0.0.1:60376/closed/photo.jpg"
+    ]
+  },
+  "154-drop-web-image-404.jpg": {
+    "file": "154-drop-web-image-404.jpg",
+    "name": "drop-web-image-404",
+    "status": "ok",
+    "about": "Close-up of the drop box and the red bar under the thumbnails after dragging an address from another web site, when the site answers that the picture is not there (404).",
+    "see": "Enlarged: the drop box, the thumbnails and under them a red bar with an x: \"That image's site answered 404, so it could not be loaded. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.\" The number is whatever the site answered.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "secondsUntilTheBar": 0.1,
+    "error": "That image's site answered 404, so it could not be loaded. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.",
+    "light": null,
+    "console": [
+      "log.error: Failed to load resource: the server responded with a status of 404 (Not Found) http://127.0.0.1:60378/missing.jpg"
+    ]
+  },
+  "155-drop-web-image-too-slow.jpg": {
+    "file": "155-drop-web-image-too-slow.jpg",
+    "name": "drop-web-image-too-slow",
+    "status": "ok",
+    "about": "Close-up of the drop box and the red bar under the thumbnails after dragging an address from another web site, when the site does not answer within 15 seconds.",
+    "see": "Enlarged: the drop box, the thumbnails and under them a red bar with an x: \"That image took too long to load. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.\" It appears 15 seconds after the drop; until then the drop box shows a spinner and \"Reading image…\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "secondsUntilTheBar": 15.2,
+    "error": "That image took too long to load. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.",
+    "light": null,
+    "console": []
+  },
+  "156-drop-web-page.jpg": {
+    "file": "156-drop-web-page.jpg",
+    "name": "drop-web-page",
+    "status": "ok",
+    "about": "Close-up of the drop box and the red bar under the thumbnails after dragging an address from another web site, when the address is a web page, not a picture.",
+    "see": "Enlarged: the drop box, the thumbnails and under them a red bar with an x: \"That address is a web page, not an image. Drag the picture itself, or save it and drop the file here.\"",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "secondsUntilTheBar": 0.1,
+    "error": "That address is a web page, not an image. Drag the picture itself, or save it and drop the file here.",
+    "light": null,
+    "console": []
+  },
+  "157-drop-nothing-an-image.jpg": {
+    "file": "157-drop-nothing-an-image.jpg",
+    "name": "drop-nothing-an-image",
+    "status": "ok",
+    "about": "Close-up of the drop box and the red bar after dropping something that holds no picture and no picture's address (a few words of text dragged from another page).",
+    "see": "Enlarged: the drop box, the thumbnails and under them a red bar with an x: \"Nothing in that drop was an image. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.\"",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "error": "Nothing in that drop was an image. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.",
+    "light": null,
+    "console": []
+  },
+  "158-drop-unreadable-address.jpg": {
+    "file": "158-drop-unreadable-address.jpg",
+    "name": "drop-unreadable-address",
+    "status": "ok",
+    "about": "Close-up of the drop box and the red bar after dropping a picture that a page holds inside its own address (a \"data:\" address) and that is damaged.",
+    "see": "Enlarged: the drop box, the thumbnails and under them a one-line red bar with an x: \"That image could not be read. Save it and drop the file here.\"",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "error": "That image could not be read. Save it and drop the file here.",
+    "light": null,
+    "console": [
+      "log.error: Failed to load resource: net::ERR_INVALID_URL data:image/png;base64,@@@"
+    ]
+  },
+  "159-drop-web-image-accepted.jpg": {
+    "file": "159-drop-web-image-accepted.jpg",
+    "name": "drop-web-image-accepted",
+    "status": "ok",
+    "about": "A picture dragged from another web site that does let other pages read it: it is taken like a dropped file. \"Left\" preset.",
+    "see": "No red bar. The dropped picture (the astronaut portrait) has loaded like a dropped file and is lit with the Left preset: sun left of the photo, x -0.10, y 0.40, exactly as 06-preset-left. Pill: \"online, mock providers\".",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "redBars": [],
+    "how": "The same second web server, this time sending the picture with the header that lets other pages read it.",
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "160-backend-offline-analyse-in-browser.jpg": {
+    "file": "160-backend-offline-analyse-in-browser.jpg",
+    "name": "backend-offline-analyse-in-browser",
+    "status": "ok",
+    "about": "The backend is not running, a photo was chosen and \"Analyse in this browser\" clicked on the failed-load card: the photo is lit all the same. \"Left\" preset, GEOMETRY open.",
+    "see": "Pill: red dot, \"backend: offline\". No red bar and no card: the portrait is lit with the Left preset (x -0.10, y 0.40), a little flatter on the face than 06-preset-left, with a thin light and dark outline round the hair and shoulders. The Enhance button is bright yellow. GEOMETRY is open: the grey text \"Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.\", a grey Depth picture, a smooth lilac Normals picture with coloured edges, the Detailed normals switch OFF (grey, but it can be clicked) with \"Off: this photo was analysed in your browser. Turn on to ask the Relight server for detailed normals.\", then three small lines: \"512 x 512 px, relief 0.3\", \"depth: this browser, graphics chip (WebGPU)\" (or \"processor (WebAssembly)\" on a device without WebGPU) and \"shading: graphics chip, full quality\".",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "cardBeforeTheClick": {
+      "lines": [
+        "Cannot reach the backend at http://localhost:8123. Is it running?",
+        "Or analyse it in this browser: a depth model of about 25 MB downloads once, and the photo stays on this device. Surfaces shade a little flatter than with the server's detailed normals."
+      ],
+      "buttons": [
+        "Analyse in this browser",
+        "Retry",
+        "Choose another photo"
+      ],
+      "yellowButton": "Analyse in this browser"
+    },
+    "shading": "webgl",
+    "sceneSeconds": 3.7,
+    "geometryIntro": "Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.",
+    "depthLine": "depth: this browser, graphics chip (WebGPU)",
+    "depthTooltip": "The depth model ran in this browser. The photo was not sent anywhere.",
+    "shadingLine": "shading: graphics chip, full quality",
+    "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)), at full quality.",
+    "greyNote": null,
+    "redBars": [],
+    "detailedNormals": {
+      "on": false,
+      "disabled": false,
+      "hint": "Off: this photo was analysed in your browser. Turn on to ask the Relight server for detailed normals."
+    },
+    "askedOfBackend": [
+      "POST /relight/scene"
+    ],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shadingPath": "gpu-full",
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
+    ]
+  },
+  "161-browser-scene-detailed-normals-backend-stopped.jpg": {
+    "file": "161-browser-scene-detailed-normals-backend-stopped.jpg",
+    "name": "browser-scene-detailed-normals-backend-stopped",
+    "status": "ok",
+    "about": "The same photo, analysed in the browser, after turning Detailed normals on while the backend is still not running: a red bar above the stage, the photo keeps its shape and the switch goes back off.",
+    "see": "A red bar above the stage with an x: \"Cannot reach the backend at http://localhost:8123. Is it running? The photo keeps the shape worked out in this browser.\" The portrait is still lit (Left preset, x -0.10, y 0.40), a little lower to make room for the bar. GEOMETRY is unchanged from 160: the \"Depth estimated in your browser\" text, the smooth Normals picture, the Detailed normals switch back OFF, and the \"depth: this browser\" line still there.",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "error": "Cannot reach the backend at http://localhost:8123. Is it running? The photo keeps the shape worked out in this browser.",
+    "cardBeforeTheClick": {
+      "lines": [
+        "Cannot reach the backend at http://localhost:8123. Is it running?",
+        "Or analyse it in this browser: a depth model of about 25 MB downloads once, and the photo stays on this device. Surfaces shade a little flatter than with the server's detailed normals."
+      ],
+      "buttons": [
+        "Analyse in this browser",
+        "Retry",
+        "Choose another photo"
+      ],
+      "yellowButton": "Analyse in this browser"
+    },
+    "shading": "webgl",
+    "geometryIntro": "Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.",
+    "depthLine": "depth: this browser, graphics chip (WebGPU)",
+    "depthTooltip": "The depth model ran in this browser. The photo was not sent anywhere.",
+    "detailedNormals": {
+      "on": false,
+      "disabled": false,
+      "hint": "Off: this photo was analysed in your browser. Turn on to ask the Relight server for detailed normals."
+    },
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shadingPath": "gpu-full",
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
+    ]
+  },
+  "162-browser-scene-detailed-normals-from-server.jpg": {
+    "file": "162-browser-scene-detailed-normals-from-server.jpg",
+    "name": "browser-scene-detailed-normals-from-server",
+    "status": "ok",
+    "about": "The same photo, analysed in the browser, after the backend has come back and Detailed normals was turned on: the backend's scene has taken the place of the browser's. \"Left\" preset, GEOMETRY open.",
+    "see": "Pill: amber dot, \"backend: online, mock providers\". No red bar. The same portrait, Left preset (x -0.10, y 0.40), now with the server's scene: the face has more modelling (nose, cheeks) than in 160. GEOMETRY reads \"What the models recovered from the photo. The shader lights these.\", the Normals picture is the detailed rainbow-coloured one, the Detailed normals switch is ON (yellow) with \"Slower to analyse, much better surface detail.\", and there are only two small lines: \"512 x 512 px, relief 0.3\" and \"shading: graphics chip, full quality\". The \"depth: this browser\" line is gone.",
+    "viewport": "1440x1300",
+    "appMode": "backend",
+    "cardBeforeTheClick": {
+      "lines": [
+        "Cannot reach the backend at http://localhost:8123. Is it running?",
+        "Or analyse it in this browser: a depth model of about 25 MB downloads once, and the photo stays on this device. Surfaces shade a little flatter than with the server's detailed normals."
+      ],
+      "buttons": [
+        "Analyse in this browser",
+        "Retry",
+        "Choose another photo"
+      ],
+      "yellowButton": "Analyse in this browser"
+    },
+    "shading": "webgl",
+    "before": {
+      "on": false,
+      "disabled": false,
+      "hint": "Off: this photo was analysed in your browser. Turn on to ask the Relight server for detailed normals.",
+      "depthLine": "depth: this browser, graphics chip (WebGPU)"
+    },
+    "geometryIntro": "What the models recovered from the photo. The shader lights these.",
+    "depthLine": null,
+    "depthTooltip": null,
+    "detailedNormals": {
+      "on": true,
+      "disabled": false,
+      "hint": "Slower to analyse, much better surface detail."
+    },
+    "redBars": [],
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": [
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
+      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
+    ]
+  },
+  "163-mock-analysis-failed.jpg": {
+    "file": "163-mock-analysis-failed.jpg",
+    "name": "mock-analysis-failed",
+    "status": "ok",
+    "about": "Frontend mock mode, a photo chosen when the depth model cannot be downloaded: the failed-load card, which in mock mode alone has the extra button \"Use a stand-in dome\".",
+    "see": "Pill: \"backend: mock\". The photo is grey and dim under a red-bordered card: \"This photo could not be analysed\", \"The depth model could not be downloaded. Check your connection and try again. The sample photos work without it.\", a yellow \"Retry\", a plain \"Use a stand-in dome\" beside it, and \"Choose another photo\" on a line of its own. The dome button exists in mock mode only. Its tooltip (not in the picture): \"Mock mode only: lights the photo as a made-up dome, not its real shape.\"",
+    "viewport": "1440x900",
+    "appMode": "mock",
+    "error": "The depth model could not be downloaded. Check your connection and try again. The sample photos work without it.",
+    "card": {
+      "lines": [
+        "The depth model could not be downloaded. Check your connection and try again. The sample photos work without it."
+      ],
+      "buttons": [
+        "Retry",
+        "Use a stand-in dome",
+        "Choose another photo"
+      ],
+      "yellowButton": "Retry"
+    },
+    "domeButtonTooltip": "Mock mode only: lights the photo as a made-up dome, not its real shape.",
+    "how": "Requests to huggingface.co were refused inside Chrome after the stored copy of the model was deleted.",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "console": []
+  },
+  "164-mock-stand-in-dome.jpg": {
+    "file": "164-mock-stand-in-dome.jpg",
+    "name": "mock-stand-in-dome",
+    "status": "ok",
+    "about": "The same after clicking \"Use a stand-in dome\", with the \"Left\" preset: the photo is lit as a made-up round dome and a grey note above the stage says so.",
+    "see": "Above the stage a grey note on two lines: \"No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or start the backend to light your own photo properly.\" The portrait (Left preset, x -0.10, y 0.40) has one big round shape over its middle, brighter inside the circle, with a clear round edge across the flag and the wall. It does not follow the face. The GEOMETRY row's two tiny thumbnails are a round blob each.",
+    "viewport": "1440x900",
+    "appMode": "mock",
+    "cardBeforeTheClick": {
+      "lines": [
+        "The depth model could not be downloaded. Check your connection and try again. The sample photos work without it."
+      ],
+      "buttons": [
+        "Retry",
+        "Use a stand-in dome",
+        "Choose another photo"
+      ],
+      "yellowButton": "Retry"
+    },
+    "shading": "webgl",
+    "domeNote": "No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or start the backend to light your own photo properly.",
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "165-demo-depth-downloading.jpg": {
+    "file": "165-demo-depth-downloading.jpg",
+    "name": "demo-depth-downloading",
+    "status": "ok",
+    "about": "The static demo build just after choosing a photo, held still: the first photo on this browser, part of the way through downloading the depth model.",
+    "see": "The photo is dimmed and slightly blurred, with a pill in the middle: a spinner and \"Downloading the depth model, 19 MB, once… 42%\". The number counts up as you watch. The sidebar is faded, \"Sweep\", \"Hold to see original\" and \"Export PNG\" are greyed out, GEOMETRY has no thumbnails, and there is no sun. \"New photo\" stays available.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "line": "Downloading the depth model, 19 MB, once… 42%",
+    "how": "The messages the depth model's Worker sends the page were kept back from this one on until the picture was taken. In normal use the line changes by itself.",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shading": "webgl",
+    "console": []
+  },
+  "166-demo-depth-starting.jpg": {
+    "file": "166-demo-depth-starting.jpg",
+    "name": "demo-depth-starting",
+    "status": "ok",
+    "about": "The static demo build just after choosing a photo, held still: the depth model has arrived and is being started.",
+    "see": "The same dimmed photo and faded sidebar; the pill reads \"Starting the depth model…\". It follows the download and usually lasts a second or two.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "line": "Starting the depth model…",
+    "how": "The messages the depth model's Worker sends the page were kept back from this one on until the picture was taken. In normal use the line changes by itself.",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shading": "webgl",
+    "console": []
+  },
+  "167-demo-depth-working-out-shape.jpg": {
+    "file": "167-demo-depth-working-out-shape.jpg",
+    "name": "demo-depth-working-out-shape",
+    "status": "ok",
+    "about": "The static demo build just after choosing a photo, held still: the depth model is running on the photo.",
+    "see": "The same dimmed photo and faded sidebar; the pill reads \"Working out the shape of your photo…\". On a laptop it lasts from a fraction of a second to a couple of seconds.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "line": "Working out the shape of your photo…",
+    "how": "The messages the depth model's Worker sends the page were kept back from this one on until the picture was taken. In normal use the line changes by itself.",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shading": "webgl",
+    "console": []
+  },
+  "168-demo-depth-loading-stored.jpg": {
+    "file": "168-demo-depth-loading-stored.jpg",
+    "name": "demo-depth-loading-stored",
+    "status": "ok",
+    "about": "The static demo build just after choosing a photo, held still, on a browser that already has the depth model from an earlier photo: no download, only \"Loading the depth model…\".",
+    "see": "The coffee cup, dimmed, with the pill \"Loading the depth model…\". No size and no percentage: the model is read from this browser's own store. This is what every photo after the first shows in place of the download lines.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 0.8,
+    "line": "Loading the depth model…",
+    "how": "The page was loaded a second time; the first photo had stored the model. The Worker's messages were kept back from this one on until the picture was taken.",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "console": []
+  },
+  "169-demo-own-photo-left.jpg": {
+    "file": "169-demo-own-photo-left.jpg",
+    "name": "demo-own-photo-left",
+    "status": "ok",
+    "about": "The static demo build with an uploaded photo (the astronaut portrait) analysed in the browser, \"Left\" preset. Compare with the next picture.",
+    "see": "The demo with an uploaded portrait, Left preset: sun left of the photo, x -0.10, y 0.40, Height 0.35, Intensity 1.30. The left of the face and suit is a little brighter, the wall on the right darker. The face is lit more evenly (flatter) than the sample in the next picture, and a thin light and dark outline runs round the hair and the shoulders. Top right of the stage: \"New photo\". The Enhance button is greyed out, as always in the demo.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 2.3,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "170-demo-sample-portrait-left.jpg": {
+    "file": "170-demo-sample-portrait-left.jpg",
+    "name": "demo-sample-portrait-left",
+    "status": "ok",
+    "about": "The static demo build with the built-in \"Portrait\" sample, which is the same photograph, at the same light (\"Left\" preset): its maps were made ahead of time by the server's two models.",
+    "see": "The demo with the built-in Portrait sample at the same light (x -0.10, y 0.40). The face has clear modelling: the left cheek is bright and the right side of the nose and the right cheek are in shadow. No outline round the hair.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 0.1,
+    "sample": "Portrait",
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "171-demo-own-photo-vs-sample.jpg": {
+    "file": "171-demo-own-photo-vs-sample.jpg",
+    "name": "demo-own-photo-vs-sample",
+    "status": "ok",
+    "about": "The two pictures before this one side by side: left, the uploaded portrait analysed in the browser; right, the built-in \"Portrait\" sample. Same photograph, same light (\"Left\" preset).",
+    "see": "Two pictures of the photo and its sun, side by side, each under a line of text. Left, \"Your own photo, analysed in this browser (depth model only)\": evenly lit face, a thin outline round the hair and shoulders. Right, \"The built-in Portrait sample (depth and detailed normals, made ahead of time)\": the same photograph with a shadow down the right side of the nose and cheek and more shape in the suit's folds. Both have the sun in the same place, left of the photo.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 0.9,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "sampleLight": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "172-demo-own-photo-geometry.jpg": {
+    "file": "172-demo-own-photo-geometry.jpg",
+    "name": "demo-own-photo-geometry",
+    "status": "ok",
+    "about": "The static demo build: close-up of the open GEOMETRY panel for an uploaded photo analysed in the browser. It says how the maps were made, and has a new \"depth:\" line.",
+    "see": "The open GEOMETRY panel, enlarged. Grey text on five lines: \"Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.\" A grey Depth picture (the helmet in front nearly white) and a Normals picture that is smooth lilac with thin coloured lines along the edges, with no detail in the face. The Detailed normals switch is off and dull, with \"Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs.\" Then three small lines: \"512 x 512 px, relief 0.3\", \"depth: this browser, graphics chip (WebGPU)\" (new; \"processor (WebAssembly)\" on a device without WebGPU) and \"shading: graphics chip, full quality\". The tooltip on the depth line (not in the picture): \"The depth model ran in this browser. The photo was not sent anywhere.\"",
+    "viewport": "1440x1300",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 0.8,
+    "geometryIntro": "Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.",
+    "depthLine": "depth: this browser, graphics chip (WebGPU)",
+    "depthTooltip": "The depth model ran in this browser. The photo was not sent anywhere.",
+    "shadingLine": "shading: graphics chip, full quality",
+    "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)), at full quality.",
+    "greyNote": null,
+    "redBars": [],
+    "detailedNormals": {
+      "on": false,
+      "disabled": true,
+      "hint": "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs."
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "173-demo-own-photo-detailed-normals.jpg": {
+    "file": "173-demo-own-photo-detailed-normals.jpg",
+    "name": "demo-own-photo-detailed-normals",
+    "status": "ok",
+    "about": "The static demo build: close-up of the Detailed normals switch for an uploaded photo. It is off, greyed out and cannot be clicked.",
+    "see": "Enlarged: \"Detailed normals\", under it in grey \"Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs.\", and at the right the switch: off (knob on the left), dull, and it does not react to a click.",
+    "viewport": "1440x1300",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 0.8,
+    "detailedNormals": {
+      "on": false,
+      "disabled": true,
+      "hint": "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs."
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "174-demo-depth-model-not-downloaded.jpg": {
+    "file": "174-demo-depth-model-not-downloaded.jpg",
+    "name": "demo-depth-model-not-downloaded",
+    "status": "ok",
+    "about": "The static demo build, a photo chosen when the depth model cannot be downloaded (no connection to the site that holds it): the failed-load card on the grey photo.",
+    "see": "The photo is grey and dim under a red-bordered card: \"This photo could not be analysed\", \"The depth model could not be downloaded. Check your connection and try again. The sample photos work without it.\", a yellow \"Retry\" and \"Choose another photo\". No third button in the demo. The sidebar is faded.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "error": "The depth model could not be downloaded. Check your connection and try again. The sample photos work without it.",
+    "card": {
+      "lines": [
+        "The depth model could not be downloaded. Check your connection and try again. The sample photos work without it."
+      ],
+      "buttons": [
+        "Retry",
+        "Choose another photo"
+      ],
+      "yellowButton": "Retry"
+    },
+    "secondsUntilTheCard": 0.2,
+    "how": "Requests to huggingface.co were refused inside Chrome after the stored copy of the model was deleted.",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "console": []
+  },
+  "175-demo-phone-own-photo-full-page.jpg": {
+    "file": "175-demo-phone-own-photo-full-page.jpg",
+    "name": "demo-phone-own-photo-full-page",
+    "status": "ok",
+    "about": "The static demo build on a phone with an uploaded photo (the coffee cup) analysed in the browser, photographed from top to bottom with GEOMETRY opened.",
+    "see": "The whole phone page with an uploaded coffee cup: the pill \"demo\", a short stage with \"New photo\" and the sun at the left of the photo (x 0.12, y 0.35), LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open: the five-line \"Depth estimated in your browser\" text, Depth and Normals pictures of the cup, the dull Detailed normals switch (off) with its three-line reason, then \"600 x 400 px, relief 0.3\", \"depth: this browser, graphics chip (WebGPU)\" and \"shading: graphics chip, full quality\".",
+    "viewport": "390x844",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 1.5,
+    "geometryIntro": "Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.",
+    "depthLine": "depth: this browser, graphics chip (WebGPU)",
+    "depthTooltip": "The depth model ran in this browser. The photo was not sent anywhere.",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shadingPath": "gpu-full",
+    "console": []
   }
 }
