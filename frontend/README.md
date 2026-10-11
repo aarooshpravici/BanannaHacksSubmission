@@ -108,7 +108,8 @@ until it has passed a check.
   (`CHECK_MIN_AGREEMENT`, 0.99 or more passes), and **roughness** of the flat areas as a multiple of the
   reference's own (`CHECK_MAX_ROUGHNESS`, 6 or less passes). The processor scores 1.00 by definition. The one
   healthy chip measured, an Apple one in Chrome 155, scores 0.9999 and 3.27 on every run; a tester's Intel chip
-  (gen-12lp, a Dell XPS 15) scored 0.9999 and 3.28, with the check taking 647 ms. Grid noise added by
+  (gen-12lp, a Dell XPS 15) scored 0.9999 and 3.28, with the check taking 647 ms, and the same laptop's NVIDIA chip
+  ("nvidia ampere") 0.9999 and 3.26 in 1306 ms. Grid noise added by
   a program is rejected from about 0.1% to 0.3% of the depth range, which is about where it first shows on a
   blank wall under a low side light; at 3% it scored about 95 to 135. The check is one more run of the model:
   150 to 250 ms on that Mac (up to about 0.75 s the very first time in a new browser profile), once per page
@@ -154,7 +155,7 @@ until it has passed a check.
   `DepthCheckFailed: the graphics chip (…) got the depth model's test picture wrong: …` and the same numbers.
   For a listed chip, one `console.warn` that starts
   `Relight: the graphics chip (…) is on the list of chips known to get the depth model wrong.`
-- **What it does not catch, and what has not been run.** The limit of 6 rests on two healthy chips, an Apple one and an Intel one. A healthy
+- **What it does not catch, and what has not been run.** The limit of 6 rests on three healthy chips: an Apple, an Intel and an NVIDIA one. A healthy
   chip of another make that scores higher is sent to the processor: the right picture, but on the Mac about
   4 to 5 s for the first photo and about 2 s for later ones, against about 0.9 s and 0.2 s. Only the test
   picture is checked, so a chip that gets it right and spoils real photos gets through. Broad noise that is
@@ -186,6 +187,59 @@ a paste all accept them (`lib/heic.ts` tells one by its type, its name or its fi
   and is handed on as a JPEG, so the backend and the browser's depth model receive what they always did.
 - To move to another version: change `DECODER_URL` and `DECODER_SHA384` together in `lib/heic.worker.js`
   (`openssl dgst -sha384 -binary libheif-bundle.js | openssl base64 -A`).
+
+## Drafts
+
+A photo of the user's own (chosen, dropped, pasted, or fetched from an address) is kept in the browser, so that it
+can be opened again as it was left, with no model run and no request to any server. The four samples are never
+kept: they open at once anyway. The first page lists the drafts on its "Drafts" tab
+(`components/relight/StartTabs.tsx`). The code is `lib/drafts.ts`.
+
+- **Where.** IndexedDB, database `relight-drafts`, version 1, on the device only. **No cookie is used.** The
+  request was worded as "a cookie", but a cookie holds about 4 KB and is sent to the server with every request;
+  a draft is 0.4 to 2 MB (a 1024 x 1024 scene is about 1.9 MB of base64 text) and must never be sent anywhere.
+- **A draft is two records under one id.** The id is a fingerprint of the photo as the page holds it: the first
+  16 bytes of the SHA-256 of its base64 text, or, where `crypto.subtle` is missing (a page opened by a number
+  address over plain http), its length and two running sums. The store `drafts` holds the small record: the name
+  (the file's name without its ending, at most 80 characters, or "Pasted photo" when there is none), when it was
+  made and last changed, the light (x, y, height, intensity, ambient), the Colour slider, the "Cast shadows" and
+  "Detailed normals" switches, how the depth model was run with the Geometry panel's words for it, and a JPEG of
+  the lit picture, at most 320 px on its longer side, as a `data:` address. The store `scenes` holds
+  `{ id, scene }`: the page's scene object, which is the photo, the depth map, the normal map, width, height and
+  relief. Moving the light rewrites only the small record.
+- **When it is written.** When the photo is first lit; 0.8 s (`DRAFT_SAVE_MS` in `app/relight/page.tsx`) after
+  the light or a switch was last changed, once the full-quality picture is up; at once on the logo and on
+  "New photo"; and on `pagehide` and `visibilitychange`, with `transaction.commit()` and without waiting.
+  Opening a draft does not count as a change.
+- **The limit.** `MAX_DRAFTS` is 12. Every save reads the list back in the same transaction and deletes what is
+  over the limit, least recently changed first. The same picture chosen again has the same id, so it replaces
+  its draft and starts from the starting light.
+- **Reading back.** Every record is checked field by field (`asDraft`, `asScene`) and one that does not fit is
+  skipped. Numbers are held to the controls' ranges when a draft is opened. A small picture that is not a
+  `data:image/` address is ignored, so a stored record cannot make the page fetch anything. A draft whose scene
+  is missing or damaged is removed when its card is clicked, with the line "That draft could not be opened."
+- **When storage fails** (a private window in some browsers, storage switched off, the disk full, another tab
+  holding an older version of the database, or no answer at all): every call goes through one queue that cannot
+  reject and that gives up after 5 s (`WAIT_MS`). Nothing is thrown at the page and no red bar is shown. The
+  photo is simply not kept, the Drafts tab says "Drafts cannot be kept in this browser. Everything else works
+  without them.", and the console gets one `console.warn` per page load, "Relight: drafts cannot be kept in
+  this browser." If the database would not open, nothing more is asked of it unless it answers late.
+- **Nothing depends on storage at the first render.** The static demo is prerendered HTML, so `useDrafts()`
+  (a `useSyncExternalStore`) gives an empty list on the server and on the first render in the browser, and
+  IndexedDB is read only once a component has subscribed.
+- **An opened draft and the backend.** A scene the browser made keeps its `local:` id. A scene a server made is
+  given the id `draft:<id>` when it is opened and is treated like a sample: Enhance and a server render first
+  send the photo to the backend again (`relightAdoptScene`), and "Detailed normals" analyses it again with the
+  picture kept on screen. Opening a draft and lighting it never calls the backend.
+- **The logo** (`components/TopNav.tsx`, `lib/home.ts`) is still a `<Link href="/">`. Its `onNavigate` fires a
+  cancelable `relight:home` event on `window`. The page listens, runs its "New photo" function (which keeps the
+  draft first), selects the Samples tab and cancels the navigation, so nothing is loaded again and the depth
+  model stays set up. Where no page listens (the "not found" page) the link is followed as usual.
+- **What has and has not been run.** Headless Chrome 155 on one Mac: the static demo, a build against a mock
+  backend, and `next dev`. Not run: Safari, Firefox, Edge, a phone, a real private window, a full disk. Safari
+  deletes a site's stored data after about seven days without a visit, so drafts do not last there.
+  `testing/PENDING.md` has the detail (K77 to K90, open items 58 to 61) and `testing/TEST_PLAN.md` the cases
+  (group M).
 
 ## Built-in samples
 
@@ -238,6 +292,9 @@ its first lines).
   Both are ports of `backend/app/ideas/relight.py`: if the Python changes, change both.
 - `components/HowItWorks.tsx` is the "How it works" button in the top bar and the panel it opens. Its text describes
   the pipeline: if the pipeline changes, change the text.
+- `lib/drafts.ts` keeps the user's own photos in the browser's IndexedDB (see "Drafts"); `components/relight/StartTabs.tsx`
+  is the Samples and Drafts tabs on the first page; `lib/home.ts` is how the logo in `components/TopNav.tsx` asks the
+  page for its first page.
 - `components/` holds the shared UI (dropzone, before/after, panels, buttons and sliders); `components/relight/RelightCanvas.tsx` is the live preview.
 
 ## Checks
