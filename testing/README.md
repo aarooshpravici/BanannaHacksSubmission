@@ -45,7 +45,7 @@ If setup fails, that is a result too. Report it (see [Reporting](#reporting-what
 
 ## Splitting the work between three testers
 
-Everyone does the smoke test first. Then pick one share and say which in your report. If nobody has agreed a split, take the share for the order you joined (first tester A, second B, third C).
+Everyone does the smoke test first. Then pick one share and say which in your report. Do the groups of your share in the order listed: Aaroosh is working through the plan from the **end backwards** (H, G, J, Q, D, F and so on), and the table [Cases a person has run](PENDING.md#cases-a-person-has-run) lists what has been done, so look there before each group. If nobody has agreed a split, take the share for the order you joined (first tester A, second B, third C).
 
 | Share | Groups in [TEST_PLAN.md](TEST_PLAN.md) |
 | --- | --- |

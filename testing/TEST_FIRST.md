@@ -1,10 +1,19 @@
 # Test this first
 
-Saturday Oct 10, night update, for version `3c8c0fd` or later.
+Saturday Oct 10, 9:20 PM, for version `53e2c26` or later.
 
 The full plan in [TEST_PLAN.md](TEST_PLAN.md) has 186 cases. You do not need to do them all. This page says what helps most right now, in order. The developer rewrites this page after every update, so check its date before you start.
 
-**What changed since the evening update.**
+**Who is testing what.** Aaroosh is working through the plan from the **end backwards**: group H, then G, J, Q, D, F and so on. Everyone else: work from the **top** of your share, so that two people do not do the same case. Before each case, look at the table [Cases a person has run](PENDING.md#cases-a-person-has-run) and skip what is listed there for your browser and kind of device. Three cases are wanted from everyone all the same: **W-16** on every device you own, **Q-11** and **G-07**.
+
+**Changed at 9:20 PM (versions `378919a` and `53e2c26`), after a tester's run on a real phone.** Get the update before you test: "Getting fixes" in [SETUP.md](SETUP.md#what-to-expect).
+
+- **A phone on the same Wi-Fi can now use the app** by the computer's address (W-16 step 8). Before, the page opened on the phone but nothing reacted to a tap.
+- **Back closes the "How it works" panel.** On a phone, where the panel fills the screen, Back used to leave the app.
+- **Sweep keeps one steady speed.** It used to move almost twice as fast in its first and last second as in between. Same path, same 6 seconds.
+- With the keyboard, the scrolling text of the "How it works" card gets a yellow outline, like every other control; it was the browser's blue one.
+
+**What changed in the night update, before that.**
 
 - **The photo is lit even when the graphics chip cannot be used.** The page now has several ways to draw the lit picture and picks the best one your device can do. If the graphics chip cannot be used, the processor draws the picture, and a **grey note** above the photo says so. The red bar "Live shading is unavailable" that used to appear there is gone in that case; so is the dead end on the demo.
 - **The page tells you which way it is using.** Open the **GEOMETRY** panel at the bottom of the sidebar. Its last small grey line is new. It starts with "shading:", for example "shading: graphics chip, full quality". We call it the **shading line**.
@@ -20,7 +29,7 @@ All 103 screenshots were retaken tonight and 49 were added (152). If you tested 
 
 1. **Open it on every device you own, including your phone, and tell us which shading path it reports and whether the light works.** Do case **W-16**. It takes five minutes a device and needs no backend.
    On each device: click the **Portrait** sample. Open **GEOMETRY** and copy its last grey line, the one that starts "shading:". Copy any grey note or red bar above the photo. Drag the sun and click **Sweep**. Then tell us, even when it simply works: the device, the browser, the shading line, and whether the picture follows the sun at once, follows late, or is wrong.
-   Why this is first: the drawing was rebuilt tonight so that it works on weaker devices, but it was tested only by switching features off in Chrome on one Mac. No real phone, no older laptop, no Windows computer, no Firefox and no Safari has run it. A judge will open the demo on whatever device they have. The table at the top of [group F](TEST_PLAN.md#f-shading-paths) says what each wording of the shading line means. A phone is easiest with a demo address (case **H-10**); without one, W-16 step 8 says how to reach your computer from a phone on the same Wi-Fi.
+   Why this is first: the drawing was rebuilt tonight so that it works on weaker devices, but it was tested only by switching features off in Chrome on one Mac. No real phone, no older laptop, no Windows computer, no Firefox and no Safari has run it. A judge will open the demo on whatever device they have. The table at the top of [group F](TEST_PLAN.md#f-shading-paths) says what each wording of the shading line means. A phone is easiest with a demo address (case **H-10**); without one, W-16 step 8 says how to reach your computer from a phone on the same Wi-Fi (one tester has done this; it needs version `378919a` or later).
 2. **Look at the face under side light.** Do case **Q-11**: the **Portrait** sample with **Right**, **Left**, **Top** and a **Sweep**, then the **Cat** sample.
    We still have no human opinion on it. Two questions: is the hard, straight line really gone everywhere, and is the side lighting still strong enough to look lit. Give a score and attach a screenshot if you see any hard line.
 3. **Read "How it works" as a newcomer.** Do case **G-07**, then **G-01** and **G-03**.

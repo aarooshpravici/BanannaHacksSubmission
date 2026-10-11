@@ -408,7 +408,7 @@ Needs Plan B (pill "backend: mock") or the static demo (pill "demo: runs in your
 
 1. Click the **Portrait** sample (or do a standard start). Do not move the light. Move the mouse over **Sweep** (top right of the LIGHT panel) and wait two seconds. 2. Click **Sweep**. Start a stopwatch. Watch the sun, the x and y numbers and the button. Do not touch anything until it ends.
 
-**Expected:** step 1: the hover text reads "Moves the light once around the subject in about six seconds, then gives it back. Handy for recording a demo." Step 2: the button now reads **Stop sweep**, in **yellow letters with a thin yellow outline**. The sun glides from its place out to the edge of the photo and travels once round, clockwise: over the top, down the right side, along the bottom, back up the left side. Its path is a rounded loop that touches the photo's edge in the middle of each side and cuts inside the corners. The lighting follows the whole way: when the sun is on the right, the right of the face is bright and the left half is dark, fading in gradually (no hard straight line; see Q-11). The x and y numbers change all the time. After about 6 seconds the sun is back exactly where it started (x 0.12, y 0.35), the button reads **Sweep** again in its normal grey, and the picture looks as before. The movement is smooth, with no jumps at the start or the end. The path is the same on every window size.
+**Expected:** step 1: the hover text reads "Moves the light once around the subject in about six seconds, then gives it back. Handy for recording a demo." Step 2: the button now reads **Stop sweep**, in **yellow letters with a thin yellow outline**. The sun glides from its place out to the edge of the photo and travels once round, clockwise: over the top, down the right side, along the bottom, back up the left side. Its path is a rounded loop that touches the photo's edge in the middle of each side and cuts inside the corners. The lighting follows the whole way: when the sun is on the right, the right of the face is bright and the left half is dark, fading in gradually (no hard straight line; see Q-11). The x and y numbers change all the time. After about 6 seconds the sun is back exactly where it started (x 0.12, y 0.35), the button reads **Sweep** again in its normal grey, and the picture looks as before. The movement is smooth, with no jumps at the start or the end, and the sun keeps **one steady speed** the whole way round: it only speeds up for about half a second at the start and slows down for about half a second at the end. (Changed in version `53e2c26`. Before that the sun moved almost twice as fast in the first and last second as in between; a tester saw it as a sweep that slows down in the middle.) The path is the same on every window size.
 
 ![L-09 before](screenshots/66-sweep-before.jpg)
 ![L-09 during](screenshots/67-sweep-during.jpg)
@@ -1088,7 +1088,7 @@ It needs no backend: the samples are enough. Plan B in [SETUP.md](SETUP.md#plan-
 5. Switch **Cast shadows** off and on.
 6. Click **New photo**, click the **Rocket** sample, click **Left**. Compare with the screenshot below.
 7. Click **Export PNG** and open the file.
-8. Optional, only if you have a phone or tablet on the same Wi-Fi as the computer and no demo address. Find the computer's address: macOS, in a new Terminal window type `ipconfig getifaddr en0`; Windows, type `ipconfig` and read the "IPv4 Address" line. On the phone open `http://` + that address + `:3000` (for example `http://192.168.1.23:3000`). Then do steps 1 to 6 with a finger. On the phone the pill reads "offline" (in Plan B: "mock"). That is expected: the phone cannot reach the backend on your computer. Use the samples only; do not upload a photo. The developer has not tried this. If the page does not open or stays empty, write that down and stop; it is not a bug in the app.
+8. Optional, only if you have a phone or tablet on the same Wi-Fi as the computer and no demo address. Find the computer's address: macOS, in a new Terminal window type `ipconfig getifaddr en0`; Windows, type `ipconfig` and read the "IPv4 Address" line. On the phone open `http://` + that address + `:3000` (for example `http://192.168.1.23:3000`). Then do steps 1 to 6 with a finger. On the phone the pill reads "offline" (in Plan B: "mock"). That is expected: the phone cannot reach the backend on your computer. Use the samples only; do not upload a photo. This needs version `378919a` or later: with an older one the page opens on the phone but nothing reacts to a tap. Get the update first ("Getting fixes" in [SETUP.md](SETUP.md#what-to-expect)) and start the frontend again. One tester has used the app on a real phone this way. If the page does not open at all, the Wi-Fi is probably keeping its devices apart, as many campus and café networks do: write that down and stop; it is not a bug in the app.
 
 **Expected on most devices:** no grey note and no red bar. The shading line reads "shading: graphics chip, full quality". The photo responds to the light: the bright side follows the sun at once, with no delay. Cast shadows are soft. The rocket looks like the screenshot: soft, faint shading on the sky and no hard black stripes. Known: a soft, blurred darker column on the sky to the right of each tower can be seen (K13 in [PENDING.md](PENDING.md#already-known-no-need-to-report)). Only a column with a sharp, straight edge is a FAIL. The exported file matches the screen.
 
@@ -1108,6 +1108,8 @@ It needs no backend: the samples are enough. Plan B in [SETUP.md](SETUP.md#plan-
 ![W-16: the rocket should look like this](screenshots/73-sample-rocket-left.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Devices, browsers, shading lines and results:
+
+*Devices reported so far, all "graphics chip, full quality":* an Apple M5 MacBook in Chrome 153 and in Safari; a Dell XPS 15 with Intel UHD graphics in Chrome 154 on Windows 11; and one real phone over Wi-Fi (its model and browser are not yet recorded). **Every other device is still wanted.**
 
 ### W-17 The preset row on narrow phones
 
@@ -1840,9 +1842,9 @@ All seven pictures load; none is missing, broken or stretched. Every word is rea
 
 ### G-03 Closing the panel, and the page behind it
 
-1. Click the **Portrait** sample. Click **Left**. Click "How it works". 2. Click on the dimmed **Right** button in the sidebar behind the card. 3. Open the card again. Press the Escape key. 4. Open it again. Click **Close**. 5. Open it, scroll down to "HONEST LIMITS", click **Close**, and open it again. 6. With the card open, put the mouse over the dimmed page beside the card and scroll the wheel. 7. Click **Sweep**, at once click "How it works", wait three seconds and close the card.
+1. Click the **Portrait** sample. Click **Left**. Click "How it works". 2. Click on the dimmed **Right** button in the sidebar behind the card. 3. Open the card again. Press the Escape key. 4. Open it again. Click **Close**. 5. Open it, scroll down to "HONEST LIMITS", click **Close**, and open it again. 6. With the card open, put the mouse over the dimmed page beside the card and scroll the wheel. 7. Click **Sweep**, at once click "How it works", wait three seconds and close the card. 8. Open the card and press the browser's Back button (the arrow left of the address bar).
 
-**Expected:** step 1: the card opens over the photo. The photo, its sun, the sidebar and the top bar are still there behind it, dimmed. Step 2: the click **closes the card and does nothing else**: the light does not jump to the right, and the readout still says x -0.10, y 0.40. A click anywhere on the dimmed page closes the card; nothing behind the card can be pressed while it is open. Steps 3 and 4: Escape closes it; **Close** closes it. After every closing the page is exactly as you left it: the same photo, the same light, the same settings. Step 5: the card opens at the **top** again, at "Two pretrained vision models measure the photo once.", not at "HONEST LIMITS". Step 6: the card stays. The page behind does not move on a normal laptop window, because it has nothing to scroll. On a narrow window, where the page is longer than the screen, the page behind may scroll (known, K46). Step 7: not known. Write down whether the sweep kept running behind the card, and whether the page was in a normal state afterwards.
+**Expected:** step 1: the card opens over the photo. The photo, its sun, the sidebar and the top bar are still there behind it, dimmed. Step 2: the click **closes the card and does nothing else**: the light does not jump to the right, and the readout still says x -0.10, y 0.40. A click anywhere on the dimmed page closes the card; nothing behind the card can be pressed while it is open. Steps 3 and 4: Escape closes it; **Close** closes it. After every closing the page is exactly as you left it: the same photo, the same light, the same settings. Step 5: the card opens at the **top** again, at "Two pretrained vision models measure the photo once.", not at "HONEST LIMITS". Step 6: the card stays. The page behind does not move on a normal laptop window, because it has nothing to scroll. On a narrow window, where the page is longer than the screen, the page behind may scroll (known, K46). Step 7: not known. Write down whether the sweep kept running behind the card, and whether the page was in a normal state afterwards. Step 8: the card closes and you are still in the app, with the same photo and the same light; the browser does not go to another page. (New in version `53e2c26`: before that, Back left the app. Checked by the developer in Chrome on a Mac.)
 
 ![G-03 the card over a lit photo](screenshots/111-how-it-works-over-photo.jpg)
 
@@ -1854,11 +1856,13 @@ Do not use the mouse.
 
 1. Reload the first page. Press Tab twice. 2. Press Enter. 3. Press Tab five times, slowly. 4. Press the Down arrow a few times, then Page Down. 5. Press Escape. 6. Press the Space bar. Then press Enter.
 
-**Expected:** step 1: the first Tab selects the "Relight" logo, the second puts a yellow outline round "How it works". Step 2: the card opens, and the selection is on **Close** inside it. Step 3: the selection never goes to the page behind the card: not to the dashed box, not to a thumbnail. It stays on **Close**, or moves between **Close**, the scrolling text and the browser's own address bar, depending on the browser. Write down what yours did. Step 4: the text in the card scrolls. (If it does not, press Tab once and try again; say which browser.) Step 5: the card closes and the yellow outline is back on "How it works". Step 6: Space opens the card again, with the selection on **Close**; Enter then presses **Close**, the card closes, and the outline is back on "How it works" once more. In Safari the Tab key may skip buttons unless "Press Tab to highlight each item" is on in Safari's settings; say so if it does.
+**Expected:** step 1: the first Tab selects the "Relight" logo, the second puts a yellow outline round "How it works". Step 2: the card opens, and the selection is on **Close** inside it. Step 3: the selection never goes to the page behind the card: not to the dashed box, not to a thumbnail. It stays on **Close**, or moves between **Close**, the scrolling text and the browser's own address bar, depending on the browser. Write down what yours did. In Chrome on a Mac it goes from **Close** to the scrolling text, then to Chrome's own toolbar, and round again. While the scrolling text is selected it has a **yellow** outline just inside the card's edge (from version `53e2c26`; before that it had the browser's own blue one). Step 4: the text in the card scrolls. (If it does not, press Tab once and try again; say which browser.) Step 5: the card closes and the yellow outline is back on "How it works". Step 6: Space opens the card again, with the selection on **Close**; Enter then presses **Close**, the card closes, and the outline is back on "How it works" once more. In Safari the Tab key may skip buttons unless "Press Tab to highlight each item" is on in Safari's settings; say so if it does.
 
 With "reduced motion" switched on in the computer's settings (how: J-10 step 3), the card appears at once, without its small upward slide. (Escape and the returning selection were checked in Chrome. The rest of this case was written from the code.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
+
+*Run by a person:* Aaroosh, Oct 10, Chrome on an Apple M5 MacBook: PASS for steps 1 to 3, 5 and 6; step 4 not reported. Still wanted: step 4, and the whole case in Safari or Firefox.
 
 ### G-05 The panel on a phone
 
@@ -1866,7 +1870,7 @@ Use a real phone if you can (the hosted demo, or W-16 step 8). Otherwise imitate
 
 1. Tap "How it works" in the top bar. 2. Scroll slowly to the end with a finger. 3. Tap **Close**. 4. On a real phone: open the card again and use the phone's own Back button or Back swipe.
 
-**Expected:** step 1: the panel fills the **whole screen**. There is no dimmed page round it, it has no rounded corners, and the top bar is hidden behind it. "How Relight works" and **Close** are at the top and stay there while the text scrolls. The three chips fit on one line. Step 2: the same five steps and the same words as in G-02, with these differences. In each step the chip sits on a line of its own under the step's title. Steps 1 and 4 show their two pictures side by side, each about 150 pixels wide, with captions on two lines. Steps 2 and 3 show one picture; the grey notes that sit beside those pictures on a computer ("A depth map is too smooth…", "A surface also goes dark gradually…") are **not shown** on a phone. The card with no number shows a small picture with its note beside it in a narrow column. Nothing is cut off at the sides and the page does not scroll sideways. Step 3: the panel closes and the page is as it was. Step 4: not known. Write down what happened: the panel closed, or the browser left the app.
+**Expected:** step 1: the panel fills the **whole screen**. There is no dimmed page round it, it has no rounded corners, and the top bar is hidden behind it. "How Relight works" and **Close** are at the top and stay there while the text scrolls. The three chips fit on one line. Step 2: the same five steps and the same words as in G-02, with these differences. In each step the chip sits on a line of its own under the step's title. Steps 1 and 4 show their two pictures side by side, each about 150 pixels wide, with captions on two lines. Steps 2 and 3 show one picture; the grey notes that sit beside those pictures on a computer ("A depth map is too smooth…", "A surface also goes dark gradually…") are **not shown** on a phone. The card with no number shows a small picture with its note beside it in a narrow column. Nothing is cut off at the sides and the page does not scroll sideways. Step 3: the panel closes and the page is as it was. Step 4: the panel closes and you are still in the app, on the page you opened it from. (From version `53e2c26`. Before that the browser left the app; a tester saw this on a real phone. The fix was checked by the developer in Chrome on a Mac, not on a phone, so write down what yours did.)
 
 ![G-05 just opened](screenshots/115-phone-how-it-works-open.jpg)
 ![G-05 step 1](screenshots/116-phone-how-it-works-step-1.jpg)
@@ -1876,6 +1880,8 @@ Use a real phone if you can (the hosted demo, or W-16 step 8). Otherwise imitate
 ![G-05 step 5 and the limits](screenshots/120-phone-how-it-works-step-5-and-limits.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Phone, browser and note:
+
+*Run by a person:* Aaroosh, Oct 10, a real phone over Wi-Fi: PASS for steps 1 to 3. Step 4 found the Back problem that version `53e2c26` fixes. Still wanted: step 4 on a phone with that version, and other phones.
 
 ### G-06 The top bar on narrow windows, and the panel on a tablet
 
@@ -1891,6 +1897,8 @@ To get an exact width: in Chrome press F12, click the phone/tablet icon, choose 
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
+*Run by a person:* Aaroosh, Oct 10, Chrome on an Apple M5 MacBook: PASS, all five steps. No need to repeat it in Chrome.
+
 ### G-07 Is the panel clear, and is it right? (human judgement)
 
 A judge who wonders "did they build this, or is it just an AI model?" will read this card. Pretend you are that judge. You know nothing about the app.
@@ -1902,6 +1910,8 @@ A judge who wonders "did they build this, or is it just an AI model?" will read 
 No need to report: "The live shader has been tested in one browser on one computer." is the plain truth today; your W-16 results are what will change it. The grey line under "EVERY FRAME, IN YOUR BROWSER" was reworded so that it is true whatever your shading line says. If it does not match what your device did, report that.
 
 `Result: PASS / FAIL / NOT RUN` Score and note:
+
+*Answers so far:* one, without a score yet (see "Confirmed by testers" in [PENDING.md](PENDING.md#confirmed-by-testers)). **Still wanted from everyone.**
 
 ---
 
