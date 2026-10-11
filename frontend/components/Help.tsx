@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { XIcon } from "./icons";
 import { cn } from "@/lib/cn";
 
 /**
@@ -85,21 +86,21 @@ export function Help({
           id={id}
           role="note"
           onClick={(e) => e.preventDefault()}
-          className="absolute inset-x-0 top-full z-30 mt-1.5 block cursor-default space-y-1.5 rounded-xl border border-white/15 bg-surface p-3 text-xs font-normal leading-5 text-zinc-300 shadow-2xl"
+          className="absolute inset-x-0 top-full z-30 mt-1.5 block cursor-default space-y-1.5 rounded-xl border border-white/15 bg-surface py-3 pl-3 pr-9 text-xs font-normal leading-5 text-zinc-300 shadow-2xl"
         >
+          {/* In the corner, and first for the Tab key. The words keep clear of it (pr-9). */}
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => {
+              setOpen(false);
+              button.current?.focus();
+            }}
+            className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 hover:bg-white/10 hover:text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent/70"
+          >
+            <XIcon />
+          </button>
           {children}
-          <span className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                button.current?.focus();
-              }}
-              className="rounded-lg border border-white/15 bg-white/[0.07] px-2.5 py-1 text-xs font-medium text-zinc-100 hover:bg-white/[0.14] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/70"
-            >
-              Got it
-            </button>
-          </span>
         </span>
       )}
     </>
