@@ -100,6 +100,9 @@ export async function base64ToCanvas(base64: string, raw = false): Promise<HTMLC
 
 // --- files ----------------------------------------------------------------------
 
+/** What the page says when a chosen file's contents cannot be had at all. */
+export const UNREADABLE_FILE = "That file could not be read from this device. If it is kept online (Google Photos, OneDrive, iCloud), save it to the device first, then choose it again.";
+
 /** Can the file's bytes be had at all? A photo kept online by a phone's gallery, or one the browser was not allowed to open, can arrive as a name whose contents cannot be read. (An empty file reads without complaint: it is simply not a picture.) */
 async function unreadable(file: Blob): Promise<boolean> {
   try {
@@ -134,7 +137,7 @@ async function decodeFile(file: Blob, heic: boolean, maxSide: number): Promise<I
       if (heic) return decodeHeic(file, maxSide);
       console.warn("Relight: a chosen file could not be opened as a picture.", { type: file.type, bytes: file.size }, bitmapError, imgError);
       if (await unreadable(file)) {
-        throw new Error("That file could not be read from this device. If it is kept online (Google Photos, OneDrive, iCloud), save it to the device first, then choose it again.");
+        throw new Error(UNREADABLE_FILE);
       }
       throw new Error("That file is not an image this browser can read.");
     } finally {

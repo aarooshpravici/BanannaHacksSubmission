@@ -7,7 +7,7 @@ import { UploadIcon } from "./icons";
 import { errorMessage } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { HEIC_BUSY_TEXT, isHeic } from "@/lib/heic";
-import { type LoadedImage, fileToImage } from "@/lib/image";
+import { type LoadedImage, UNREADABLE_FILE, fileToImage } from "@/lib/image";
 
 /**
  * How long a dropped or pasted image address gets to answer, in milliseconds.
@@ -102,19 +102,6 @@ export function UploadDropzone({
   const [converting, setConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Open the file chooser. The last choice is forgotten first, so that picking
-   * the same file again still counts as a change. It is forgotten here and not
-   * straight after a choice: on an Android phone a chosen file can only be read
-   * while the input still holds it, and emptying the input at once left every
-   * photo unreadable there ("That file is not an image this browser can read.").
-   */
-  const openChooser = useCallback(() => {
-    if (!input.current) return;
-    input.current.value = "";
-    input.current.click();
-  }, []);
-
   const accept = useCallback(
     async (file: Blob | null | undefined) => {
       if (!file || disabled) return;
@@ -136,6 +123,35 @@ export function UploadDropzone({
       }
     },
     [disabled, format, onImage],
+  );
+
+  /**
+   * A file from the chooser. Its contents are copied into memory in the same
+   * instant, before anything else is done with it, and only the copy is used
+   * from then on: on an Android phone a chosen file went unreadable part of the
+   * way through (a Galaxy S21 Ultra, Chrome 154: once when the input was emptied
+   * straight after the choice, and again on later choices when it was not, for a
+   * reason nobody here has found). The input is emptied once the copy exists, so
+   * that the same file can be chosen twice. If even the copy cannot be made, the
+   * red bar ends with the browser's own name for the failure, because a phone
+   * has no console to look in.
+   */
+  const acceptChosen = useCallback(
+    async (chosen: File | undefined) => {
+      if (!chosen || disabled) return;
+      let copy: File;
+      try {
+        copy = new File([await chosen.arrayBuffer()], chosen.name, { type: chosen.type, lastModified: chosen.lastModified });
+      } catch (e) {
+        console.warn("Relight: a chosen file could not be read.", { type: chosen.type, bytes: chosen.size }, e);
+        setError(`${UNREADABLE_FILE} (${e instanceof Error ? e.name : "no reason given"})`);
+        return;
+      } finally {
+        if (input.current) input.current.value = "";
+      }
+      await accept(copy);
+    },
+    [accept, disabled],
   );
 
   /** A drop or a paste: its image file if it has one, otherwise the image its address points to. Resolves false if it held neither. */
@@ -183,11 +199,11 @@ export function UploadDropzone({
         role="button"
         tabIndex={disabled ? -1 : 0}
         aria-disabled={disabled}
-        onClick={() => !disabled && openChooser()}
+        onClick={() => !disabled && input.current?.click()}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            openChooser();
+            input.current?.click();
           }
         }}
         onDragOver={(e) => {
@@ -214,7 +230,7 @@ export function UploadDropzone({
           type="file"
           accept="image/*,.heic,.heif"
           className="hidden"
-          onChange={(e) => void accept(e.target.files?.[0])}
+          onChange={(e) => void acceptChosen(e.target.files?.[0])}
         />
         {reading ? (
           <BusyLabel>{converting ? HEIC_BUSY_TEXT : "Reading image…"}</BusyLabel>
