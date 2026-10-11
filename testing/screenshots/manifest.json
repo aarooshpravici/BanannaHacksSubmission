@@ -4,7 +4,7 @@
     "name": "landing",
     "status": "ok",
     "about": "The first page at \"/\" before any photo is chosen.",
-    "see": "Top bar: \"Relight  Banana Hacks 2026\" on the left; on the right the text button \"How it works\" and then the pill: amber dot, \"backend: online, mock providers\". Below: the yellow words \"MOVE THE LIGHT\", the heading \"Relight a photo by dragging the light.\", a dashed box \"Drop a photo here\", then \"Or try a sample photo:\" and four thumbnails: Portrait, Coffee cup, Cat, Rocket.",
+    "see": "Top bar: \"Relight  Banana Hacks 2026\" on the left; on the right the text button \"How it works\" and then the pill: amber dot, \"backend: online, mock providers\". Below: the yellow words \"MOVE THE LIGHT\", the heading \"Relight a photo by dragging the light.\", a dashed box \"Drop a photo here\", then \"Or try a sample photo:\" and four thumbnails: Portrait, Coffee cup, Cat, Rocket. At the right end of that line are two small tabs: \"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey.",
     "viewport": "1440x900",
     "appMode": "backend",
     "light": null,
@@ -1034,7 +1034,7 @@
     "name": "phone-landing",
     "status": "ok",
     "about": "The empty upload page in a phone-sized window.",
-    "see": "The first page in one column: the top bar with \"Relight\", \"How it works\" and the pill \"online\"; the heading on two lines, the dashed drop box, \"Or try a sample photo:\" and the four thumbnails in one row.",
+    "see": "The first page in one column: the top bar with \"Relight\", \"How it works\" and the pill \"online\"; the heading on two lines, the dashed drop box, a row of two tabs with a thin line under it (\"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey), \"Or try a sample photo:\" and the four thumbnails in one row.",
     "viewport": "390x844",
     "appMode": "backend",
     "light": null,
@@ -1141,7 +1141,7 @@
     "name": "mock-landing",
     "status": "ok",
     "about": "Frontend mock mode (no backend): the first page, status pill yellow \"mock\".",
-    "see": "The first page with a yellow dot and \"backend: mock\" in the pill, and \"How it works\" to its left. The text under the heading starts \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser\". Under the dashed drop box are two grey lines: \"Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.\" Then \"Or try a sample photo:\" and the four thumbnails.",
+    "see": "The first page with a yellow dot and \"backend: mock\" in the pill, and \"How it works\" to its left. The text under the heading starts \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser\". Under the dashed drop box are two grey lines: \"Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.\" Then \"Or try a sample photo:\" and the four thumbnails. At the right end of that line are two small tabs: \"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey.",
     "viewport": "1440x900",
     "appMode": "mock",
     "light": null,
@@ -1234,7 +1234,7 @@
     "name": "sample-thumbnails",
     "status": "ok",
     "about": "Close-up of the first page under the drop box: the line \"Or try a sample photo:\" and the four sample thumbnails.",
-    "see": "The line \"Or try a sample photo:\" and four thumbnails in a row, each with its name under it: Portrait (astronaut), Coffee cup, Cat, Rocket.",
+    "see": "The line \"Or try a sample photo:\" and four thumbnails in a row, each with its name under it: Portrait (astronaut), Coffee cup, Cat, Rocket. At the right end of that line are two small tabs: \"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey.",
     "viewport": "1440x900",
     "appMode": "backend",
     "labels": [
@@ -1646,7 +1646,7 @@
     "name": "laptop-1280x720-landing",
     "status": "ok",
     "about": "The first page in a small laptop window (1280 x 720): the drop box is lower and everything down to the thumbnails fits with no scrolling.",
-    "see": "The first page fits with no scrolling: heading, a lower drop box, \"Or try a sample photo:\" and the four thumbnails, with a little space left under them.",
+    "see": "The first page fits with no scrolling: heading, a lower drop box, \"Or try a sample photo:\" and the four thumbnails, with a little space left under them. The two tabs, \"SAMPLES\" and \"DRAFTS\", sit at the right end of the \"Or try a sample photo:\" line and take no height of their own.",
     "viewport": "1280x720",
     "appMode": "backend",
     "pageScrolls": false,
@@ -2255,7 +2255,7 @@
     "name": "demo-landing",
     "status": "ok",
     "about": "The static demo build: the first page, with a working drop box and a line under it that says the photo stays on this device.",
-    "see": "Top right: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". The text under the heading reads \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly.\" Then the same dashed drop box as the normal app (\"Drop a photo here\", \"or click to browse, or paste an image or its address\"), two grey lines under it that start \"Your photo stays on this device:\", then \"Or try a sample photo:\" and the four thumbnails. The card \"This is the in-browser demo.\" is gone.",
+    "see": "Top right: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". The text under the heading reads \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly.\" Then the same dashed drop box as the normal app (\"Drop a photo here\", \"or click to browse, or paste an image or its address\"), two grey lines under it that start \"Your photo stays on this device:\", then \"Or try a sample photo:\" and the four thumbnails. At the right end of that line are two small tabs: \"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey. The card \"This is the in-browser demo.\" is gone.",
     "viewport": "1440x900",
     "appMode": "demo",
     "fileInputOnPage": true,
@@ -2355,7 +2355,7 @@
     "name": "demo-phone-landing",
     "status": "ok",
     "about": "The static demo build: the first page in a phone-sized window. The pill is shortened to \"demo\".",
-    "see": "One column. Top bar: \"Relight\", \"How it works\" and a pill that reads only \"demo\" with a green dot. Heading on two lines, the \"Upload a photo or pick a sample.\" text on five lines, the dashed drop box (its grey hint wraps onto two lines), the three grey lines that start \"Your photo stays on this device:\", \"Or try a sample photo:\" and the four thumbnails in one row.",
+    "see": "One column. Top bar: \"Relight\", \"How it works\" and a pill that reads only \"demo\" with a green dot. Heading on two lines, the \"Upload a photo or pick a sample.\" text on five lines, the dashed drop box (its grey hint wraps onto two lines), the three grey lines that start \"Your photo stays on this device:\", a row of two tabs with a thin line under it (\"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey), \"Or try a sample photo:\" and the four thumbnails in one row.",
     "viewport": "390x844",
     "appMode": "demo",
     "light": null,
@@ -3681,8 +3681,8 @@
     "how": "A real drop, made by Chrome, of the address of a picture on a second web server the tool runs on another port. That server sends the picture without the header that lets other pages read it.",
     "light": null,
     "console": [
-      "log.error: Access to fetch at 'http://127.0.0.1:49339/closed/photo.jpg' from origin 'http://localhost:3123' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. http://localhost:3123/",
-      "log.error: Failed to load resource: net::ERR_FAILED http://127.0.0.1:49339/closed/photo.jpg"
+      "log.error: Access to fetch at 'http://127.0.0.1:51504/closed/photo.jpg' from origin 'http://localhost:3123' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. http://localhost:3123/",
+      "log.error: Failed to load resource: net::ERR_FAILED http://127.0.0.1:51504/closed/photo.jpg"
     ]
   },
   "154-drop-web-image-404.jpg": {
@@ -3697,7 +3697,7 @@
     "error": "That image's site answered 404, so it could not be loaded. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.",
     "light": null,
     "console": [
-      "log.error: Failed to load resource: the server responded with a status of 404 (Not Found) http://127.0.0.1:49341/missing.jpg"
+      "log.error: Failed to load resource: the server responded with a status of 404 (Not Found) http://127.0.0.1:51506/missing.jpg"
     ]
   },
   "155-drop-web-image-too-slow.jpg": {
@@ -3708,7 +3708,7 @@
     "see": "Enlarged: the drop box, the thumbnails and under them a red bar with an x: \"That image took too long to load. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.\" It appears 15 seconds after the drop; until then the drop box shows a spinner and \"Reading image…\".",
     "viewport": "1440x900",
     "appMode": "backend",
-    "secondsUntilTheBar": 15.2,
+    "secondsUntilTheBar": 15.1,
     "error": "That image took too long to load. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.",
     "light": null,
     "console": []
@@ -4750,6 +4750,80 @@
       "detailedNormals": false
     },
     "shadingPath": "gpu-full",
+    "console": []
+  },
+  "192-drafts-empty.jpg": {
+    "file": "192-drafts-empty.jpg",
+    "name": "drafts-empty",
+    "status": "ok",
+    "about": "The first page with the \"Drafts\" tab clicked, in a browser that holds no drafts.",
+    "see": "The first page with the \"DRAFTS\" tab selected (yellow, underlined) and \"SAMPLES\" grey beside it. The line \"Or try a sample photo:\" and the four thumbnails are not shown. In their place, in grey on two lines: \"No drafts yet. A photo you upload is kept here, on this device, with the light where you left it. The draft is not sent anywhere.\" That last sentence is the one for the app with a backend, which a photo is sent to for analysis. On the static demo and in mock mode it reads \"Nothing is uploaded.\" The page above the tabs is where it is in 01-landing.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "words": "No drafts yet. A photo you upload is kept here, on this device, with the light where you left it. The draft is not sent anywhere.",
+    "light": null,
+    "console": []
+  },
+  "193-drafts-cards.jpg": {
+    "file": "193-drafts-cards.jpg",
+    "name": "drafts-cards",
+    "status": "ok",
+    "about": "The \"Drafts\" tab with three drafts. Three of the kit's photos were chosen one after the other; each was lit and then left with a click on the \"Relight\" logo.",
+    "see": "The tab reads \"DRAFTS\" with a small \"3\" beside it. Under it are three cards in one row, the one changed last at the left: the cat (\"03-animal-cat\"), the coffee cup lit from the right (\"02-object-coffee\") and the portrait in its warm orange light (\"01-portrait-astronaut\"). Each card has a small picture of the photo as it was lit, the file's name without its ending, \"just now\" in grey under the name, and a small \"Delete\" button in its top right corner. Under the cards, in small grey letters: \"Kept in this browser, on this device only. The 12 most recent are kept.\" and, at the right, \"Delete all drafts\". The page above the tabs sits about 30 pixels higher than in 01-landing.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "cards": [
+      "Draft: 03-animal-cat, changed just now",
+      "Draft: 02-object-coffee, changed just now",
+      "Draft: 01-portrait-astronaut, changed just now"
+    ],
+    "how": "Each photo was left with a real click on the logo in the top bar, which is also what brought the first page back.",
+    "light": null,
+    "console": []
+  },
+  "194-draft-opened.jpg": {
+    "file": "194-draft-opened.jpg",
+    "name": "draft-opened",
+    "status": "ok",
+    "about": "A draft opened from the \"Drafts\" tab after the page was loaded again: the portrait with the \"Low and warm\" light it was left with.",
+    "see": "The workspace, as the photo was left before the page was loaded again: the portrait with the Low and warm light. The sun is orange-tinted at the bottom left corner of the photo. Readouts: x 0.00, y 0.90, Height 0.12, Intensity 1.60, Ambient 0.20, Colour warm 100, Cast shadows on. The photo looks the same as in 09-preset-low-and-warm, which was lit straight after choosing the file. There was no \"Estimating…\" wait, and nothing was asked of the backend while the draft opened (the tool watched). The yellow \"?\" beside each setting is newer than most pictures in this set.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "cards": [
+      "Draft: 01-portrait-astronaut, changed just now"
+    ],
+    "backendRequests": [],
+    "light": {
+      "x": 0,
+      "y": 0.9,
+      "height": null,
+      "intensity": null,
+      "ambient": null,
+      "colour": null,
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "195-drafts-delete-all.jpg": {
+    "file": "195-drafts-delete-all.jpg",
+    "name": "drafts-delete-all",
+    "status": "ok",
+    "about": "Close-up of the \"Drafts\" tab with three drafts, after a click on \"Delete all drafts\": the page asks once more before it deletes anything.",
+    "see": "Enlarged: the two tabs (\"DRAFTS\" selected, with a \"3\"), the three cards with their \"Delete\" buttons, the grey line \"Kept in this browser, on this device only. The 12 most recent are kept.\" and, under it, the question \"Delete all 3 drafts?\" with two buttons: \"Delete\" in a box and \"Keep\" plain. The question stands where \"Delete all drafts\" was; being wider, it has dropped to a line of its own. Nothing has been deleted: the three cards are still there, and \"Keep\" brings the button back.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "question": "Delete all 3 drafts?",
+    "cards": [
+      "Draft: 03-animal-cat, changed just now",
+      "Draft: 02-object-coffee, changed just now",
+      "Draft: 01-portrait-astronaut, changed just now"
+    ],
+    "light": null,
     "console": []
   }
 }

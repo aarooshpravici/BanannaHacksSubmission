@@ -76,6 +76,10 @@
 //     photo that is too large to convert is made on the spot with macOS's own converter (sips).
 //   - The light's distance: the mouse wheel and a two-finger pinch are Chrome's own wheel and touch
 //     input, sent to the sun on the photo.
+//   - Drafts: the page keeps a photo of the user's own in this browser (IndexedDB, see
+//     frontend/lib/drafts.ts) and lists it on the "Drafts" tab of the first page. Every shot shares
+//     one browser profile, so before each shot the tool deletes what the shots before it left there.
+//     Each picture is then of a browser that holds no drafts, unless the shot makes some itself.
 //   - A tooltip (the text that appears when the mouse rests on a control) cannot be photographed
 //     headless. Where one matters, its text is read from the page into manifest.json instead.
 //
@@ -1158,6 +1162,42 @@ function detailSwitch(t) {
 
 /** A magnified picture of the right end of the top bar, where the backend status pill is. */
 const statusClip = (t) => ({ clip: { x: t.page.viewport.width - 480, y: 0, width: 480, height: 56, scale: 3 } });
+
+// ----- Drafts: a photo of the user's own is kept in this browser and listed on the first page's "Drafts" tab (frontend/lib/drafts.ts). -----
+
+/** The "Drafts" tab on the first page. Its text is the word and, when there are drafts, their number straight after it: "Drafts3". */
+const DRAFTS_TAB = `[...document.querySelectorAll('button[role="tab"]')].find((b) => b.textContent.trim().startsWith("Drafts"))`;
+/** The Drafts tab's own content. (The samples lie under it unseen, to keep the page's height, and are not part of it.) */
+const DRAFTS_PANEL = `document.querySelector('div[role="tabpanel"]')`;
+
+/**
+ * From the first page: choose one of the kit's photos, wait until it is lit, click
+ * a preset if one is named, and go back to the first page with a click on the
+ * "Relight" logo. The page keeps the photo as a draft on its way out. `count` is
+ * how many drafts the browser then holds; the Drafts tab has to say so.
+ */
+async function leaveDraft(t, photo, preset, count) {
+  await t.page.upload(join(t.photos, photo));
+  t.note.shading = await t.page.sceneReady();
+  if (preset) {
+    await t.page.clickButton(preset);
+    await t.page.painted();
+  }
+  await t.page.clickOn(`document.querySelector("header a[data-home]")`, 'the "Relight" logo');
+  await t.page.waitFor(`!!document.querySelector('input[type="file"]') && !photoBox() && ${DRAFTS_TAB}?.textContent.trim() === "Drafts${count}"`, `the first page again, with ${count} beside "Drafts"`);
+}
+
+/** Click the "Drafts" tab and wait until it shows what the browser holds: its cards with their small pictures, or the words for "none". */
+async function openDraftsTab(t) {
+  await t.page.clickOn(DRAFTS_TAB, 'the "Drafts" tab');
+  await t.page.waitFor(
+    `(() => { const tab = ${DRAFTS_TAB}, panel = ${DRAFTS_PANEL}; return tab?.getAttribute("aria-selected") === "true" && !!panel?.innerText.trim() && [...panel.querySelectorAll("img")].every((i) => i.complete && i.naturalWidth > 0); })()`,
+    "the Drafts tab to show its drafts",
+  );
+}
+
+/** The drafts as the Drafts tab lists them: each card's name for a screen reader, which holds the photo's name and when it was last changed. */
+const draftCards = (t) => t.page.js(`[...${DRAFTS_PANEL}.querySelectorAll('button[aria-label^="Draft: "]')].map((b) => b.getAttribute("aria-label"))`);
 
 // ---------------------------------------------------------------------------------
 // The shots, in the order a tester meets them.
@@ -3350,12 +3390,72 @@ const SHOTS = [
       await t.snap();
     },
   },
+  // Drafts and the logo. Every shot starts in a browser that holds no drafts (main() empties its store first).
+  {
+    name: "drafts-empty",
+    about: "The first page with the \"Drafts\" tab clicked, in a browser that holds no drafts.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await openDraftsTab(t);
+      t.note.words = await t.page.js(`${DRAFTS_PANEL}.innerText.trim()`);
+      await t.snap();
+    },
+  },
+  {
+    name: "drafts-cards",
+    about: "The \"Drafts\" tab with three drafts. Three of the kit's photos were chosen one after the other; each was lit and then left with a click on the \"Relight\" logo.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await leaveDraft(t, PHOTO.portrait, "Low and warm", 1);
+      await leaveDraft(t, PHOTO.object, "Right", 2);
+      await leaveDraft(t, PHOTO.cat, null, 3);
+      await openDraftsTab(t);
+      t.note.cards = await draftCards(t);
+      t.note.how = "Each photo was left with a real click on the logo in the top bar, which is also what brought the first page back.";
+      await t.snap();
+    },
+  },
+  {
+    name: "draft-opened",
+    about: "A draft opened from the \"Drafts\" tab after the page was loaded again: the portrait with the \"Low and warm\" light it was left with.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await leaveDraft(t, PHOTO.portrait, "Low and warm", 1);
+      // A reload: the page itself forgets everything, and the draft comes back from the browser's own store.
+      await t.page.goto(t.url + "/");
+      await t.page.waitFor(`${DRAFTS_TAB}?.textContent.trim() === "Drafts1"`, 'the reloaded first page to show 1 beside "Drafts"');
+      await openDraftsTab(t);
+      t.note.cards = await draftCards(t);
+      if (t.api) await t.page.route(t.api, "watch");
+      await t.page.clickOn(`${DRAFTS_PANEL}.querySelector('button[aria-label^="Draft: "]')`, "the draft's card");
+      t.note.shading = await t.page.sceneReady();
+      // Opening a draft asks nothing of the backend: the photo and its maps come from this browser.
+      if (t.api) t.note.backendRequests = backendRequests(t);
+      await t.snap();
+    },
+  },
+  {
+    name: "drafts-delete-all",
+    about: "Close-up of the \"Drafts\" tab with three drafts, after a click on \"Delete all drafts\": the page asks once more before it deletes anything.",
+    async run(t) {
+      await t.page.goto(t.url + "/");
+      await leaveDraft(t, PHOTO.portrait, "Low and warm", 1);
+      await leaveDraft(t, PHOTO.object, "Right", 2);
+      await leaveDraft(t, PHOTO.cat, null, 3);
+      await openDraftsTab(t);
+      await t.page.clickButton("Delete all drafts");
+      await t.page.waitFor(`!!byText("button", "Keep")`, "the question with its two buttons");
+      t.note.question = await t.page.js(`byText("button", "Keep").parentElement.getAttribute("aria-label")`);
+      t.note.cards = await draftCards(t);
+      await t.snap(await t.page.clipOf(`${DRAFTS_TAB}.parentElement.parentElement`, "the tabs and the Drafts tab's content", { pad: 16, scale: 2 }));
+    },
+  },
 ];
 
 // What a tester should see in each picture, written after looking at it: where the light is,
 // which side is bright, what the readouts say. Goes into manifest.json as "see".
 const SEE = {
-  "landing": "Top bar: \"Relight  Banana Hacks 2026\" on the left; on the right the text button \"How it works\" and then the pill: amber dot, \"backend: online, mock providers\". Below: the yellow words \"MOVE THE LIGHT\", the heading \"Relight a photo by dragging the light.\", a dashed box \"Drop a photo here\", then \"Or try a sample photo:\" and four thumbnails: Portrait, Coffee cup, Cat, Rocket.",
+  "landing": "Top bar: \"Relight  Banana Hacks 2026\" on the left; on the right the text button \"How it works\" and then the pill: amber dot, \"backend: online, mock providers\". Below: the yellow words \"MOVE THE LIGHT\", the heading \"Relight a photo by dragging the light.\", a dashed box \"Drop a photo here\", then \"Or try a sample photo:\" and four thumbnails: Portrait, Coffee cup, Cat, Rocket. At the right end of that line are two small tabs: \"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey.",
   "upload-empty": "The same page at the address /relight. The dashed drop box is a little lighter because the mouse is on it.",
   "scene-loading": "The photo is dimmed with a pill \"Estimating depth and surface normals…\" in the middle. The whole sidebar is faded, the \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" buttons are greyed out, and the GEOMETRY row has no thumbnails yet. There is no sun on the photo.",
   "scene-default-light": "The round white sun is on the flag at the left edge, about a third of the way down. Readouts: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, Cast shadows on. Under the Height track, in grey: \"close to the surface\" at the left end and \"close to you\" at the right end. The left side of the face (your left) is bright and the right cheek is in shadow; the right of the picture is darker than the left.",
@@ -3401,19 +3501,19 @@ const SEE = {
   "enhance-error": "The live preview is still there (Left preset). Above the photo, across the top of the stage column, a red bar reads \"Cannot reach the backend at http://localhost:8123. Is it running?\" with an x to close it. Nothing red is in the ENHANCE panel, the yellow button reads \"Enhance\" again, and the pill reads \"offline\".",
   "phone-scene": "One column. Top bar: \"Relight\", \"How it works\" and a short pill that reads only \"online\" (amber dot; no word \"backend:\" and no \"mock providers\" at this width). Then the photo with the sun on the flag, \"Hold to see original\" and \"Export PNG\", and the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. Under the Height track are the grey words \"close to the surface\" (left) and \"close to you\" (right), and under them the helper line \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\" on two lines.",
   "phone-full-page": "The whole phone page: stage, LIGHT (the five buttons Left, Right, Top, Low and warm, Reset light on one line), ENHANCE with its helper line and a two-row box that reads \"Optional: a mood, such as golden hour\", and the one-row GEOMETRY panel at the bottom.",
-  "phone-landing": "The first page in one column: the top bar with \"Relight\", \"How it works\" and the pill \"online\"; the heading on two lines, the dashed drop box, \"Or try a sample photo:\" and the four thumbnails in one row.",
+  "phone-landing": "The first page in one column: the top bar with \"Relight\", \"How it works\" and the pill \"online\"; the heading on two lines, the dashed drop box, a row of two tabs with a thin line under it (\"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey), \"Or try a sample photo:\" and the four thumbnails in one row.",
   "status-checking": "The right end of the top bar, enlarged: \"How it works\", then the pill with a grey dot and \"backend: checking\". It shows for a moment after the page opens.",
   "status-online-mock-providers": "The right end of the top bar, enlarged: \"How it works\", then the pill with an amber dot and \"backend: online, mock providers\".",
   "status-online": "The right end of the top bar, enlarged: \"How it works\", then the pill with a green dot and \"backend: online\".",
   "status-offline": "The right end of the top bar, enlarged: \"How it works\", then the pill with a red dot and \"backend: offline\".",
   "no-webgl-fallback": "No red bar. Above the stage a grey note with a thin grey outline, no x and no \"Retry\": \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The photo is lit for the Left preset (x -0.10, y 0.40) exactly as in 06-preset-left, a little smaller because the note takes two lines. The sun, the sliders, \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. The page asked the backend for nothing but the photo's analysis.",
   "not-found-page": "A black page with \"404\" and \"This page could not be found.\" in the middle, under the normal top bar, which has \"How it works\" and the status pill here too.",
-  "mock-landing": "The first page with a yellow dot and \"backend: mock\" in the pill, and \"How it works\" to its left. The text under the heading starts \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser\". Under the dashed drop box are two grey lines: \"Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.\" Then \"Or try a sample photo:\" and the four thumbnails.",
+  "mock-landing": "The first page with a yellow dot and \"backend: mock\" in the pill, and \"How it works\" to its left. The text under the heading starts \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser\". Under the dashed drop box are two grey lines: \"Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.\" Then \"Or try a sample photo:\" and the four thumbnails. At the right end of that line are two small tabs: \"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey.",
   "mock-status": "The right end of the top bar, enlarged: \"How it works\", then the pill with a yellow dot and \"backend: mock\".",
   "mock-scene": "An uploaded portrait in frontend mock mode with the Left preset (x -0.10, y 0.40), analysed in the browser. The shading follows the real face and suit: the left of the face is a little brighter and the right of the picture darker, much as in 06-preset-left but flatter. There is no round dome, and no note above the stage. There is no outline round the hair and shoulders. The GEOMETRY row shows two tiny thumbnails of the real shape.",
   "mock-enhance-running": "Frontend mock mode: tabs \"Live preview\" and \"Enhancing…\", the pill \"Enhancing in the background, keep dragging\" at the bottom left, and the dimmed \"Enhancing…\" button.",
   "mock-enhance-done": "Frontend mock mode, on an uploaded photo the browser analysed: the Enhanced tab with the divider in the middle. The right half (\"Enhanced\") has more contrast and a soft glow; the left half is the live preview. The button reads \"Enhance again\" with the download button beside it.",
-  "sample-thumbnails": "The line \"Or try a sample photo:\" and four thumbnails in a row, each with its name under it: Portrait (astronaut), Coffee cup, Cat, Rocket.",
+  "sample-thumbnails": "The line \"Or try a sample photo:\" and four thumbnails in a row, each with its name under it: Portrait (astronaut), Coffee cup, Cat, Rocket. At the right end of that line are two small tabs: \"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey.",
   "sample-loading": "The first page with the Portrait thumbnail at full brightness and the other three dimmed. In normal use this lasts a fraction of a second.",
   "sample-coffee": "The coffee cup sample (600 x 400). Sun on the table at the left, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The left of the cup and saucer is bright; the inside of the cup and the area to its right are in shadow.",
   "sample-cat": "The cat sample. Sun at the left by the ear, x 0.12, y 0.35. The left of the face is bright; the right side, past the nose, is in shadow.",
@@ -3430,7 +3530,7 @@ const SEE = {
   "sample-rocket-left": "Rocket sample, Left preset: the sun is at the left edge of the stage, x -0.10, y 0.40, Height 0.35, Intensity 1.30. To the right of the rocket and of each thin mast there is a faint, blurred darker patch on the sky. There are no hard-edged black stripes.",
   "sample-detailed-normals-backend-stopped": "A red bar above the stage: \"Cannot reach the backend at http://localhost:8123. Is it running? The sample keeps the geometry it came with.\" The portrait is still lit (x 0.12, y 0.35), GEOMETRY is open, the Detailed normals switch is back on (yellow) and the last line still reads \"shading: graphics chip, full quality\". Pill: \"offline\".",
   "laptop-1280x720-scene": "Everything fits with no scrolling: the photo, and in the sidebar LIGHT, ENHANCE and the GEOMETRY row. There are no grey helper lines under Height, Ambient or Cast shadows and no line under ENHANCE. The Enhance box is one row and shows \"Optional: a mood, such as golden hour\" in full. The five preset buttons fill one line. Readouts x 0.12, y 0.35.",
-  "laptop-1280x720-landing": "The first page fits with no scrolling: heading, a lower drop box, \"Or try a sample photo:\" and the four thumbnails, with a little space left under them.",
+  "laptop-1280x720-landing": "The first page fits with no scrolling: heading, a lower drop box, \"Or try a sample photo:\" and the four thumbnails, with a little space left under them. The two tabs, \"SAMPLES\" and \"DRAFTS\", sit at the right end of the \"Or try a sample photo:\" line and take no height of their own.",
   "laptop-1366x768-scene": "The uploaded coffee cup with the Right preset (x 1.10, y 0.40; the sun is drawn at the right edge of the stage). The sidebar fits without scrolling, in the same compact form as at 1280 x 720: no helper lines, a one-row Enhance box.",
   "window-1440x820-scene": "The sidebar fits without scrolling. There are no grey helper lines under Height, Ambient or Cast shadows, but the line \"A photoreal pass over this lighting. Takes a few seconds.\" under ENHANCE is there and the Enhance box has two rows.",
   "phone-sample": "The coffee cup sample on a phone: the top bar with \"How it works\" and the pill \"online\", a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35. Under the Height track: \"close to the surface\" and \"close to you\", then the two-line helper \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\" Ambient has its helper line too.",
@@ -3450,12 +3550,12 @@ const SEE = {
   "phone-enhance-error": "The page is scrolled down to the ENHANCE panel. Under the yellow \"Enhance\" button a red box reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. There is no red bar above the photo on a phone. Pill: \"offline\".",
   "no-webgl-render-lost": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with \"Retry\" at its right end and no x. The photo still shows the last picture the server sent (the Left preset), with no sun. The readout already says x 1.10, y 0.40. The LIGHT panel is faded and \"Sweep\" and \"Enhance\" are greyed out; \"Hold to see original\" and \"Export PNG\" still work on that last picture. Pill: \"offline\". You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
   "mock-sample-detailed-normals": "The light has not been moved: the sun is at the left of the photo, where it starts. The sidebar is scrolled to the bottom, GEOMETRY open: grey Depth and purple Normals pictures of the cat, then \"Detailed normals\" with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\" Its switch is on but dull (dark yellow) and does nothing when clicked. Then \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\". Pill: \"mock\".",
-  "demo-landing": "Top right: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". The text under the heading reads \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly.\" Then the same dashed drop box as the normal app (\"Drop a photo here\", \"or click to browse, or paste an image or its address\"), two grey lines under it that start \"Your photo stays on this device:\", then \"Or try a sample photo:\" and the four thumbnails. The card \"This is the in-browser demo.\" is gone.",
+  "demo-landing": "Top right: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". The text under the heading reads \"Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly.\" Then the same dashed drop box as the normal app (\"Drop a photo here\", \"or click to browse, or paste an image or its address\"), two grey lines under it that start \"Your photo stays on this device:\", then \"Or try a sample photo:\" and the four thumbnails. At the right end of that line are two small tabs: \"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey. The card \"This is the in-browser demo.\" is gone.",
   "demo-drop-box": "Enlarged: the dashed box with the upload icon, \"Drop a photo here\" in white and \"or click to browse, or paste an image or its address\" in grey. Under the box, in grey on two lines: \"Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.\"",
   "demo-status": "The right end of the top bar, enlarged: \"How it works\", then the pill with a green dot and \"demo: runs in your browser\". It never reads \"checking\" or \"offline\".",
   "demo-sample": "The portrait lit live, sun on the flag, x 0.12, y 0.35. The top-right stage button reads \"New photo\" with the upload icon, as in the normal app. ENHANCE holds only the line \"Enhance needs the Relight server, which this demo runs without.\" and a dull, greyed-out \"Enhance\" button; there is no text box. LIGHT, \"Sweep\", \"Hold to see original\" and \"Export PNG\" are all available.",
   "demo-all-panels": "Coffee cup, Right preset (x 1.10, y 0.40; the sun is at the right edge of the stage). The whole sidebar shows: LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open with Depth and Normals pictures, a dull Detailed normals switch with the line \"Always on for a sample photo: its maps were made ahead of time with detailed normals.\", then \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
-  "demo-phone-landing": "One column. Top bar: \"Relight\", \"How it works\" and a pill that reads only \"demo\" with a green dot. Heading on two lines, the \"Upload a photo or pick a sample.\" text on five lines, the dashed drop box (its grey hint wraps onto two lines), the three grey lines that start \"Your photo stays on this device:\", \"Or try a sample photo:\" and the four thumbnails in one row.",
+  "demo-phone-landing": "One column. Top bar: \"Relight\", \"How it works\" and a pill that reads only \"demo\" with a green dot. Heading on two lines, the \"Upload a photo or pick a sample.\" text on five lines, the dashed drop box (its grey hint wraps onto two lines), the three grey lines that start \"Your photo stays on this device:\", a row of two tabs with a thin line under it (\"SAMPLES\", yellow and underlined, and \"DRAFTS\", grey), \"Or try a sample photo:\" and the four thumbnails in one row.",
   "demo-phone-sample-full-page": "The whole phone page with the cat: the top bar with the pill \"demo\", a short stage with \"New photo\", the LIGHT panel with the five preset buttons on one line, the short ENHANCE panel (reason line and greyed-out button, no text box), and GEOMETRY open with the dull Detailed normals switch, \"451 x 300 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
   "demo-no-webgl": "No red bar. Above the stage the grey note \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" It has no x and no \"Retry\". The portrait is lit for the Left preset (sun left of the photo, x -0.10, y 0.40, left of the face bright). The LIGHT panel is at full brightness and \"Sweep\", \"Hold to see original\" and \"Export PNG\" are available. \"Enhance\" is greyed out as it always is in the demo.",
   "how-it-works-button": "Enlarged: the words \"How it works\" in light grey with no box round them (a faint box appears when the mouse is on them), and right of them the status pill, here \"backend: online, mock providers\" with an amber dot.",
@@ -3546,6 +3646,10 @@ const SEE = {
   "heic-error-no-converter": "The first page is still showing. Under the four thumbnails is a red bar on three lines: \"This is a HEIC photo, which this browser cannot read by itself, and the converter for it could not be downloaded from cdn.jsdelivr.net. Check the connection and try again, or export the photo as a JPEG and use that.\" with an x to close it.",
   "heic-error-too-large": "The first page is still showing. Under the four thumbnails is a red bar on two lines: \"This HEIC photo is too large to convert in a browser (8192 x 8192 pixels). Export it as a JPEG (on a Mac: open it in Preview, then File, Export) and use that.\" with an x to close it. The two numbers are the chosen photo's own size.",
   "demo-heic-photo": "The static demo (pill \"demo: runs in your browser\") with the astronaut from the .heic file, Left preset: sun left of the photo, x -0.10, y 0.40, Height 0.35. It looks the same as 169-demo-own-photo-left, which is the same photograph chosen as a JPEG. ENHANCE is greyed out, as always in the demo.",
+  "drafts-empty": "The first page with the \"DRAFTS\" tab selected (yellow, underlined) and \"SAMPLES\" grey beside it. The line \"Or try a sample photo:\" and the four thumbnails are not shown. In their place, in grey on two lines: \"No drafts yet. A photo you upload is kept here, on this device, with the light where you left it. The draft is not sent anywhere.\" That last sentence is the one for the app with a backend, which a photo is sent to for analysis. On the static demo and in mock mode it reads \"Nothing is uploaded.\" The page above the tabs is where it is in 01-landing.",
+  "drafts-cards": "The tab reads \"DRAFTS\" with a small \"3\" beside it. Under it are three cards in one row, the one changed last at the left: the cat (\"03-animal-cat\"), the coffee cup lit from the right (\"02-object-coffee\") and the portrait in its warm orange light (\"01-portrait-astronaut\"). Each card has a small picture of the photo as it was lit, the file's name without its ending, \"just now\" in grey under the name, and a small \"Delete\" button in its top right corner. Under the cards, in small grey letters: \"Kept in this browser, on this device only. The 12 most recent are kept.\" and, at the right, \"Delete all drafts\". The page above the tabs sits about 30 pixels higher than in 01-landing.",
+  "draft-opened": "The workspace, as the photo was left before the page was loaded again: the portrait with the Low and warm light. The sun is orange-tinted at the bottom left corner of the photo. Readouts: x 0.00, y 0.90, Height 0.12, Intensity 1.60, Ambient 0.20, Colour warm 100, Cast shadows on. The photo looks the same as in 09-preset-low-and-warm, which was lit straight after choosing the file. There was no \"Estimating…\" wait, and nothing was asked of the backend while the draft opened (the tool watched). The yellow \"?\" beside each setting is newer than most pictures in this set.",
+  "drafts-delete-all": "Enlarged: the two tabs (\"DRAFTS\" selected, with a \"3\"), the three cards with their \"Delete\" buttons, the grey line \"Kept in this browser, on this device only. The 12 most recent are kept.\" and, under it, the question \"Delete all 3 drafts?\" with two buttons: \"Delete\" in a box and \"Keep\" plain. The question stands where \"Delete all drafts\" was; being wider, it has dropped to a line of its own. Nothing has been deleted: the three cards are still there, and \"Keep\" brings the button back.",
 };
 
 const numbered = SHOTS.map((shot, i) => ({ ...shot, needs: shot.needs ?? "any", file: `${String(i + 1).padStart(2, "0")}-${shot.name}.jpg` }));
@@ -3674,6 +3778,8 @@ async function main() {
             await page.capture(file, options);
           },
         };
+        // A new visitor each time: the drafts the shots before this one left in the browser are deleted (see "Drafts" at the top of this file).
+        await page.send("Storage.clearDataForOrigin", { origin: new URL(args.url).origin, storageTypes: "indexeddb" });
         await shot.run(t);
         const light = note.light ? `light x ${note.light.x} y ${note.light.y}` : "";
         const fallback = note.shading === "server" ? "  ** a render from the server, not the live canvas **" : "";
