@@ -397,6 +397,14 @@ Things to know:
 
 PowerShell is refusing to run npm's script file. Type `npm.cmd` wherever these instructions say `npm` (for example `npm.cmd ci` and `npm.cmd run dev`). Nothing needs to be changed in Windows.
 
+### Windows on a Snapdragon (ARM) laptop: `pip install` stops at `opencv-python-headless`
+
+The backend's libraries are not all published for the ARM version of Python on Windows. `opencv-python-headless` is one: pip then tries to build it from source and stops, because there is no C compiler. (Found by a tester on a Snapdragon X laptop, Oct 11.)
+
+Quickest: use [Plan B](#plan-b-no-backend), which needs no Python and runs everything except Enhance and the detailed normals for your own photo. The tester's Plan B run on that laptop worked as written.
+
+If you want the backend all the same, this is the likely way, **not yet tried by anyone**: uninstall the ARM64 Python, install the ordinary one (the file named **Windows installer (64-bit)** on the page in step 1, not the one named ARM64), delete the folder `backend\.venv`, and do step 3 again. That Python runs under Windows' emulation, so expect it to be slow. `py -0p` lists the Pythons Windows knows about; the 3.12 line should not say `arm64`. If it works, or stops somewhere else, say so in an issue with the last 30 lines of the output.
+
 ### The pill says "backend: offline"
 
 ![Offline pill](screenshots/51-status-offline.jpg)
