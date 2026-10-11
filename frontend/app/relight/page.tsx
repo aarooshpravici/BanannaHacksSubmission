@@ -85,7 +85,9 @@ const PINCH_GRACE_MS = 350;
 const SUN_HINT = "Scroll to bring the light nearer or push it back";
 const HEIGHT_HINT = "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.";
 const HEIGHT_ENDS: [string, string] = ["close to the surface", "close to you"];
-/** Height spelt out, behind "What is this?" beside its name: beside the stage a laptop window has no room for HEIGHT_HINT, and a tester who lit an outdoor photo of his own from low down found the result odd and nothing to say why. It opens by itself the first time the Height is changed by hand (heightUsed). */
+/** Under every slider's "?": its number can be typed as well as dragged. */
+const TYPE_IT = <span className="block text-zinc-500">Click the number on the right to type an exact value.</span>;
+/** Height spelt out, behind the "?" beside its name: beside the stage a laptop window has no room for HEIGHT_HINT, and a tester who lit an outdoor photo of his own from low down found the result odd and nothing to say why. It opens by itself the first time the Height is changed by hand (heightUsed). */
 const HEIGHT_HELP = (
   <>
     <span className="block">
@@ -97,7 +99,58 @@ const HEIGHT_HELP = (
     <span className="block">
       <strong className="font-semibold text-zinc-100">High</strong>: the light faces the photo. The whole frame is lit evenly, shadows are short, and near and far things differ less.
     </span>
-    <span className="block text-zinc-500">Scrolling or pinching on the sun changes it too.</span>
+    <span className="block text-zinc-500">Scrolling or pinching on the sun changes it too. Click the number on the right to type an exact value.</span>
+  </>
+);
+/** The other settings of the LIGHT panel, behind their own "?". What each says follows the shading itself: brightness = Ambient + Intensity x the light that reaches a surface. */
+const INTENSITY_HELP = (
+  <>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Intensity</strong> is how strong the light is.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Higher</strong>: the lit side gets brighter and stands out more against the dark side.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">At 0</strong> the light is off, and only the Ambient light is left.
+    </span>
+    {TYPE_IT}
+  </>
+);
+const AMBIENT_HELP = (
+  <>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Ambient</strong> is even light that reaches everything, shadows included, like daylight filling a room.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Low</strong>: the side away from the light stays dark. Dramatic, but detail is lost there.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Higher</strong>: the shadows lift and the picture softens towards the original photo. For a gentle look on a face, try 0.3 to 0.6 with a lower Intensity.
+    </span>
+    {TYPE_IT}
+  </>
+);
+const COLOUR_HELP = (
+  <>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Colour</strong> is the colour of the light.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Left</strong> is cool and bluish, like shade or a screen. <strong className="font-semibold text-zinc-100">The middle</strong> is plain white. <strong className="font-semibold text-zinc-100">Right</strong> is warm and orange, like a lamp or a low sun.
+    </span>
+    <span className="block text-zinc-500">Click the words on the right to type a number: -100 is the coolest, 0 is neutral, 100 the warmest.</span>
+  </>
+);
+const SHADOWS_HELP = (
+  <>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">On</strong>: things block the light and throw shadows on whatever is behind them, as a nose does on a cheek.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Off</strong>: every surface is still brighter or darker by the way it faces, but nothing throws a shadow.
+    </span>
+    <span className="block">Behind something that stands in front of open sky, a thrown shadow shows as a soft dark band on the sky. Switch this off and the band goes.</span>
   </>
 );
 
@@ -814,6 +867,8 @@ export default function RelightPage() {
           <Panel
             title="Light"
             hint="Drag the sun on the photo."
+            // Above the panels after it: a "?" box near the bottom of this one hangs down over them, and each panel is a layer of its own (backdrop-blur).
+            className="relative z-10"
             actions={
               <Button
                 size="sm"
@@ -855,7 +910,7 @@ export default function RelightPage() {
                 help={HEIGHT_HELP}
                 helpNow={heightUsed}
               />
-              <Slider label="Intensity" value={base.intensity} min={0} max={4} step={0.05} onChange={(v) => setBase((b) => ({ ...b, intensity: v }))} />
+              <Slider label="Intensity" value={base.intensity} min={0} max={4} step={0.05} onChange={(v) => setBase((b) => ({ ...b, intensity: v }))} help={INTENSITY_HELP} />
               <Slider
                 label="Ambient"
                 value={base.ambient}
@@ -864,6 +919,7 @@ export default function RelightPage() {
                 step={0.01}
                 onChange={(v) => setBase((b) => ({ ...b, ambient: v }))}
                 hint="Light that reaches everything, shadows included."
+                help={AMBIENT_HELP}
               />
               <Slider
                 label="Colour"
@@ -874,8 +930,16 @@ export default function RelightPage() {
                 onChange={setWarmth}
                 format={(v) => (Math.abs(v) < 0.02 ? "neutral" : v > 0 ? `warm ${Math.round(v * 100)}` : `cool ${Math.round(-v * 100)}`)}
                 track={`linear-gradient(to right, ${cssColor(COOL)}, #ffffff, ${cssColor(WARM)})`}
+                help={COLOUR_HELP}
+                typed={{
+                  text: (v) => String(Math.round(v * 100)),
+                  parse: (text) => {
+                    const hundredths = Number.parseFloat(text.trim().replace(",", "."));
+                    return Number.isFinite(hundredths) ? hundredths / 100 : null;
+                  },
+                }}
               />
-              <Toggle label="Cast shadows" hint="Objects block the light." checked={shadows} onChange={setShadows} />
+              <Toggle label="Cast shadows" hint="Objects block the light." checked={shadows} onChange={setShadows} help={SHADOWS_HELP} />
               {/* The five share one row: each starts with next to no padding of its own and takes an equal share of what is left, so the row fits a 360 px phone and fills the sidebar alike. */}
               <div className="flex flex-wrap gap-1.5">
                 {PRESETS.map((preset) => (

@@ -1,5 +1,6 @@
-import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from "react";
+import { type ButtonHTMLAttributes, type CSSProperties, type ReactNode, useId } from "react";
 import { Help } from "./Help";
+import { NumberEntry } from "./NumberEntry";
 import { Spinner } from "./Spinner";
 import { cn } from "@/lib/cn";
 
@@ -70,24 +71,44 @@ interface SliderProps {
   help?: ReactNode;
   /** True once the reader has changed this slider's value by hand: `help` then opens by itself, once. */
   helpNow?: boolean;
+  /** For a value that is not printed as a plain number (Colour): the number to type from, and what was typed as a value again (null if it is not one). */
+  typed?: { text: (value: number) => string; parse: (typed: string) => number | null };
 }
 
-export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends, help, helpNow }: SliderProps) {
+export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends, help, helpNow, typed }: SliderProps) {
+  const id = useId();
   const fill = ((value - min) / (max - min)) * 100;
+  // A typed value is held to the slider's range and steps, so the track and the number always agree.
+  const fromTyped = (text: string) => {
+    const wanted = typed ? typed.parse(text) : Number.parseFloat(text.trim().replace(",", "."));
+    if (wanted === null || !Number.isFinite(wanted)) return null;
+    const onStep = min + Math.round((Math.min(max, Math.max(min, wanted)) - min) / step) * step;
+    return Number(Math.min(max, Math.max(min, onStep)).toFixed(4));
+  };
   return (
-    <label className="relative block" title={hint}>
+    // Not one <label> round everything: it would name the first button inside it (the "?"), not the slider.
+    <div className="relative" title={hint}>
       <span className="mb-1.5 flex items-baseline justify-between gap-3 text-[13px]">
         <span className="flex items-center gap-1.5">
-          <span className="font-medium text-zinc-200">{label}</span>
+          <label htmlFor={id} className="font-medium text-zinc-200">
+            {label}
+          </label>
           {help && (
             <Help about={label} show={helpNow}>
               {help}
             </Help>
           )}
         </span>
-        <span className="font-mono text-xs tabular-nums text-zinc-400">{format ? format(value) : value.toFixed(2)}</span>
+        <NumberEntry
+          about={label}
+          shown={format ? format(value) : value.toFixed(2)}
+          text={typed ? typed.text(value) : String(Number(value.toFixed(2)))}
+          parse={fromTyped}
+          onChange={onChange}
+        />
       </span>
       <input
+        id={id}
         type="range"
         className="slider"
         min={min}
@@ -106,7 +127,7 @@ export function Slider({ label, value, min, max, step = 0.01, onChange, format, 
       )}
       {/* Beside the stage the sidebar has one line to spare under a slider, and the end labels take it. A stacked page scrolls, so there both are shown. */}
       {hint && <span className={cn("hidden text-xs leading-4 text-zinc-500", ends ? "mt-1 max-lg:block" : "mt-1.5 tall:block")}>{hint}</span>}
-    </label>
+    </div>
   );
 }
 
@@ -119,16 +140,26 @@ interface ToggleProps {
   hint?: string;
   /** Greyed out and inert. Say why in `hint`. */
   disabled?: boolean;
+  /** A longer explanation, opened from a "?" beside the label. */
+  help?: ReactNode;
 }
 
-export function Toggle({ label, checked, onChange, hint, disabled = false }: ToggleProps) {
+export function Toggle({ label, checked, onChange, hint, disabled = false, help }: ToggleProps) {
+  const id = useId();
   return (
-    <label className={cn("flex items-center justify-between gap-4", disabled ? "cursor-not-allowed" : "cursor-pointer")} title={hint}>
+    // The words are the switch's <label>, so a click on them still flips it; the "?" sits beside them, outside it.
+    <div className="relative flex items-center justify-between gap-4" title={hint}>
       <span>
-        <span className="block text-[13px] font-medium text-zinc-200">{label}</span>
+        <span className="flex items-center gap-1.5">
+          <label htmlFor={id} className={cn("block text-[13px] font-medium text-zinc-200", disabled ? "cursor-not-allowed" : "cursor-pointer")}>
+            {label}
+          </label>
+          {help && <Help about={label}>{help}</Help>}
+        </span>
         {hint && <span className="mt-0.5 hidden text-xs leading-4 text-zinc-500 tall:block">{hint}</span>}
       </span>
       <button
+        id={id}
         type="button"
         role="switch"
         aria-checked={checked}
@@ -142,7 +173,7 @@ export function Toggle({ label, checked, onChange, hint, disabled = false }: Tog
       >
         <span className={cn("absolute left-0.5 top-0.5 h-5 w-5 rounded-full shadow transition-transform", checked ? "translate-x-4 bg-black" : "bg-white")} />
       </button>
-    </label>
+    </div>
   );
 }
 

@@ -4,12 +4,12 @@ import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 
 /**
- * "What is this?" beside a control's name. It opens a few lines that say what
- * the control does, for where the page has no room to print them: beside the
- * stage a slider has no line under it on a laptop window, and a phone has no
- * hover text. A tester who had never seen Height explained asked for it. The
- * first version was a small grey "?", and he did not see it at all: hence the
- * words, the colour, and `show`.
+ * A yellow "?" beside a control's name. It opens a few lines that say what the
+ * control does, for where the page has no room to print them: beside the stage
+ * a slider has no line under it on a laptop window, and a phone has no hover
+ * text. A tester who had never seen Height explained asked for it. The first
+ * "?" was grey and he did not see it at all; the second read "What is this?",
+ * which he found too much. Hence a "?" again, in the page's yellow, and `show`.
  *
  * The box is laid out against the nearest positioned ancestor (the control),
  * just under it, so the control stays in view and can be tried while the box
@@ -71,15 +71,15 @@ export function Help({
           setOpen((o) => !o);
         }}
         className={cn(
-          "shrink-0 rounded-full border px-2 py-px text-[11px] font-medium leading-4 text-accent transition-colors",
+          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-accent text-[11px] font-bold leading-none transition-colors",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/70",
-          open ? "border-accent/70 bg-accent/25" : "border-accent/45 bg-accent/10 hover:bg-accent/20",
+          open ? "bg-accent text-black" : "bg-accent/20 text-accent hover:bg-accent/40",
         )}
       >
-        What is this?
+        ?
       </button>
       {open && (
-        // Inside a <label>, a click on the words would otherwise be passed on to the slider.
+        // A click on the words must not reach whatever the box happens to lie over.
         <span
           ref={box}
           id={id}
