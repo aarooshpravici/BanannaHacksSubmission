@@ -74,7 +74,7 @@ Without the two pretrained models there is nothing to shade; without our code th
 - Shading is diffuse only: no shine. Light already in the photo is not removed.
 - The live shader has been tested by people on three devices so far: an Apple-chip Mac (Chrome and Safari), a Windows laptop with Intel graphics (Chrome) and one phone.
 - Real Enhance has run once, and it weakened the side lighting. In the default setup (`MOCK_MODE=1`) Enhance returns the preview unchanged.
-- The static demo runs the four pre-computed samples only. Analysing your own photo needs the backend running locally.
+- With no backend (the static demo, mock mode, or the backend not answering), your own photo is analysed in the browser: the same depth model (an ONNX build, `onnx-community/depth-anything-v2-small`, Apache-2.0, run by transformers.js on WebGPU or WebAssembly; about 25 MB downloaded once from Hugging Face and jsDelivr, the photo itself is not uploaded). The normals model is too large for a browser, so those scenes take their normals from the slope of the depth map and faces shade flatter. Tested in Chrome on one Apple-chip Mac only.
 
 `testing/PENDING.md` is the full list of what has not been verified.
 
@@ -134,7 +134,7 @@ cp .env.local.example .env.local   # set NEXT_PUBLIC_MOCK=0 to use the backend
 npm run dev
 ```
 
-Open http://localhost:3000. With `NEXT_PUBLIC_MOCK=1` the page runs with no backend at all: an uploaded photo gets a made-up dome shape instead of real depth, while the samples keep their real shape. The dot in the top-right corner says which mode you are in.
+Open http://localhost:3000. With `NEXT_PUBLIC_MOCK=1` the page runs with no backend at all: an uploaded photo's depth is estimated in the browser (see "Honest limits"), and the samples keep the shape they were baked with. The dot in the top-right corner says which mode you are in.
 
 ## Static demo
 
@@ -143,7 +143,7 @@ cd frontend
 NEXT_PUBLIC_BASE_PATH=/BanannaHacksSubmission npm run build:demo   # leave the variable out for a site at the root of its address
 ```
 
-This writes a plain static site to `frontend/out/`, for a host with no server of ours (GitHub Pages, say), so a judge can open the app from a link. Only the four samples work in it: uploading and Enhance are switched off and the page says why. Upload everything inside `out/`, including the hidden `.nojekyll`. A build only works at the path it was built for; `frontend/README.md` has the details.
+This writes a plain static site to `frontend/out/`, for a host with no server of ours (GitHub Pages, say), so a judge can open the app from a link. The four samples and your own photos work in it, analysed and shaded in the browser; Enhance is switched off and the page says why. Upload everything inside `out/`, including the hidden `.nojekyll`. A build only works at the path it was built for; `frontend/README.md` has the details.
 
 ## Sample scenes
 
