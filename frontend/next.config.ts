@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
   partialPrefetching: !demo,
   // The floating dev-mode badge sits on top of the page's own controls.
   devIndicators: false,
+  // A phone on the same Wi-Fi opens the dev server by the computer's address (testing/TEST_PLAN.md, W-16 step 8).
+  // Without this the dev server refuses its live-reload socket and the page never becomes interactive there.
+  allowedDevOrigins: ["10.*.*.*", "192.168.*.*", "172.*.*.*", "*.local"],
   basePath,
   // The page reads the cleaned-up value (lib/config.ts), so the sample fetches use the same folder as Next.js.
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
