@@ -198,13 +198,15 @@ Open a second PowerShell window:
 
 ```powershell
 cd $HOME\BanannaHacksSubmission\frontend
-npm ci
+npm.cmd ci
 $env:NEXT_PUBLIC_MOCK = "0"
 $env:NEXT_PUBLIC_API_URL = "http://localhost:8000"
-npm run dev
+npm.cmd run dev
 ```
 
-`npm ci` is only needed the first time, and again after each `git pull`. It installs exactly the versions the project lists and changes no project file. Wait for a line like `Local: http://localhost:3000`. Leave this window open.
+On Windows type `npm.cmd`, not `npm`. In PowerShell plain `npm` can stop with "running scripts is disabled on this system"; `npm.cmd` is the same program and always works. (Found by a tester on Windows 11.)
+
+`npm.cmd ci` is only needed the first time, and again after each `git pull`. It installs exactly the versions the project lists and changes no project file. Wait for a line like `Local: http://localhost:3000`. Leave this window open.
 
 If `npm` answers "running scripts is disabled on this system", type `npm.cmd` instead of `npm` in both commands.
 
@@ -327,9 +329,9 @@ NEXT_PUBLIC_MOCK=1 npm run dev
 ```powershell
 # Windows
 cd $HOME\BanannaHacksSubmission\frontend
-npm ci
+npm.cmd ci
 $env:NEXT_PUBLIC_MOCK = "1"
-npm run dev
+npm.cmd run dev
 ```
 
 Open http://localhost:3000. The pill reads **backend: mock** (yellow dot).
@@ -390,6 +392,10 @@ Things to know:
 - For whoever puts the demo online: upload everything **inside** `out`, including the hidden file `.nojekyll`. Without that file GitHub Pages does not serve the folder `_next`, and the page stays blank. A site that sits at the top of its address needs a build without the `NEXT_PUBLIC_BASE_PATH=…` part; that build has never been made or tried.
 
 ## Troubleshooting
+
+### Windows: "npm : File ...npm.ps1 cannot be loaded because running scripts is disabled on this system"
+
+PowerShell is refusing to run npm's script file. Type `npm.cmd` wherever these instructions say `npm` (for example `npm.cmd ci` and `npm.cmd run dev`). Nothing needs to be changed in Windows.
 
 ### The pill says "backend: offline"
 

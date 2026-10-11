@@ -34,6 +34,14 @@ Never write a key, a password or the contents of a `.env` file here.
 | 7 Enhance | | |
 | 8 Export | | |
 
+## Does the light work on this device? (case W-16)
+
+Please answer this even if you test nothing else.
+
+- When you move the sun, does the picture change? (yes / no / only slowly):
+- Open **GEOMETRY** in the sidebar. The last line starts with "shading:". Copy it here:
+- Any grey or red note above the photo? Copy its words, or write "none":
+
 ## Test plan cases
 
 Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.

@@ -41,6 +41,14 @@ Write PASS or FAIL after each.
 - Step 7 Enhance:
 - Step 8 Export:
 
+## Does the light work on this device? (case W-16)
+
+Please answer this even if you test nothing else.
+
+- When you move the sun, does the picture change? (yes / no / only slowly):
+- Open **GEOMETRY** in the sidebar. The last line starts with "shading:". Copy it here:
+- Any grey or red note above the photo? Copy its words, or write "none":
+
 ## Test plan cases (testing/TEST_PLAN.md)
 
 One line per case you ran: `ID  PASS / FAIL / NOT RUN  note`. For every FAIL, open a separate "Bug report" issue and put its number in the note.
