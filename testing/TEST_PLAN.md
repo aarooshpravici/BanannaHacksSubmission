@@ -2144,6 +2144,8 @@ A FAIL would be: the light coming from the wrong side; speckle or blotches on a 
 
 `Result: PASS / FAIL / NOT RUN` Scores and note:
 
+*Run by a person:* Aaroosh, Oct 11, an iPhone 11 in Chrome, on the hosted demo at version `39abe26`: step 5 only, with an outdoor photo of two people in front of a helicopter. He sent a screenshot and no opinion. In it the developer sees no rim round the people, the helicopter or the tents. Still wanted: a person's own opinion on an outdoor photo, and steps 1 to 4.
+
 ### Q-13 Does the sun look nearer and further? (new on Oct 11: wanted from everyone)
 
 The owner asked for the light's move towards you and away from you to be easier to recognise. Now the sun on the photo grows, glows wider and drops its shadow lower as the light comes nearer, and shrinks as it is pushed back. Whether that reads as "near" and "far" is something only a person can say. **Do steps 1 and 2 before you read the rest of this case, and before L-13 and C-12.**
@@ -2553,7 +2555,7 @@ If it goes wrong, these are the results we most need:
 
 `Result: PASS / FAIL / NOT RUN` Devices, browsers, times, depth lines and note:
 
-*Run by a person:* Aaroosh, Oct 11, an iPhone 11 in Chrome, on the hosted demo: PASS for the phone (steps 1 to 5). A few seconds for the photo; "768 x 1024 px, relief 0.3", "depth: this browser, graphics chip (WebGPU)", "shading: graphics chip, full quality". Still wanted: step 6 on a computer, an Android phone, and an older phone.
+*Run by a person:* Aaroosh, Oct 11, an iPhone 11 in Chrome, on the hosted demo: PASS for the phone (steps 1 to 5). A few seconds for the photo; "768 x 1024 px, relief 0.3", "depth: this browser, graphics chip (WebGPU)", "shading: graphics chip, full quality". Run again on Oct 11 at 12:40 PM on the build from version `39abe26`, which tests the graphics chip first: about 8 seconds for an outdoor photo, and the depth line still reads "graphics chip (WebGPU)". Still wanted: step 6 on a computer, an Android phone, and an older phone.
 
 ### H-13 A HEIC photo in the demo
 
