@@ -1257,7 +1257,7 @@ Only if your computer has a touch screen, or with the phone imitation on (it tur
 
 1. Drag the sun with a finger. 2. Try to scroll the page by swiping on the stage. 3. Swipe on the sidebar area.
 
-**Expected:** (1) the sun follows the finger. (2) swiping on the stage moves the light and does **not** scroll the page. (3) swiping below the stage scrolls. Write down whether getting past the stage to the controls was awkward. (Two fingers on the stage change the Height since Oct 11: L-16.)
+**Expected:** (1) the sun follows the finger. (2) swiping on the stage moves the light and does **not** scroll the page. (3) swiping below the stage scrolls. Write down whether getting past the stage to the controls was awkward. On a phone the sun stops 48 pixels short of the screen's left and right sides (since version `04c9b28`), so that reaching for it does not set off the browser's own Back or Forward swipe; if a drag on the sun still makes the browser leave the page, report it with the phone and the browser (K65). (Two fingers on the stage change the Height since Oct 11: L-16.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -2447,6 +2447,8 @@ If it goes wrong, these are the results we most need:
 ![H-12 on a phone, whole page with GEOMETRY open](screenshots/175-demo-phone-own-photo-full-page.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Devices, browsers, times, depth lines and note:
+
+*Run by a person:* Aaroosh, Oct 11, an iPhone 11 in Chrome, on the hosted demo: PASS for the phone (steps 1 to 5). A few seconds for the photo; "768 x 1024 px, relief 0.3", "depth: this browser, graphics chip (WebGPU)", "shading: graphics chip, full quality". Still wanted: step 6 on a computer, an Android phone, and an older phone.
 
 ### H-13 A HEIC photo in the demo
 
