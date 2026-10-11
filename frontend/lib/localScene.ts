@@ -21,6 +21,14 @@ export type { DepthDevice } from "./sceneGeometry";
  */
 const QUIET_TIMEOUT_MS = 60_000;
 /**
+ * The limit before the first progress report, in milliseconds. This is when the
+ * 5 MB of code that runs the model arrives, with no reports at all, so silence
+ * here does not mean a dead connection. Three minutes lets a slow connection
+ * (about a quarter of a megabit per second) finish; a shorter limit gave up on
+ * a download that was still arriving, and Retry then started it from zero.
+ */
+const START_TIMEOUT_MS = 180_000;
+/**
  * How long the model may take over one photo, in milliseconds. A laptop needs
  * 0.1 to 2 seconds and a slow phone perhaps twenty; past this the tab is more
  * likely out of memory than still working.
@@ -111,7 +119,7 @@ function onReply(reply: DepthReply): void {
   if (reply.type === "progress") {
     current.onProgress(reply);
     if (reply.stage === "estimate") watch(current, ESTIMATE_TIMEOUT_MS, failureText("timeout", ""));
-    else watch(current, QUIET_TIMEOUT_MS, `The depth model stopped downloading. Check your connection and try again. ${SAMPLES_STILL_WORK}`);
+    else watch(current, reply.stage === "start" ? START_TIMEOUT_MS : QUIET_TIMEOUT_MS, `The depth model stopped downloading. Check your connection and try again. ${SAMPLES_STILL_WORK}`);
     return;
   }
   if (reply.type === "done") {
@@ -143,7 +151,7 @@ function run(request: Omit<DepthRequest, "id">, onProgress: (progress: LocalProg
           fail(new Error(failureText("estimate", event.message ?? "")));
         };
       }
-      watch(current, QUIET_TIMEOUT_MS, failureText("download", ""));
+      watch(current, START_TIMEOUT_MS, failureText("download", ""));
       const message: DepthRequest = { ...request, id: current.id };
       worker.postMessage(message, [request.pixels.buffer]);
     } catch (error) {
