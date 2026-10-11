@@ -2112,7 +2112,7 @@ The **static demo** is a copy of the app made of plain files, with no backend an
 
 **Run H-12 first.** It is your own photo in the demo, on your phone and on your computer. That is the first thing a judge will try, and no phone has tried it yet.
 
-**Which address?** The demo is online at **https://aarooshpravici.github.io/BanannaHacksSubmission/** (since Oct 10, 11:15 PM; built from version `ada3fc2`, so it can be a little behind the newest code). If you were given none, you can build the demo on a Mac with [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) and use `http://localhost:3142/BanannaHacksSubmission/`. If you have neither, mark this group NOT RUN.
+**Which address?** The demo is online at **https://aarooshpravici.github.io/BanannaHacksSubmission/** (since Oct 10, 11:15 PM). **On Oct 11 at 1:40 AM that copy was still the build from version `ada3fc2`, from before your own photo worked in the demo.** If its first page shows a card "This is the in-browser demo." and no dashed box, you have that build: H-01, H-02, H-12 and step 2 of H-09 cannot be run on it, the other cases can. The log in [PENDING.md](PENDING.md#log) says when it has been published again. If you were given none, you can build the demo on a Mac with [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) and use `http://localhost:3142/BanannaHacksSubmission/`. If you have neither, mark this group NOT RUN.
 
 **Reporting.** The bug form asks what the top-right pill reads. For this group write "demo". For the version, write "hosted demo" and the address you opened.
 
@@ -2174,6 +2174,8 @@ Use a real phone if you have a hosted address: type the address into the phone's
 
 `Result: PASS / FAIL / NOT RUN` Phone, browser and note:
 
+*Run by a person:* Aaroosh, Oct 11, an iPhone 11 in Chrome, on the hosted demo: PASS on the earlier build, which had a card where the dashed box now is. Nothing cut off, the presets on one line, no scrolling while dragging on the photo. Still wanted: step 1 on the new first page, and an Android phone.
+
 ### H-06 The demo's addresses, reload and Back
 
 1. Add `relight/` to the end of the demo address and open it. 2. Click a sample, change the light, then reload the page. 3. Click a sample, then click the "Relight" logo in the top bar. Look at the address bar. 4. Click a sample, then press the browser's Back button. 5. Replace `relight/` in the address with `nothing-here/` and open it.
@@ -2222,6 +2224,8 @@ Only if you have a Mac with Node and the code. Follow [Plan C in SETUP.md](SETUP
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
+*Run by a person:* Aaroosh, Oct 11, an iPhone 11 in Chrome, on the hosted demo: PASS for step 5. Steps 1 to 4, on a computer, are still wanted.
+
 ### H-10 The demo's shading line
 
 The demo is what a judge will open, on whatever device they have. So this is W-16 again, on the demo: do it on every device you can, a real phone above all.
@@ -2234,6 +2238,8 @@ The demo is what a judge will open, on whatever device they have. So this is W-1
 ![H-10 for comparison: full quality on the demo](screenshots/149-demo-no-float-filtering.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Devices, browsers, shading lines and results:
+
+*Run by a person:* Aaroosh, Oct 11, an iPhone 11 in Chrome, on the hosted demo: PASS. "shading: graphics chip, full quality", no note or bar, and the light follows the finger. Every other device is still wanted.
 
 ### H-11 The demo when nothing can shade: the red bar (only if it happens)
 
