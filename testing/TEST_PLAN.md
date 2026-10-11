@@ -530,7 +530,7 @@ The card can show five other lines. The developer has never seen any of them on 
 
 ### P-14 The graphics chip is tested before your photo (new on Oct 11: wanted from every computer)
 
-New in the depth check update of Oct 11. Needs Plan B (pill "backend: mock") or the static demo (pill "demo: runs in your browser"). It takes two minutes. The demo online has this only once it has been published again from the new version: P-16 step 1 shows how to tell.
+New in the depth check update of Oct 11. Needs Plan B (pill "backend: mock") or the static demo (pill "demo: runs in your browser"). It takes two minutes. The demo online has this since Oct 11, 4:31 AM (P-16 step 1 shows how to tell an old copy kept by your browser: reload the page).
 
 **Why this case exists.** On one tester's Snapdragon laptop, both photos they tried came out covered in a regular grid of dimples, like hammered metal (issue 4). The depth model had run on that laptop's graphics chip with no error and had given a wrong answer. So the page now tests the graphics chip first. Each time the page is loaded, before your first photo, it runs the depth model on a small test picture of its own (a wall, a floor, a ball, a box and a post) and compares the answer with the one a processor gives, which is stored in the page. If the chip's answer is wrong, the processor works out your photo instead: slower, and right. This is about the **depth line** only. The four samples and the shading line have no part in it.
 
@@ -572,7 +572,7 @@ The console may hold many lines. Ours all start with "Relight:". Typing `Relight
 
 New in the depth check update of Oct 11. **Only for someone with a Windows laptop that has a Qualcomm Snapdragon chip** (its graphics chip is called Adreno). Everyone else: mark NOT RUN and do P-14. If you have such a laptop, this is the most wanted result in the whole plan. Issue 4 was found on one, nobody else on the team has one, and **the developer has never run any of this on a Qualcomm chip**. The fix was built on a Mac, with the fault imitated by a program.
 
-Needs Plan B (pill "backend: mock") at the version named at the top of [TEST_FIRST.md](TEST_FIRST.md) or later; "Getting fixes" in [SETUP.md](SETUP.md#what-to-expect) says how to get it. Or the hosted demo, once it has been published again from that version (P-16 step 1 shows how to tell).
+Needs Plan B (pill "backend: mock") at the version named at the top of [TEST_FIRST.md](TEST_FIRST.md) or later; "Getting fixes" in [SETUP.md](SETUP.md#what-to-expect) says how to get it. Or the hosted demo, which has had this since Oct 11, 4:31 AM (P-16 step 1 shows how to tell an old copy kept by your browser).
 
 **What was done for this chip.** Two things. (1) A list. The page now takes it as known that a Qualcomm graphics chip on Windows gets the depth model wrong. It does not try the chip at all; the processor works out your photo. (2) A test for every chip, described in P-14. The list exists because nobody could try the test on the real chip. Run 2 below tries it.
 
@@ -2388,7 +2388,7 @@ The **static demo** is a copy of the app made of plain files, with no backend an
 
 **Run H-12 first.** It is your own photo in the demo, on your phone and on your computer. That is the first thing a judge will try, and no phone has tried it yet.
 
-**Which address?** The demo is online at **https://aarooshpravici.github.io/BanannaHacksSubmission/** (since Oct 10, 11:15 PM; **last published on Oct 11 at 2:12 AM from version `6693451`; it takes your own photo**). If its first page still shows a card "This is the in-browser demo." and no dashed box, your browser has kept the old copy: reload the page. The demo does not update by itself, so it can be a little behind the newest code; the log in [PENDING.md](PENDING.md#log) says which version is online. If you were given none, you can build the demo on a Mac with [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) and use `http://localhost:3142/BanannaHacksSubmission/`. If you have neither, mark this group NOT RUN.
+**Which address?** The demo is online at **https://aarooshpravici.github.io/BanannaHacksSubmission/** (since Oct 10, 11:15 PM; **last published on Oct 11 at 4:31 AM from version `23ea368`; it takes your own photo and tests the graphics chip first (P-14)**). If its first page still shows a card "This is the in-browser demo." and no dashed box, your browser has kept the old copy: reload the page. The demo does not update by itself, so it can be a little behind the newest code; the log in [PENDING.md](PENDING.md#log) says which version is online. If you were given none, you can build the demo on a Mac with [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) and use `http://localhost:3142/BanannaHacksSubmission/`. If you have neither, mark this group NOT RUN.
 
 **Reporting.** The bug form asks what the top-right pill reads. For this group write "demo". For the version, write "hosted demo" and the address you opened.
 
