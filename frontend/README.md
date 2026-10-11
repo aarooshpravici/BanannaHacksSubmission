@@ -72,8 +72,25 @@ In the normal app the backend comes first; if it cannot be reached, the failure 
 - **What is different from a backend scene:** the depth map goes through the same steps (`lib/sceneGeometry.ts`
   is a port of `estimate_height` and `build_geometry` in `backend/app/ideas/relight.py`; if the Python changes,
   change it too). The backend's detailed normals come from a second model, Marigold, which is too large for a
-  browser, so these scenes take their normals from the slope of the depth map: surfaces shade flatter and
-  outlines get a darker rim. The page says so in the Geometry panel, and "Detailed normals" is off for them.
+  browser, so these scenes take their normals from the slope of the depth map: surfaces shade flatter.
+  The page says so in the Geometry panel, and "Detailed normals" is off for them.
+- **The depth-step rule.** Where the depth jumps from one object to what is behind it, the slope is nearly
+  vertical and the normal taken from it points sideways. Lit from the side, every object then had a bright rim
+  towards the light and a dark one away from it (GitHub issue 6). So `buildGeometry()` takes a slope that
+  steep for a jump between objects, not a surface, and turns the normal there to face the viewer. The slope
+  (rise over run, both in image widths) is multiplied by one minus a weight that is a smoothstep from 0 at
+  `DEPTH_STEP_SLOPE_LOW` (1.5, a tilt of 56 degrees) to 1 at `DEPTH_STEP_SLOPE_HIGH` (4, 76 degrees), spread
+  to every pixel within `DEPTH_STEP_GROW` (3 pixels at 512 width, by the `dilate()` helper) and blurred with
+  a sigma of `DEPTH_STEP_FEATHER` (2 pixels at 512 width). It is a port of `_depth_steps()` in the Python,
+  which a backend scene with "Detailed normals" off goes through too. The cost: a surface that really is
+  that steep, such as the rounded edge of a cup, is shaded as if it faced the viewer. Measured by an
+  independent check on Oct 11 (Python reference and headless Chrome 155, one Mac): a plane is shown as it is
+  up to 58 degrees, less steep than it is beyond that, never steeper than 61, and flat from 76; on a ball as
+  deep as it is wide the flattening starts at 83% of the radius and is complete at 97%; a jump of less than
+  about 6% of the depth range is left alone, so a rim can stay there, and on photos under about 200 pixels
+  wide part of the rim stays; thin things are flattened right across; and `buildGeometry()` alone takes
+  about 130 ms at 1024 x 1024 in Node, where it took about 53. `testing/PENDING.md` (K72 to K75) says how
+  that looks on a photo.
 - **The library is loaded only when a photo is analysed.** It is a separate 576 KB file that the first page
   does not fetch.
 
@@ -140,7 +157,10 @@ until it has passed a check.
   chip of another make that scores higher is sent to the processor: the right picture, but on the Mac about
   4 to 5 s for the first photo and about 2 s for later ones, against about 0.9 s and 0.2 s. Only the test
   picture is checked, so a chip that gets it right and spoils real photos gets through. Broad noise that is
-  not on the 14-pixel grid passes. Nobody has run any of this on a real Qualcomm chip, on a phone, or on any
+  not on the 14-pixel grid passes. One tester has run the four routes on the real Qualcomm chip (a
+  Snapdragon X laptop, Chromium 152, GitHub issue 4): the list kept the page off the chip, and with
+  `?depth=check` the check turned the chip away with agreement 0.6130 and roughness 185.52, in 993 ms.
+  Edge and Chrome have not been tried there. Nobody has run any of this on a phone, or on any other
   graphics chip but one Apple one. `testing/PENDING.md` has the detail (K66 to K71, open items 52 to 54).
 - **If the model file, its revision or the test picture changes**, the reference has to be measured again;
   the first lines of `lib/depthCheckReference.ts` say how.
