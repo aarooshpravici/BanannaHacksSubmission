@@ -73,6 +73,10 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | U-23 | | |
 | U-24 | | |
 | U-25 | | |
+| U-26 | | |
+| U-27 | | |
+| U-28 | | |
+| U-29 | | |
 | P-01 | | |
 | P-02 | | |
 | P-03 | | |
@@ -98,6 +102,10 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | L-10 | | |
 | L-11 | | |
 | L-12 | | |
+| L-13 | | |
+| L-14 | | |
+| L-15 | | |
+| L-16 | | |
 | C-01 | | |
 | C-02 | | |
 | C-03 | | |
@@ -109,6 +117,7 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | C-09 | | |
 | C-10 | | |
 | C-11 | | |
+| C-12 | | |
 | S-01 | | |
 | S-02 | | |
 | S-03 | | |
@@ -233,6 +242,7 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | H-10 | | |
 | H-11 | | |
 | H-12 | | |
+| H-13 | | |
 
 ## Picture quality (group Q)
 
@@ -252,6 +262,7 @@ Score 1 (fake) to 5 (like a real photo), and one sentence why.
 | Q-10 | | |
 | Q-11 | | |
 | Q-12 | | |
+| Q-13 | | |
 
 ## Bugs
 

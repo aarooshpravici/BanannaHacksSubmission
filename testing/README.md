@@ -25,7 +25,7 @@ Short on time? Read [TEST_FIRST.md](TEST_FIRST.md): one page saying what to test
 | Your share of the full plan ([TEST_PLAN.md](TEST_PLAN.md)) | 1.5 to 3 hours |
 | The whole plan alone | 5 to 6 hours |
 
-The plan has **197 test cases** in 17 groups. Some need a key, a touch screen or a second browser, and some can only be done if your device happens to take a rare path; skip those you cannot do and mark them NOT RUN.
+The plan has **208 test cases** in 17 groups. Some need a key, a touch screen or a second browser, and some can only be done if your device happens to take a rare path; skip those you cannot do and mark them NOT RUN.
 
 If setup fails, that is a result too. Report it (see [Reporting](#reporting-what-you-found)) and switch to "Plan B" in [SETUP.md](SETUP.md#plan-b-no-backend-mock-mode).
 
@@ -41,7 +41,7 @@ If setup fails, that is a result too. Report it (see [Reporting](#reporting-what
 | [Reporting what you found](#reporting-what-you-found) (bottom of this page) | The two links for reporting a bug or a finished test run, and how to take a screenshot |
 | [results/TEMPLATE.md](results/TEMPLATE.md) | Results form to fill in **only** if you cannot use GitHub |
 | [photos/](photos/README.md) | The test photos. Everyone uses the same ones. The first four are also built into the app as the samples Portrait, Coffee cup, Cat and Rocket |
-| [screenshots/](screenshots/) | What each screen should look like: 175 pictures, all taken on Saturday Oct 10 on a Mac in Chrome (40 retaken and 23 added in the late night update), window 1440 x 900 unless the test case says otherwise |
+| [screenshots/](screenshots/) | What each screen should look like: 191 pictures, all taken early on Sunday Oct 11 on a Mac in Chrome (every one retaken and 16 added in that morning's update), window 1440 x 900 unless the test case says otherwise |
 
 ## Splitting the work between three testers
 
@@ -54,7 +54,7 @@ Everyone does the smoke test first. Then pick one share and say which in your re
 | C | Layout (W), Kinds of photos (T), Errors (R), Shading paths (F), Speed (D), What a judge would try (J) |
 | Everyone, if an address was given | Hosted demo (H). On a real phone if you have one |
 
-Everyone starts with **H-12** (your own photo with no backend, on your phone and your computer; without a demo address, **P-10** in Plan B). Everyone also does three cases, whatever their share: **W-16** (which shading path your device uses, and whether the light works), on every device you own; **Q-11** (the face under side light); and **G-07** (is the "How it works" card clear and right to a newcomer). In group F, most cases can only be done if your device takes that path by itself; mark the others NOT RUN. If you have time left, do the rest of the "Picture quality (Q)" group as well. It needs human judgement, and three opinions are better than one.
+Everyone starts with **H-12** (your own photo with no backend, on your phone and your computer; without a demo address, **P-10** in Plan B). Next come the two things that are new on Oct 11: **Q-13** and **L-13** (the sun grows as the light comes nearer, and scrolling on the sun changes Height; on a phone **L-16**), and, if you have an iPhone and a Mac, **U-27** (a photo sent by AirDrop). Everyone also does three cases, whatever their share: **W-16** (which shading path your device uses, and whether the light works), on every device you own; **Q-11** (the face under side light); and **G-07** (is the "How it works" card clear and right to a newcomer). In group F, most cases can only be done if your device takes that path by itself; mark the others NOT RUN. If you have time left, do the rest of the "Picture quality (Q)" group as well. It needs human judgement, and three opinions are better than one.
 
 ## Words used in this kit
 
@@ -96,16 +96,17 @@ Expected: the photo appears dimmed with the words "Estimating depth and surface 
 ![Step 2: the shading line, enlarged](screenshots/121-shading-line-full-quality.jpg)
 
 **Step 3. Light from the left, then the right.** In the LIGHT panel click **Left**, look, then click **Right**.
-Expected after Left: the sun jumps to just left of the photo and the readout says x -0.10, y 0.40; the left half of the face is bright and the right half darker. After Right: the opposite, with the left half of the face dark, and the readout says x 1.10, y 0.40. In both, bright turns to dark gradually, with no hard, straight line on the face.
+Expected after Left: the sun jumps to just left of the photo and is a little larger than before (a preset sets **Height** to 0.35, and the sun's size follows Height); the readout says x -0.10, y 0.40; the left half of the face is bright and the right half darker. After Right: the opposite, with the left half of the face dark, and the readout says x 1.10, y 0.40. In both, bright turns to dark gradually, with no hard, straight line on the face.
 
 ![Step 3: Left](screenshots/06-preset-left.jpg)
 ![Step 3: Right](screenshots/07-preset-right.jpg)
 
-**Step 4. Drag the sun.** Press on the sun and drag it slowly in a circle around the face, then out past the right edge of the photo. Then click **Sweep** (top right of the LIGHT panel) and watch.
-Expected: the lighting follows your mouse with no visible delay or stutter. (If your shading line says "processor", the picture is a slightly soft preview while the sun moves and sharpens when it stops. That is expected.) The x and y numbers in the sidebar change as you drag. The sun stops at the edge of the stage. With x above 1 the right side of the face is bright. After **Sweep**: the button reads "Stop sweep" in yellow letters, the sun travels once round the photo by itself in about 6 seconds, and it ends exactly where it started.
+**Step 4. Drag the sun.** Press on the sun and drag it slowly in a circle around the face, then out past the right edge of the photo. Then click **Sweep** (top right of the LIGHT panel) and watch. Last, put the mouse on the sun without pressing and scroll up a few notches (on a phone: spread two fingers on the photo).
+Expected: the lighting follows your mouse with no visible delay or stutter. (If your shading line says "processor", the picture is a slightly soft preview while the sun moves and sharpens when it stops. That is expected.) The x and y numbers in the sidebar change as you drag. The sun stops at the edge of the stage. With x above 1 the right side of the face is bright. After **Sweep**: the button reads "Stop sweep" in yellow letters, the sun travels once round the photo by itself in about 6 seconds, and it ends exactly where it started. After the scroll: the **Height** number in the sidebar rises, the sun gets larger, x and y stay the same, and the page itself does not scroll.
 
 ![Step 4: sun outside the photo](screenshots/13-drag-outside-photo.jpg)
 ![Step 4: during a Sweep](screenshots/67-sweep-during.jpg)
+![Step 4: after scrolling up on the sun (here from a fresh photo, Height 0.36)](screenshots/178-sun-scrolled-nearer.jpg)
 
 **Step 5. Shadows on an object.** Click **New photo** (top right of the stage). Click the **Coffee cup** sample thumbnail. Click **Left**. Drag the **Height** slider left to about 0.10. Then click the **Cast shadows** switch off and on again.
 Expected: the coffee photo opens at once, with no "Estimating…" wait. The readout says x -0.10, and the sun sits at the left edge of the stage. With the switch on (yellow): a soft dark shadow to the right of the cup, with blurred edges. With it off (grey): that shadow disappears and the right of the saucer gets lighter.

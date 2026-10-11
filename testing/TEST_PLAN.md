@@ -8,8 +8,8 @@ Every test case has an ID (for example `L-03`), numbered steps, the expected res
 - **No backend?** If the pill reads "backend: mock" (Plan B in SETUP) or "backend: offline", click a sample thumbnail wherever a case says to load a test photo: **Portrait** for `01-portrait-astronaut.jpg`, **Coffee cup** for `02-object-coffee.jpg`, **Cat** for `03-animal-cat.jpg`, **Rocket** for `04-dark-rocket.jpg`. They are the same four photos with the same shape data, and they need no backend. A case that needs another photo file can still be run. In Plan B, choose the file: the browser works out its shape (P-10). With the pill "backend: offline", choose the file and click **Analyse in this browser** on the card that appears (R-22). Such a photo shades a little flatter than with the backend, the words on the loading label are different, and **Detailed normals** is off (P-12). Cases about the backend's own loading screen, or about anything else the backend does, cannot be run that way: mark them NOT RUN.
 - **Hosted demo?** If you were given a web address for the static demo (the pill reads "demo: runs in your browser", or just "demo" on a phone), do group H. The demo has the four samples and it takes your own photo too: the browser works out the photo's shape and nothing is uploaded. **H-12 is the case to run first.** Only Enhance is switched off there.
 - **Recording results.** On GitHub, use the "Report a finished test run" link in [README.md](README.md#reporting-what-you-found) and write one line per case. Only if you cannot use GitHub, fill in a copy of [results/TEMPLATE.md](results/TEMPLATE.md). Mark each case **PASS** (matches "Expected"), **FAIL** (does not; open a bug issue) or **NOT RUN**.
-- **Screenshots** (175 of them) were all taken on Saturday Oct 10, on a Mac in Chrome, with a 1440 x 900 window unless the case says otherwise. Where a screenshot shows an address with port 8123, yours says 8000. In the late night update 40 were retaken and 23 were added (153 to 175). Small differences in size and position on your screen are normal. Different words, missing parts, or lighting on the wrong side are not.
-- **Sizes mean the page area**, not the whole window: the part below the browser's tabs and address bar. An ordinary 1440 x 900 window has a page area about 800 pixels high. Below 832 the grey helper lines under Height, Ambient and Cast shadows are not shown (they become hover text). That is expected, and the screenshots show them only because they were taken with a page area of exactly 1440 x 900. To get an exact page size use Chrome's F12 device toolbar, as in W-13.
+- **Screenshots** (191 of them) were all taken early on Sunday Oct 11, on a Mac in Chrome, with a 1440 x 900 window unless the case says otherwise. Where a screenshot shows an address with port 8123, yours says 8000. In the early morning update of Oct 11 every one was retaken and 16 were added (176 to 191). Small differences in size and position on your screen are normal. Different words, missing parts, or lighting on the wrong side are not.
+- **Sizes mean the page area**, not the whole window: the part below the browser's tabs and address bar. An ordinary 1440 x 900 window has a page area about 800 pixels high. Below 832 the grey words under Height (its two end labels, "close to the surface" and "close to you") and the grey helper lines under Ambient and Cast shadows are not shown (the helper lines become hover text). That is expected, and the screenshots show them only because they were taken with a page area of exactly 1440 x 900. To get an exact page size use Chrome's F12 device toolbar, as in W-13.
 - **The x and y numbers.** x 0.00 is the photo's left edge and 1.00 its right edge; y 0.00 is the top and 1.00 the bottom. Numbers below 0 or above 1 mean the light is outside the photo. **A preset always gives the same numbers**, on every window and every photo: **Left** x -0.10, y 0.40; **Right** x 1.10, y 0.40; **Top** x 0.50, y -0.15. If that point lies beyond the edge of the stage, the sun is drawn at the stage's edge and the readout still shows the preset's numbers. A drag or an arrow key is different: it stops at the stage's edge, and the readout shows where it stopped.
 - **Where an Enhance error shows.** On a window 1024 pixels wide or more, a failed Enhance shows a red bar **above the photo**. On a narrower window (a phone) the same message is a red box inside the ENHANCE panel, under the button. The cases say "above the photo"; on a phone look in the ENHANCE panel (R-21).
 - **GEOMETRY is folded.** The GEOMETRY panel at the bottom of the sidebar starts as a single row. Where a case says "open GEOMETRY", click that row.
@@ -42,7 +42,7 @@ Start each case on the first page with no photo (click **New photo** if a photo 
 
 1. Move the mouse over the dashed box. 2. Click it. 3. Choose `testing/photos/01-portrait-astronaut.jpg`.
 
-**Expected:** on hover the box border and background get slightly lighter. The click opens your computer's file chooser, which offers pictures only. After choosing, the page changes to the workspace: photo on the left, sidebar on the right.
+**Expected:** on hover the box border and background get slightly lighter. The click opens your computer's file chooser, which offers pictures only (iPhone photos ending in `.heic` or `.heif` are offered too, since Oct 11: U-26). After choosing, the page changes to the workspace: photo on the left, sidebar on the right.
 
 ![U-02 hover](screenshots/02-upload-empty.jpg)
 
@@ -114,7 +114,7 @@ Start each case on the first page with no photo (click **New photo** if a photo 
 
 1. Load a photo taken on a phone, ideally one taken holding the phone upright. 2. If you have an iPhone photo ending in `.heic`, try that too.
 
-**Expected:** the photo appears the right way up, not on its side. A `.heic` file in Chrome will probably be refused with "That file is not an image this browser can read." (Chrome cannot open that format); in Safari it may load. Write down the file type, the browser and what happened.
+**Expected:** the photo appears the right way up, not on its side. A `.heic` file should now load in every browser (changed in the early morning update of Oct 11; only Chrome on a Mac has been tried, and Chrome, Edge and Firefox need the internet for the first one; before that Chrome refused it with "That file is not an image this browser can read."). While it is read, the dashed box says "Converting your photo…". The full cases are U-26 (the kit's own `.heic` files), **U-27** (a photo sent by AirDrop from an iPhone) and U-28 (Windows). Write down the file type, the browser and what happened.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -160,7 +160,7 @@ Make three files first. Copy `not-an-image.txt` to the Desktop three times and n
 
 1. Drop `broken.jpg` on the dashed box. 2. Click the X on the red bar. Drop `mystery`. 3. Drop `empty.jpg`.
 
-**Expected:** all three: the page stays on the first page and a red bar under the sample thumbnails reads "That file is not an image this browser can read." The box may read "Reading image…" for an instant first. Note the difference from U-06: a file ending in `.txt` gives the shorter "That file is not an image." A new red bar replaces the old one; there are never two. The backend's own message "could not read image" should never appear from the page; if you ever see it, report what file caused it.
+**Expected:** all three: the page stays on the first page and a red bar under the sample thumbnails reads "That file is not an image this browser can read." The box may read "Reading image…" for an instant first. Note the difference from U-06: a file ending in `.txt` gives the shorter "That file is not an image." A new red bar replaces the old one; there are never two. The backend's own message "could not read image" should never appear from the page; if you ever see it, report what file caused it. (A damaged `.heic` file gives a different red bar: U-29.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -178,7 +178,7 @@ Use whatever of these you have or can make. Skip the rest and say which you skip
 
 1. On the first page choose `08-huge-astronaut-3000px.jpg` and watch the dashed box closely. 2. If you saw nothing, click **New photo** and try again with the largest photo you have.
 
-**Expected:** for a moment (well under a second on a fast computer) the icon and the words in the dashed box are replaced by a spinner and "Reading image…". The four sample thumbnails do not change. Then the workspace appears. If it is too fast to see, mark NOT RUN and say so.
+**Expected:** for a moment (well under a second on a fast computer) the icon and the words in the dashed box are replaced by a spinner and "Reading image…". The four sample thumbnails do not change. Then the workspace appears. If it is too fast to see, mark NOT RUN and say so. (For a `.heic` photo the words are "Converting your photo…": U-26.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -283,6 +283,69 @@ Any other words in the red bar: copy them whole into a bug issue, with the addre
 ![U-25 the site answered 404, enlarged](screenshots/154-drop-web-image-404.jpg)
 ![U-25 the site took too long, enlarged](screenshots/155-drop-web-image-too-slow.jpg)
 ![U-25 a damaged address, enlarged](screenshots/158-drop-unreadable-address.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### U-26 The kit's HEIC photos (the kind an iPhone saves)
+
+New in the early morning update of Oct 11. An iPhone saves its photos as HEIC files (the name ends in `.heic`). Chrome, Edge and Firefox cannot open that kind by themselves, so until now the app refused it. Now the page converts it. In those three browsers the first HEIC photo downloads a small converter from `cdn.jsdelivr.net`, so the computer needs the internet that one time. Safari opens HEIC by itself and downloads nothing. The three test files were made on a Mac, not by an iPhone. A real iPhone photo is U-27.
+
+1. Click the dashed box and choose `testing/photos/09-iphone-portrait.heic`. Watch the dashed box. Count the seconds until the sun appears. 2. Click **Left**. 3. Click **New photo**. Drag `10-iphone-sideways.heic` from the folder onto the dashed box. 4. Open GEOMETRY and read the size line. 5. Click **New photo**. Choose `11-iphone-12mp.heic`. Count the seconds again. Open GEOMETRY and read the size line.
+
+**Expected:** step 1: the file chooser lets you pick the `.heic` file. The dashed box shows a spinner and "Converting your photo…" (not "Reading image…"), for a second or two. Then the workspace opens as for any photo: with the backend, the photo is dimmed with "Estimating depth and surface normals…" and then lit. Nothing on the page says that the file was a HEIC. Step 2: it looks the same as `01-portrait-astronaut.jpg` with **Left** (C-05): x -0.10, y 0.40, the left of the face bright. The colours are right (no green, purple or grey cast) and the picture is sharp. Step 3: the tall astronaut comes out **upright**, taller than wide, with her head at the top. The file stores her lying on her side, with a note to turn the picture, as a phone held upright does; the app obeys the note. A sideways astronaut is a FAIL. Step 4: the size line starts "288 x 512 px". Step 5: the coffee cup, a full-size phone photo of 4032 x 3024 pixels, loads sharp and wider than tall. The size line starts "1024 x 768 px". On the developer's Mac it took 2 to 3 seconds from choosing the file to the sun. Write down your times; more than 15 seconds in step 5 is worth a report.
+
+There is no red bar in any step. It is a FAIL if a red bar reads "That file is not an image this browser can read." or "That file is not an image.": that was the old answer.
+
+Without a backend (Plan B, the demo, or **Analyse in this browser**) the same files work. The browser then also works out the photo's shape (P-10), so the first photo takes longer. The demo is H-13.
+
+![U-26 step 1: the dashed box while the photo is converted (held still by a tool)](screenshots/184-heic-converting.jpg)
+![U-26 step 2: the HEIC portrait, Left](screenshots/185-heic-photo-lit.jpg)
+![U-26 step 3: the sideways file comes out upright](screenshots/186-heic-sideways-photo.jpg)
+![U-26 step 5: the full-size phone photo](screenshots/187-heic-12mp-photo.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Browser, times and note:
+
+### U-27 A HEIC photo sent by AirDrop from an iPhone to a Mac
+
+New in the early morning update of Oct 11. Needs an iPhone and a Mac. This is what the owner asked for, and **nobody has tried it with a real iPhone photo**. The files in U-26 were made on a Mac and may differ from what an iPhone sends.
+
+1. On the iPhone open Photos. Pick a photo taken holding the phone **upright**; a person is best. Tap the share button, tap AirDrop and choose your Mac. The photo lands in the Mac's Downloads folder. Look at its name: it should end in `.HEIC`. (If it ends in `.jpg` or `.jpeg`, the phone is set to save JPEG. On the iPhone: Settings, Camera, Formats, choose "High Efficiency". Take a new photo and send that one.) 2. In **Chrome**, on the Relight first page, click the dashed box and choose the photo. Count the seconds until the sun appears. Click **Left**. Take a screenshot. 3. Click **New photo**. Drag the same file from the Downloads folder onto the dashed box. 4. Click **New photo**. In Finder click the file once and press Cmd+C. Click an empty part of the Relight first page and press Cmd+V. 5. Do steps 2 to 4 again in **Safari**. 6. If you can: send a photo taken holding the phone **sideways**, a Portrait-mode photo and a Live Photo, and choose each one in Chrome. 7. If the iPhone itself can reach the app (a demo address, or W-16 step 8): tap the dashed box on the phone and choose a photo from the library.
+
+**Expected:** step 2: the dashed box shows a spinner and "Converting your photo…" for a few seconds. Then the workspace opens and the photo is lit like any other. It is **the right way up**. Its colours look like the photo on the phone, and it is sharp. With GEOMETRY open, the longer side in the size line is 1024. A made-up full-size file took the developer's Mac 2 to 3 seconds; write down your time. More than 15 seconds is worth a report. Step 3: the same. The box's border turns yellow while the file is over it. Step 4: **not known.** Read from the code, the pasted file should load just like a chosen one. If nothing happens, or a small picture of a file icon loads in place of the photo, write that down with the browser's name. It is a result, not your mistake. Step 5: the same results in Safari. Safari opens the photo by itself, so the wait is shorter and nothing is downloaded. The box may still read "Converting your photo…" for an instant. Step 6: each one loads upright, as one still picture. Step 7: the photo loads upright. The phone may hand the page a HEIC or a JPEG; both should work. Not known: write down what happened.
+
+A FAIL is any of these: a red bar (copy its words; U-29 lists the ones we know); the photo on its side or upside down; wrong colours, or a picture that is mostly green or grey; only a part of the photo, or squares of it in the wrong places; the page frozen for more than a few seconds.
+
+**Report this even if everything works:** the iPhone model, the macOS version, each browser, the seconds, and "upright: yes or no". If something is wrong, the photo itself helps most. The repository is public, so attach it (inside a .zip file) only if you do not mind that; otherwise say so in the issue.
+
+`Result: PASS / FAIL / NOT RUN` iPhone, browsers, times and note:
+
+### U-28 A HEIC photo on Windows
+
+New in the early morning update of Oct 11. Never tried: the developer has no Windows computer. No Windows browser opens HEIC by itself, so there the page always uses its converter, which needs the internet the first time.
+
+1. In Chrome or Edge on Windows, click the dashed box. In the file chooser go to the `testing\photos` folder and choose `09-iphone-portrait.heic`. 2. Click **New photo**. Drag `10-iphone-sideways.heic` from File Explorer onto the dashed box. 3. Click **New photo**. Choose `11-iphone-12mp.heic` and count the seconds until the sun appears. 4. If you have a photo from a real iPhone whose name ends in `.heic`, try it too. 5. If you have Firefox, do step 1 in it.
+
+**Expected:** the same as U-26: "Converting your photo…" in the dashed box, then the photo lit like any other, upright in step 2, and no red bar. File Explorer may show these files with a blank icon and no preview; that is normal on Windows and does not matter. If the file chooser does not list the `.heic` files, change the list at its bottom right to "All files", choose the file anyway, and say so in the note. Write down the browser, the seconds for step 3 and what you saw.
+
+`Result: PASS / FAIL / NOT RUN` Browser, times and note:
+
+### U-29 A HEIC photo that cannot be converted: the red bars
+
+New in the early morning update of Oct 11. Step 1 is for everyone. Steps 2 and 3 are extra. In Safari do step 1 only and write down what happens: Safari opens HEIC by itself, so its words may differ.
+
+1. Choose `testing/photos/broken-photo.heic`. It is the first part of a HEIC file, with the picture itself missing. Then click the X on the red bar. 2. The converter cannot be downloaded. Open a **new private window** (Chrome: Cmd+Shift+N on macOS, Ctrl+Shift+N on Windows), so that the browser has not kept the converter from before. Open http://localhost:3000 in it. Turn the computer's Wi-Fi off. Choose `09-iphone-portrait.heic` and wait up to one minute. Turn Wi-Fi on again and choose the file once more. 3. macOS only: make a HEIC photo that is too large. In Terminal, in the project folder, run `sips -z 8192 8192 -s format heic testing/photos/01-portrait-astronaut.jpg --out ~/Desktop/too-large.heic`. Choose `too-large.heic` from the Desktop. Delete it afterwards.
+
+**Expected:** always a red bar under the sample thumbnails, with an X. The page stays on the first page and the dashed box goes back to "Drop a photo here".
+
+- Step 1: "This HEIC photo could not be converted. Export it as a JPEG (on a Mac: open it in Preview, then File, Export) and use that." The X removes it. (This needs the internet in Chrome, Edge and Firefox: the converter is fetched before the file is tried. Offline you get the step 2 bar instead; that is not a FAIL of step 1.)
+- Step 2: "This is a HEIC photo, which this browser cannot read by itself, and the converter for it could not be downloaded from cdn.jsdelivr.net. Check the connection and try again, or export the photo as a JPEG and use that." It may show at once, or after up to 60 seconds of "Converting your photo…". With Wi-Fi back on, the photo loads. (The developer staged this by blocking that one address inside Chrome. The Wi-Fi way was not tried.)
+- Step 3: "This HEIC photo is too large to convert in a browser (8192 x 8192 pixels). Export it as a JPEG (on a Mac: open it in Preview, then File, Export) and use that." The two numbers are the photo's own size. The limit is 64 million pixels. An iPhone's largest photo (48 million) is under it and should load.
+
+A FAIL is any of these: no bar and no photo; the old bar "That file is not an image this browser can read."; the box stuck on "Converting your photo…" for more than about a minute; or a damaged file that **loads** and shows a picture that is mostly green or grey, with no error. That last one was found by an automatic check, for a large iPhone-style HEIC file cut short just after its beginning (an interrupted AirDrop or download leaves a file like that). The app now refuses a file that stops before its own contents do, with the step 1 bar; the check was run on the kit's own files and on two cut copies of `11-iphone-12mp.heic`, not in a browser by hand. If you see a green or grey picture all the same, attach the file.
+
+![U-29 step 1: a damaged file](screenshots/188-heic-error-cannot-convert.jpg)
+![U-29 step 2: the converter could not be downloaded](screenshots/189-heic-error-no-converter.jpg)
+![U-29 step 3: a photo that is too large](screenshots/190-heic-error-too-large.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -473,7 +536,7 @@ The card can show five other lines. The developer has never seen any of them on 
 
 1. Standard start.
 
-**Expected:** a round white button with a sun icon and a soft glow, near the left edge of the photo about a third of the way down, on the flag. Readout "x 0.12", "y 0.35", "colour" with a white dot. Height 0.12, Intensity 1.80, Ambient 0.06. The left of the face is clearly bright and the right cheek is in shadow. Every photo and every sample starts with this light.
+**Expected:** a round white button with a sun icon and a soft glow, near the left edge of the photo about a third of the way down, on the flag. The white disc is 40 pixels across here; since Oct 11 its size follows **Height** (C-12). Readout "x 0.12", "y 0.35", "colour" with a white dot. Height 0.12, Intensity 1.80, Ambient 0.06. The left of the face is clearly bright and the right cheek is in shadow. Every photo and every sample starts with this light.
 
 ![L-01](screenshots/04-scene-default-light.jpg)
 
@@ -528,9 +591,9 @@ The card can show five other lines. The developer has never seen any of them on 
 
 ### L-07 Other mouse buttons
 
-1. Right-click on the photo. 2. Scroll the mouse wheel over the photo.
+1. Right-click on the photo. 2. Scroll the mouse wheel over the photo, with the pointer **not** on the sun.
 
-**Expected:** the sun does not move for either. (A browser menu may open on right-click; that is fine.)
+**Expected:** the sun does not move for either, and the **Height** number does not change. (A browser menu may open on right-click; that is fine. Scrolling with the pointer **on** the sun is different since Oct 11: it changes Height. That is L-13.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -585,6 +648,66 @@ Developer note: possible bug (step 3: the first press towards the photo is a jum
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
+### L-13 Scroll on the sun: bring the light nearer, push it back
+
+New in the early morning update of Oct 11. **Height** is how far in front of the photo the light floats. You can now change it on the photo itself: put the pointer on the sun and scroll. Use a real mouse wheel or a real trackpad, and say which in the note. **Nobody has done this by hand**: the developer's scrolls were made by a program.
+
+1. Standard start (Height 0.12). Move the mouse onto the sun and hold it still for one second. Do not press. 2. Turn the mouse wheel **up** (away from you), one notch at a time, five notches. On a trackpad: slide two fingers slowly, a short way, in the direction that scrolls a web page back towards its top. Watch the sun, the **Height** number and the Height slider. 3. Scroll the other way until Height stops changing. 4. Scroll up until Height stops changing. 5. Trackpad only, in Chrome or Firefox: with the pointer on the sun, spread two fingers apart, then pinch them together. 6. Press on the sun and drag it a little.
+
+**Expected:** step 1: after about half a second a small dark label appears under the sun: "Scroll to bring the light nearer or push it back". It goes when the mouse leaves the sun. Step 2: each notch up brings the light **nearer to you**. The Height number rises, the slider's knob moves right, the sun gets **larger**, and the picture gets more evenly lit. With an ordinary mouse wheel each notch adds about a quarter: about 0.15, 0.19, 0.23, 0.29, 0.36. Some mice, and every trackpad, move in other step sizes; the direction is what matters. x and y do **not** change, and the page does not scroll. Step 3: scrolling down pushes the light back: the number falls, the sun shrinks, and the shadows stretch. It stops at **0.03**. Step 4: it stops at **2.00**. Step 5: spreading the fingers brings the light nearer (Height rises), pinching pushes it back, and the page does not zoom. (Read from the code; never run. In Safari on a Mac the trackpad pinch on the sun is known not to work, K61; two-finger scrolling does.) Step 6: the label is hidden while you drag, and the drag works as always.
+
+A scroll on the sun during a **Sweep** should change Height without stopping the sweep. (Read from the code. It is hard to do by hand, because the sun moves; not required.)
+
+**Write down:** mouse or trackpad, and the browser. Was the direction the one you expected (up = nearer)? Was it too fast, too slow or about right? On a Mac trackpad the light may go on moving for a moment after your fingers lift (K60): did that bother you? Did you find the label by yourself, and did it tell you enough? Was the label cut off anywhere (K59)?
+
+![L-13 step 1: the label under the sun, enlarged](screenshots/177-sun-scroll-hint.jpg)
+![L-13 step 2: after five notches up, Height 0.36](screenshots/178-sun-scrolled-nearer.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Mouse or trackpad, browser and note:
+
+### L-14 Scrolling on the sun does not scroll the page
+
+New in the early morning update of Oct 11. The wheel belongs to the light only while the pointer is on the sun. Anywhere else it scrolls the page as before. For this case the page must be long enough to scroll.
+
+1. Make the browser window about 900 pixels wide and 600 high. (Narrower than 1024, so the sidebar moves under the photo and the page gets long.) Click the **Portrait** sample. 2. Put the mouse on the photo, **not** on the sun. Scroll down a little, then back up to the top. 3. Put the mouse on the sun. Scroll down until Height reads 0.03, then keep scrolling down for two more seconds. 4. Scroll up until Height reads 2.00, then keep scrolling up for two more seconds. 5. Move the mouse off the sun, onto the photo, and scroll down. 6. Scroll back to the top. Put the mouse on the sun again, hold Ctrl and turn the wheel.
+
+**Expected:** step 2: the page scrolls down and up as any web page does. The sun does not move and Height does not change. Step 3: Height falls to 0.03 and the page stays exactly where it is, also while you keep scrolling at 0.03. Step 4: the same at 2.00: the page never starts to move. Step 5: the page scrolls again, and Height stays 2.00. Step 6: the page does **not** zoom. Height changes, a little faster than without Ctrl (read from the code; never run).
+
+A FAIL is any of these: the page moves while the pointer is on the sun; Height changes while the pointer is somewhere else; or the page can no longer be scrolled at all.
+
+At Height 2.00 the sun is 69 pixels across and covers more of the photo, so it is easier to be on it without meaning to. Say in the note if you ever changed Height by accident while trying to scroll the page.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### L-15 Nearer and further with the + and - keys
+
+New in the early morning update of Oct 11.
+
+1. Reload the page, load the astronaut, and press Tab three times so that the sun has a white ring (as in L-05). 2. Press the **+** key three times. (On most keyboards that is Shift with =. The = key alone works too.) 3. Press the **-** key three times. 4. Press - again and again until Height stops changing. Then press + twice. 5. Hold Cmd (macOS) or Ctrl (Windows) and press +. Then hold Cmd or Ctrl and press 0.
+
+**Expected:** step 1: as soon as the sun has the white ring, the label "Scroll to bring the light nearer or push it back" shows under it; there is no half-second wait. Step 2: Height goes 0.12, 0.13, 0.15, 0.17. The sun grows a little each time and the Height slider follows. Step 3: back down: 0.15, 0.13, 0.12. Step 4: it stops at **0.03**. The two + presses give 0.04 and 0.05: every press changes the number, at the low end too. (Each press changes Height by about one eighth, and never by less than 0.01.) x and y never change. The arrow keys still move the light as in L-05. Step 5: with Cmd or Ctrl held, the keys do what they do in every browser: the whole page zooms in, then goes back to normal size. Height does not change.
+
+![L-15 step 2: the white ring, the label and Height 0.17, enlarged](screenshots/179-sun-keyboard-plus.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### L-16 Pinch on a phone or a touch screen: nearer and further
+
+New in the early morning update of Oct 11. Needs a real touch screen: a phone, a tablet or a touch laptop. Chrome's phone imitation has only one finger. The developer made the two fingers with a program; **no real hand has tried this.**
+
+1. On the phone, load the **Portrait** sample (use the demo address, or W-16 step 8). The light starts at Height 0.12. Notice how big the sun is. 2. Put two fingers close together on the photo, both at the same moment, and spread them to about twice as far apart. Lift both. Scroll down and read the **Height** number. 3. Scroll back up. Put two fingers far apart on the photo and pinch them together. Lift both. 4. Put **one** finger on the photo, wait a full second, then add a second finger and spread. 5. After a spread, lift only one finger and move the other one about. 6. Drag the sun with one finger.
+
+**Expected:** step 2: the light comes **nearer**: the sun grows, and Height rises. Twice as far apart takes 0.12 to about 0.68. (The developer's program got exactly 0.68 going from 80 to 160 pixels apart.) The light does **not** move sideways: x 0.12 and y 0.35 stay. The page does not zoom and does not scroll. Step 3: the light is pushed back: the sun shrinks and Height falls, to 0.03 at the lowest. Step 4: the first finger moves the light to where it touched, as a tap always did. The second finger then changes only the Height. (The light is put back where it was only if the second finger lands within about a third of a second. Known, K64.) Step 5: the finger left on the screen does not drag the light. Step 6: a one-finger drag works as before (W-05).
+
+Under the Height slider a phone shows grey words: "close to the surface" at the left and "close to you" at the right, and under them "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows." The words say "on the sun", but the two fingers may be anywhere on the photo or on the dark area round it, and "Scroll" is for a mouse. Say in the note if that wording confused you.
+
+**Write down:** the phone and the browser. Did the direction feel right (spread = nearer)? Was it too fast? (One spread can go from one end of Height to the other.) Did the light jump sideways? Did the page zoom?
+
+![L-16 step 2: after the spread, Height 0.68 and a larger sun (Chrome on a Mac imitating a phone)](screenshots/183-phone-pinch-nearer.jpg)
+![L-16 the words under the Height slider on a phone, enlarged](screenshots/182-phone-height-control.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Phone, browser and note:
+
 ---
 
 ## C. Controls
@@ -595,7 +718,7 @@ All in the LIGHT panel. Each case begins: standard start, then click **Left**, s
 
 1. Drag **Height** all the way left. 2. Drag it all the way right.
 
-**Expected:** the value goes from 0.03 to 2.00. At 0.03 the light skims the surface: the picture is darker, with strong shadows, and only the left edge and left-facing surfaces stay bright. At 2.00 the picture is evenly and brightly lit with almost no shadows, close to the original photo. Helper line under the slider: "Low grazes the surface and stretches the shadows." (On a window less than 832 pixels high the helper line is not on the page; it shows as hover text on the slider instead. See W-14.)
+**Expected:** the value goes from 0.03 to 2.00. At 0.03 the light skims the surface: the picture is darker, with strong shadows, and only the left edge and left-facing surfaces stay bright. At 2.00 the picture is evenly and brightly lit with almost no shadows, close to the original photo. The sun changes with it (new on Oct 11): at 0.03 it is at its smallest, about two thirds of its usual size, with almost no glow; at 2.00 it is at its largest, not quite twice its usual size, with a wide soft glow (C-12). Under the slider's track are two grey labels: "close to the surface" at the left end and "close to you" at the right end. (On a window less than 832 pixels high they are not shown.) The sentence "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows." is hover text on the slider; on a phone it is printed under the two labels. See W-14. (Before Oct 11 the line under the slider read "Low grazes the surface and stretches the shadows.")
 
 ![C-01 min](screenshots/15-height-min.jpg)
 ![C-01 max](screenshots/16-height-max.jpg)
@@ -639,12 +762,12 @@ All in the LIGHT panel. Each case begins: standard start, then click **Left**, s
 
 1. Click **Left**. 2. Click **Right**. 3. Click **Top**. 4. Set Colour to warm, set Ambient to 0.50, turn **Cast shadows** off, then click **Left** again.
 
-**Expected:** every one sets Height 0.35, Intensity 1.30 and Colour "neutral". The five buttons Left, Right, Top, Low and warm, Reset light sit in one row that fills the panel from edge to edge.
+**Expected:** every one sets Height 0.35, Intensity 1.30 and Colour "neutral". The sun is therefore a little larger than at the start (about 51 pixels across, not 40: C-12). The five buttons Left, Right, Top, Low and warm, Reset light sit in one row that fills the panel from edge to edge.
 Left: readout x -0.10, y 0.40. Sun just left of the photo; left of face bright, the right half darker.
 Right: readout x 1.10, y 0.40. Sun just right of the photo; right of face bright and the left half of the face dark.
 Top: readout x 0.50, y -0.15. Sun above the photo in the middle, at the very top of the stage; hair and forehead brightest, under the chin darker.
 Step 4: Colour goes back to "neutral"; Ambient **stays** at 0.50 and **Cast shadows stays off**.
-These numbers are the same on every window and every photo (C-11). With **Top** on the astronaut the true point is a little above the stage, so the sun is drawn at the stage's top edge; the readout still says y -0.15. In all three, the dark side of the face fades in gradually: there is no hard, straight line between bright and dark (Q-11).
+These numbers are the same on every window and every photo (C-11). With **Top** on the astronaut the true point is a little above the stage, so the sun is drawn at the stage's top edge, where the top of its disc is cut off by a few pixels (known, K56); the readout still says y -0.15. In all three, the dark side of the face fades in gradually: there is no hard, straight line between bright and dark (Q-11).
 
 ![C-05 Left](screenshots/06-preset-left.jpg)
 ![C-05 Right](screenshots/07-preset-right.jpg)
@@ -683,7 +806,7 @@ These numbers are the same on every window and every photo (C-11). With **Top** 
 
 1. Drag **Intensity** slowly from 0 to 4 while watching the sun. 2. Drag **Colour** from one end to the other.
 
-**Expected:** the glow around the sun gets brighter as Intensity rises (it stops changing above 3). Its size does not change. The sun's fill colour and the colour dot in the readout match the Colour slider.
+**Expected:** the glow around the sun gets brighter as Intensity rises (it stops changing above 3). Its size does not change with Intensity or Colour; only **Height** changes it (C-12). The sun's fill colour and the colour dot in the readout match the Colour slider.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -703,11 +826,33 @@ Before the Oct 10 evening update **Left** could read x -0.10 on one photo and -0
 
 1. Window about 1440 x 900. Astronaut. Click **Left**, **Right**, **Top**, **Low and warm** in turn and write down x and y each time. 2. Make the window smaller (for example 1280 x 720, as in W-13) and click the four again. 3. Click **New photo**, load `02-object-coffee.jpg` or click the **Coffee cup** sample, and click the four again. 4. Load `06-wide-coffee-crop.jpg` (needs the backend) and click **Top**. 5. Imitate a phone (group W) with any photo and click the four again.
 
-**Expected:** always exactly: Left x -0.10, y 0.40. Right x 1.10, y 0.40. Top x 0.50, y -0.15. Low and warm x 0.00, y 0.90. Where that point lies beyond the edge of the stage, the sun is drawn at the stage's edge, fully visible, and the readout still shows the numbers above. You see that with **Top** on the astronaut (sun at the very top edge of the stage, just under the top bar) and with **Left** and **Right** on the coffee photo (sun at the left or right edge of the stage). On the wide photo the sun sits in the black band above the photo. The lighting for a preset looks the same whatever the window size. Any other number is a FAIL: write down the window size, the photo and the readout.
+**Expected:** always exactly: Left x -0.10, y 0.40. Right x 1.10, y 0.40. Top x 0.50, y -0.15. Low and warm x 0.00, y 0.90. Where that point lies beyond the edge of the stage, the sun is drawn at the stage's edge, and the readout still shows the numbers above. With **Left**, **Right** and **Top** the sun is larger than at the start (Height 0.35), and about 7 pixels of its disc are cut off by the stage's edge there (known, K56); most of it stays visible and it can still be grabbed. You see that with **Top** on the astronaut (sun at the very top edge of the stage, just under the top bar) and with **Left** and **Right** on the coffee photo (sun at the left or right edge of the stage). On the wide photo the sun sits in the black band above the photo. The lighting for a preset looks the same whatever the window size. Any other number is a FAIL: write down the window size, the photo and the readout.
 
 ![C-11 Top in a 1280 x 720 window: readout y -0.15, sun at the very top edge of the stage, just under the top bar](screenshots/90-laptop-1280x720-preset-top.jpg)
 ![C-11 Left on the coffee photo (here with Height 0.10): readout x -0.10, sun at the left edge of the stage](screenshots/23-shadows-on.jpg)
 ![C-11 Right on the coffee photo: readout x 1.10, sun at the right edge of the stage](screenshots/34-object-side-light.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### C-12 The sun's size follows Height
+
+New in the early morning update of Oct 11. The sun now shows how far in front of the photo the light is. For this case do **not** click **Left** first: after a standard start the sun is on the flag, as in the picture.
+
+1. Standard start. Look at the sun. 2. Drag **Height** all the way left (0.03). 3. Drag it slowly all the way right (2.00) and watch the sun. 4. Click **Left**. 5. Drag **Intensity** and **Colour** from end to end.
+
+**Expected:** step 1: at Height 0.12 the white disc is 40 pixels across, the size it always was, with a soft shadow just under it. Step 2: the disc is small, 26 pixels across, with its dark shadow tight round it and almost no glow. The light lies close to the photo's surface. It is still easy to grab: the part that answers the mouse stays 40 pixels across. Step 3: the sun grows smoothly, with no jumps. At 2.00 the disc is 69 pixels across, with a wide soft glow, and its shadow has dropped well below it (about 30 pixels), as if the disc floats above the photo, close to you. The icon inside grows with the disc. x and y do not change. Step 4: **Left** sets Height 0.35; the disc is about 51 pixels across, clearly larger than at the start. Step 5: the size does not change; only the glow's brightness and the tint do (C-09).
+
+| Height | White disc, pixels across |
+| --- | --- |
+| 0.03 | 26 |
+| 0.12 (a new photo) | 40 |
+| 0.35 (**Left**, **Right**, **Top**) | 51 |
+| 0.68 | 58 |
+| 2.00 | 69 |
+
+Known: the white glow hardly shows where the photo is pale, such as the flag (K57); look at the disc and its shadow there. A large sun at the stage's edge is partly cut off (K56). With "reduce motion" switched on in the computer's settings (J-10), the sun changes size at once, without its short animation.
+
+![C-12 the sun at Height 0.03, 0.12 and 2.00, enlarged](screenshots/176-sun-height-close-ups.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1097,11 +1242,12 @@ To imitate a phone on a computer: in Chrome press F12, then click the small phon
 
 1. Imitate a phone (see above), reload, and look at the first page. 2. Load the astronaut. 3. Scroll down the whole page.
 
-**Expected:** first page: the title wraps to two lines, the dashed box is as wide as the screen, the four sample thumbnails sit in one row with their labels readable, nothing is cut off at the sides. Workspace: the top bar shows the logo, "Relight", the words "How it works" and a short pill that reads only "online" (no "backend:", no "mock providers"), all on one line. The stage is on top and is only as tall as it needs to be: **New photo** top right, the photo, then **Hold to see original** and **Export PNG**. There are no big black bands above and below the photo. The LIGHT panel starts straight under the stage, so its title, the x and y readout and the first sliders are on the first screen. Below: ENHANCE, then the folded GEOMETRY row. The helper lines under Height, Ambient and Cast shadows are shown. The five buttons Left, Right, Top, Low and warm, Reset light are on **one line** (on a phone 360 pixels wide or more; see W-17). The ENHANCE box shows the grey words "Optional: a mood, such as golden hour" in full.
+**Expected:** first page: the title wraps to two lines, the dashed box is as wide as the screen, the four sample thumbnails sit in one row with their labels readable, nothing is cut off at the sides. Workspace: the top bar shows the logo, "Relight", the words "How it works" and a short pill that reads only "online" (no "backend:", no "mock providers"), all on one line. The stage is on top and is only as tall as it needs to be: **New photo** top right, the photo, then **Hold to see original** and **Export PNG**. There are no big black bands above and below the photo. The LIGHT panel starts straight under the stage, so its title, the x and y readout and the first sliders are on the first screen. Below: ENHANCE, then the folded GEOMETRY row. Under the Height slider are the grey labels "close to the surface" (left) and "close to you" (right), and under them the line "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows." (two lines of text on a phone 360 or 390 wide, three at 320, one on a tablet). The helper lines under Ambient and Cast shadows are shown. The five buttons Left, Right, Top, Low and warm, Reset light are on **one line** (on a phone 360 pixels wide or more; see W-17). The ENHANCE box shows the grey words "Optional: a mood, such as golden hour" in full.
 
 ![W-04 first page](screenshots/47-phone-landing.jpg)
 ![W-04 workspace](screenshots/45-phone-scene.jpg)
 ![W-04 whole page](screenshots/46-phone-full-page.jpg)
+![W-04 the Height slider on a phone, enlarged](screenshots/182-phone-height-control.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1111,7 +1257,7 @@ Only if your computer has a touch screen, or with the phone imitation on (it tur
 
 1. Drag the sun with a finger. 2. Try to scroll the page by swiping on the stage. 3. Swipe on the sidebar area.
 
-**Expected:** (1) the sun follows the finger. (2) swiping on the stage moves the light and does **not** scroll the page. (3) swiping below the stage scrolls. Write down whether getting past the stage to the controls was awkward.
+**Expected:** (1) the sun follows the finger. (2) swiping on the stage moves the light and does **not** scroll the page. (3) swiping below the stage scrolls. Write down whether getting past the stage to the controls was awkward. (Two fingers on the stage change the Height since Oct 11: L-16.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1181,11 +1327,12 @@ To get an exact size: in Chrome press F12, click the phone/tablet icon, choose *
 
 1. Set 1280 x 720. Reload and look at the first page. 2. Click the **Portrait** sample. 3. Set 1366 x 768 and look again.
 
-**Expected:** step 1: the whole first page fits with no scrolling: title, dashed box and all four thumbnails with their labels. Step 2: stage left, sidebar right. LIGHT, ENHANCE and the folded GEOMETRY row all fit; nothing scrolls. To make room, three things are left out: there are no helper lines under Height, Ambient and Cast shadows; there is no line under the ENHANCE title; and the ENHANCE text box is one line tall. The five preset buttons are in one row. The grey words in the one-line text box read "Optional: a mood, such as golden hour" **in full**; nothing is cut off at the right edge. Step 3: the same, and it still fits. (The 1366 x 768 screenshot shows the coffee photo with **Right**, not the Portrait sample. Compare the sidebar only.)
+**Expected:** step 1: the whole first page fits with no scrolling: title, dashed box and all four thumbnails with their labels. Step 2: stage left, sidebar right. LIGHT, ENHANCE and the folded GEOMETRY row all fit; nothing scrolls. To make room, three things are left out: there is nothing under the Height slider (no "close to the surface" and "close to you") and there are no helper lines under Ambient and Cast shadows; there is no line under the ENHANCE title; and the ENHANCE text box is one line tall. The five preset buttons are in one row. The grey words in the one-line text box read "Optional: a mood, such as golden hour" **in full**; nothing is cut off at the right edge. Step 3: the same, and it still fits. (The 1366 x 768 screenshot shows the coffee photo with **Right**, not the Portrait sample. Compare the sidebar only.)
 
 ![W-13 first page, 1280 x 720](screenshots/76-laptop-1280x720-landing.jpg)
 ![W-13 workspace, 1280 x 720](screenshots/75-laptop-1280x720-scene.jpg)
 ![W-13 workspace, 1366 x 768 (this one shows the coffee photo with **Right**; compare the sidebar only)](screenshots/77-laptop-1366x768-scene.jpg)
+![W-13 the Height slider at 1280 x 720, enlarged: nothing under the track](screenshots/181-laptop-1280x720-height-control.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1193,11 +1340,12 @@ To get an exact size: in Chrome press F12, click the phone/tablet icon, choose *
 
 Use a real browser window for this, not the phone imitation (hover text does not show there).
 
-1. With a photo loaded and the sidebar on the right, make the window about 820 pixels high (drag its bottom edge up until the grey line under the **Height** slider disappears). 2. Hold the mouse still over the **Height** slider for two seconds. Do the same over **Ambient** and over **Cast shadows**. 3. Hold the mouse still over the **Enhance** button. 4. Make the window tall again.
+1. With a photo loaded and the sidebar on the right, make the window about 820 pixels high (drag its bottom edge up until the grey words "close to the surface" and "close to you" under the **Height** slider disappear). 2. Hold the mouse still over the **Height** slider for two seconds. Do the same over **Ambient** and over **Cast shadows**. 3. Hold the mouse still over the **Enhance** button. 4. Make the window tall again.
 
-**Expected:** step 1: the lines under Height, Ambient and Cast shadows are gone, and everything fits without scrolling. The line under the ENHANCE title is still there (it only goes below 771 pixels high). Step 2: a small hover text appears with the missing line: "Low grazes the surface and stretches the shadows.", "Light that reaches everything, shadows included.", "Objects block the light." Step 3: "A photoreal pass over this lighting. Takes a few seconds." Step 4: at 832 pixels high or more the three lines are back on the page. (The developer could not photograph hover texts; their words were read from the page.)
+**Expected:** step 1: the two grey labels under Height and the lines under Ambient and Cast shadows are gone, and everything fits without scrolling. The line under the ENHANCE title is still there (it only goes below 771 pixels high). Step 2: a small hover text appears: over Height "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.", over Ambient "Light that reaches everything, shadows included.", over Cast shadows "Objects block the light." (Changed on Oct 11: the sentence about Height is never printed beside the stage any more, at any window height. There it is always hover text, and the two labels have its place. It is printed only where the sidebar sits under the photo: W-04.) Step 3: "A photoreal pass over this lighting. Takes a few seconds." Step 4: at 832 pixels high or more the two labels under Height and the lines under Ambient and Cast shadows are back on the page. (The developer could not photograph hover texts; their words were read from the page.)
 
 ![W-14](screenshots/78-window-1440x820-scene.jpg)
+![W-14 step 4: the two labels under Height on a 900-pixel-high window, enlarged](screenshots/180-height-end-labels.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1501,11 +1649,11 @@ Write down the device and browser, and how long the picture took to sharpen if i
 
 **Expected:** after sleep, usually nothing changes at all. After `chrome://gpucrash` one of two things happens. Write down which, and the seconds.
 - (a) **The chip comes back within about 2.5 seconds.** The photo may show plain (no lighting) for a moment, then the relit picture returns by itself. No note. The shading line still says "graphics chip".
-- (b) **The chip does not come back in time.** For about 2.5 seconds the photo is the plain original with even lighting. The sun, the sliders and the buttons look normal, but the picture does not answer them, and there is no message (known, K39). Then a grey note appears above the stage: "Shading on this device's processor, not its graphics chip (the graphics chip stopped responding). The picture is a quick preview while the light moves and sharpens when it stops." The photo is lit again, with the light where you left it, and everything works as in R-11. The shading line now reads "shading: processor, in the background". Step 5: the next photo tries the graphics chip again. Usually the grey note is gone and the shading line reads "shading: graphics chip, full quality" again. If the chip still cannot be used, the note comes back. Write down which.
+- (b) **The chip does not come back in time.** For about 2.5 seconds the photo is the plain original with even lighting. (On Oct 11, in Chrome 155, the developer saw a plain **white box** with a small broken-picture mark in its place for those seconds; either one is the known K39.) The sun, the sliders and the buttons look normal, but the picture does not answer them, and there is no message (known, K39). Then a grey note appears above the stage: "Shading on this device's processor, not its graphics chip (the graphics chip stopped responding). The picture is a quick preview while the light moves and sharpens when it stops." The photo is lit again, with the light where you left it, and everything works as in R-11. The shading line now reads "shading: processor, in the background". Step 5: the next photo tries the graphics chip again. Usually the grey note is gone and the shading line reads "shading: graphics chip, full quality" again. If the chip still cannot be used, the note comes back. Write down which.
 
 In both cases there is no red bar, no reload is needed, and the photo, the sliders and any Enhance result are kept. It is a FAIL if the photo stays plain or black for more than about five seconds, or if a red bar "Live shading is unavailable (…)" appears: report the browser, the computer and the bar's words. (The developer imitated (b) only, and measured 2.6 seconds. Outcome (a) was never seen.)
 
-![R-12 (b): the wait of about 2.5 seconds, photo plain, no message](screenshots/137-graphics-chip-stopped-waiting.jpg)
+![R-12 (b): the wait of about 2.5 seconds, no message; here Chrome 155 shows a white box where the plain photo used to be](screenshots/137-graphics-chip-stopped-waiting.jpg)
 ![R-12 (b): then the processor takes over, with the grey note](screenshots/138-graphics-chip-stopped.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Outcome (a or b), seconds and note:
@@ -1891,6 +2039,29 @@ A FAIL would be: the light coming from the wrong side; speckle or blotches on a 
 
 `Result: PASS / FAIL / NOT RUN` Scores and note:
 
+### Q-13 Does the sun look nearer and further? (new on Oct 11: wanted from everyone)
+
+The owner asked for the light's move towards you and away from you to be easier to recognise. Now the sun on the photo grows, glows wider and drops its shadow lower as the light comes nearer, and shrinks as it is pushed back. Whether that reads as "near" and "far" is something only a person can say. **Do steps 1 and 2 before you read the rest of this case, and before L-13 and C-12.**
+
+1. Click the **Portrait** sample. Read nothing on the page. Drag the **Height** slider slowly from one end to the other, twice. Watch the sun on the photo, not the slider. 2. Write down, in your own words, what you think the sun is doing. 3. Now read the grey words under the slider. Put the mouse on the sun, wait for the label, and scroll. (On a phone: put two fingers on the photo and spread them.) 4. Set Height to 0.03 and take a screenshot. Set Height to 2.00 and take a screenshot. 5. Click **New photo**, click the **Coffee cup** sample and click **Left**. Move Height again and watch the sun and the cup's shadow together.
+
+**Expected:** there is no right answer; this is your honest reaction. What the developer meant: a small sun with a tight shadow is a light lying close to the photo's surface, which grazes it and makes long shadows. A large sun with its shadow well below it is a light floating in front of the photo, close to you, which lights everything evenly.
+
+**Write down:**
+
+- (a) your words from step 2, written before you knew;
+- (b) a score from 1 to 5 for how clearly the sun's look says "nearer" and "further" (1 = I saw only a button changing size, 5 = obvious at once);
+- (c) did a large sun mean "nearer to me" to you, or "a stronger light", or something else;
+- (d) do the words "close to the surface" and "close to you" help, and is **Height** the right name for this slider;
+- (e) would you have found the scroll or the pinch without being told (the "How it works" card and the line "Drag the sun on the photo." do not mention them: K58);
+- (f) the white glow hardly shows on the pale parts of a photo (K57): did you see it at all.
+
+Attach the two screenshots from step 4.
+
+![Q-13 what the developer sees at Height 0.03, 0.12 and 2.00, enlarged](screenshots/176-sun-height-close-ups.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Scores and note:
+
 ---
 
 ## J. What a judge would try
@@ -1975,7 +2146,7 @@ Developer note: possible bug (step 2: a visitor who presses Back to choose anoth
 
 1. Screen reader. macOS: press Cmd+F5 to start VoiceOver (the same keys stop it). Windows: press Ctrl+Windows+Enter to start Narrator (the same keys stop it). On the first page press Tab through the page and listen. Then do a standard start and Tab through again. 2. Stop the screen reader. Read all the grey text: the helper lines under the sliders, the grey words in the ENHANCE box, the line at the bottom of the opened GEOMETRY panel. 3. Turn on reduced motion (macOS: System Settings, Accessibility, Display, "Reduce motion"; Windows: Settings, Accessibility, Visual effects, "Animation effects" off). Reload, load a photo file, and watch the dot in the pill, the loading label and the yellow band on the photo. Turn the setting back afterwards.
 
-**Expected:** step 1: "How it works" is read as a button. The four thumbnails are read as buttons: "Sample photo: Portrait", "Sample photo: Coffee cup", "Sample photo: Cat", "Sample photo: Rocket". The sun is read as a button: "Light position, x 0.12, y 0.35. Use the arrow keys to move." **Sweep** is read as a button that is not pressed. The switches are read as "Cast shadows" and "Detailed normals", with on or off. The sliders are read with their names (Height, Intensity, Ambient, Colour) and values. The GEOMETRY row is read as a button ("Geometry, Show"), collapsed or expanded. After Enhance, the round handle is read as "Comparison divider" and the small square button as "Download the enhanced image". The X on a red bar is read as "Dismiss". Step 2: say whether each grey text is comfortable to read on your screen, and which is hardest. There is no exact right answer. Step 3: the pill's dot still pulses, the spinner still turns and the yellow band still moves down the photo. The app does not react to the reduced-motion setting. (One exception: the "How it works" card then appears without its small upward slide.)
+**Expected:** step 1: "How it works" is read as a button. The four thumbnails are read as buttons: "Sample photo: Portrait", "Sample photo: Coffee cup", "Sample photo: Cat", "Sample photo: Rocket". The sun is read as a button: "Light position, x 0.12, y 0.35, height 0.12. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back." (Changed on Oct 11; the three numbers follow the light. The small label under the sun is not read out.) **Sweep** is read as a button that is not pressed. The switches are read as "Cast shadows" and "Detailed normals", with on or off. The sliders are read with their names (Height, Intensity, Ambient, Colour) and values. The GEOMETRY row is read as a button ("Geometry, Show"), collapsed or expanded. After Enhance, the round handle is read as "Comparison divider" and the small square button as "Download the enhanced image". The X on a red bar is read as "Dismiss". Step 2: say whether each grey text is comfortable to read on your screen, and which is hardest. There is no exact right answer. Step 3: the pill's dot still pulses, the spinner still turns and the yellow band still moves down the photo. The app does not react to the reduced-motion setting. (Two exceptions: the "How it works" card then appears without its small upward slide, and, since Oct 11, the sun changes size at once when Height changes.)
 
 Developer note: possible bug (step 3: the app ignores the reduced-motion setting).
 
@@ -2136,7 +2307,7 @@ The first photo you give the demo downloads a depth model (about 25 MB), so the 
 
 1. Click the dashed box and choose `testing/photos/02-object-coffee.jpg` (or any photo of your own). Wait for the lit photo. 2. Click **New photo**. Drag `03-animal-cat.jpg` from a folder over the dashed box, hold it there, then let go. 3. Click **New photo**. Copy a picture (as in U-04), click an empty part of the page and press Cmd+V or Ctrl+V. 4. Click **New photo**. Reload the page. Do not use the mouse: press Tab again and again, and press Enter when the dashed box has the yellow outline.
 
-**Expected:** step 1: the click opens your computer's file chooser, which offers pictures only. After choosing, the workspace appears with the photo dimmed and a label on it (its words are listed in P-10). Then the photo brightens, lit from the left, with the sun near its left edge and the readout x 0.12, y 0.35. Step 2: while the file is over the box, the border turns yellow and the background gets a yellow tint. After dropping, the cat loads and is lit. Step 3: the pasted picture loads and is lit. In all three there is no red bar, no card, and the pill stays green. Step 4: Tab goes to the "Relight" logo, "How it works", the dashed box (yellow outline), then Portrait, Coffee cup, Cat, Rocket. Enter on the dashed box opens the file chooser. (Before the late night update of Oct 10 the demo took no photo at all. This case was written from the code and from screenshots; nobody has dropped or pasted on the demo by hand.) The other drop and paste cases, U-06, U-13 to U-15 and U-23 to U-25, behave the same on the demo.
+**Expected:** step 1: the click opens your computer's file chooser, which offers pictures only (iPhone photos ending in `.heic` are offered too: H-13). After choosing, the workspace appears with the photo dimmed and a label on it (its words are listed in P-10). Then the photo brightens, lit from the left, with the sun near its left edge and the readout x 0.12, y 0.35. Step 2: while the file is over the box, the border turns yellow and the background gets a yellow tint. After dropping, the cat loads and is lit. Step 3: the pasted picture loads and is lit. In all three there is no red bar, no card, and the pill stays green. Step 4: Tab goes to the "Relight" logo, "How it works", the dashed box (yellow outline), then Portrait, Coffee cup, Cat, Rocket. Enter on the dashed box opens the file chooser. (Before the late night update of Oct 10 the demo took no photo at all. This case was written from the code and from screenshots; nobody has dropped or pasted on the demo by hand.) The other drop and paste cases, U-06, U-13 to U-15 and U-23 to U-25, behave the same on the demo.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -2259,7 +2430,7 @@ No demo address? Do this case on your computer in Plan B: it does exactly the sa
 
 1. On your **phone**, on Wi-Fi (the first photo downloads about 25 MB), open the demo address. 2. Tap the dashed box. Take a photo or choose one from the phone's library; a face is best. Count the seconds from choosing it until the sun appears, and read the words on the dimmed photo while you wait. 3. Drag the sun with a finger. Tap **Left**, then **Right**. 4. Scroll down. Tap the **GEOMETRY** row. Copy the three small grey lines at its end. 5. Tap **New photo**. Choose a second photo and count the seconds again. 6. Do steps 1 to 5 on your **computer**, in the browser you normally use.
 
-**Expected:** step 2: the phone offers its camera or its photo library. The photo appears dimmed, the right way up, with a label whose words are listed in P-10: "Downloading the depth model, 19 MB, once…" with a rising number, then "Starting the depth model…", then "Working out the shape of your photo…". Then the photo brightens and the sun appears near its left edge. **Up to 1 minute is acceptable** for this first photo; most of it is the download. Step 3: the lighting follows the sun: the side nearest the sun is the bright side. A face looks a little flatter than on the Portrait sample, with a thin outline round the head; that is known (Q-12). Step 4: GEOMETRY starts with "Depth estimated in your browser by Depth Anything V2 Small…". The **Detailed normals** switch is off and greyed, with "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs." The three lines are the size line (the longer side is 1024 at most), the depth line "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)", and the shading line. Step 5: no download this time. On the developer's Mac the second photo took under a second; on a phone **up to 30 seconds is acceptable**.
+**Expected:** step 2: the phone offers its camera or its photo library. (An iPhone may hand the page a HEIC photo. Since Oct 11 that is fine: the dashed box may read "Converting your photo…" for a moment first. See H-13.) The photo appears dimmed, the right way up, with a label whose words are listed in P-10: "Downloading the depth model, 19 MB, once…" with a rising number, then "Starting the depth model…", then "Working out the shape of your photo…". Then the photo brightens and the sun appears near its left edge. **Up to 1 minute is acceptable** for this first photo; most of it is the download. Step 3: the lighting follows the sun: the side nearest the sun is the bright side. A face looks a little flatter than on the Portrait sample, with a thin outline round the head; that is known (Q-12). Step 4: GEOMETRY starts with "Depth estimated in your browser by Depth Anything V2 Small…". The **Detailed normals** switch is off and greyed, with "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs." The three lines are the size line (the longer side is 1024 at most), the depth line "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)", and the shading line. Step 5: no download this time. On the developer's Mac the second photo took under a second; on a phone **up to 30 seconds is acceptable**.
 
 **Report this even if everything works.** For each device: the model and the browser; the two times; the depth line and the shading line, copied; whether the result looks right (yes / partly / no); and a screenshot.
 
@@ -2276,3 +2447,15 @@ If it goes wrong, these are the results we most need:
 ![H-12 on a phone, whole page with GEOMETRY open](screenshots/175-demo-phone-own-photo-full-page.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Devices, browsers, times, depth lines and note:
+
+### H-13 A HEIC photo in the demo
+
+New in the early morning update of Oct 11. The demo has no server, so the browser converts the iPhone photo and then works out its shape, all on your device. The online demo does this only after it has been published again from the new version; if the old red bar "That file is not an image this browser can read." shows there, say so and mark NOT RUN.
+
+1. On the demo (or in Plan B), choose `testing/photos/09-iphone-portrait.heic`. If it is the first photo you give the demo, the depth model downloads first (H-12). 2. Click **Left**. 3. If you have an iPhone: open the demo on it, tap the dashed box and choose a photo from the library.
+
+**Expected:** step 1: the dashed box reads "Converting your photo…" for a moment. Then the photo appears dimmed, with the labels listed in P-10, and then it is lit. No red bar. Step 2: x -0.10, y 0.40, Height 0.35; the pill reads "demo: runs in your browser". It looks the same as the astronaut JPEG chosen as a file (the first picture of H-12). Step 3: the photo loads the right way up. The phone may hand over a HEIC or a JPEG; both should work. Not known: write down what happened, with the phone model.
+
+![H-13 step 2: the HEIC portrait in the demo, Left](screenshots/191-demo-heic-photo.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Device, browser and note:
