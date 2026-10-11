@@ -13,8 +13,9 @@ import { ShadingNote } from "@/components/relight/ShadingNote";
 import { Button, Segmented, Slider, Toggle } from "@/components/ui";
 import { ApiError, errorMessage, isAbort, relightAdoptScene, relightEnhance, relightRender, relightScene } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { API_URL, DEMO, MOCK, REPO_URL } from "@/lib/config";
+import { API_URL, DEMO, MOCK } from "@/lib/config";
 import { type LoadedImage, downloadBase64AsPng, downloadCanvas, toDataUrl } from "@/lib/image";
+import { type DepthDevice, type LocalProgress, isLocalScene, localScene, progressText } from "@/lib/localScene";
 import { SAMPLES, type SamplePhoto, isSampleScene, loadSampleScene, sampleThumbUrl } from "@/lib/samples";
 import type { Light, RelightRender, RelightScene } from "@/lib/types";
 import { useJob } from "@/lib/useJob";
@@ -54,8 +55,28 @@ const SWEEP_STEPS = 360;
 const ENHANCE_OFFLINE = `Enhance needs the backend, which cannot be reached at ${API_URL}. The live preview and Export PNG still work without it.`;
 const ENHANCE_HINT = "A photoreal pass over this lighting. Takes a few seconds.";
 const SERVER_RENDER_OFFLINE = `Cannot reach the backend at ${API_URL}. Is it running?`;
-/** The static demo: why uploading and Enhance are missing. */
-const DEMO_UPLOAD_NOTE = "Uploading your own photo needs the Relight server, which this demo runs without.";
+/**
+ * Where a photo's scene comes from: the Relight server (depth and detailed
+ * normals), or the depth model run in this browser (lib/localScene.ts).
+ */
+type SceneRoute = "backend" | "browser";
+/** With no server (the static demo, mock mode) the browser is the only place a photo can be analysed. */
+const BROWSER_ONLY = DEMO || MOCK;
+const FIRST_ROUTE: SceneRoute = BROWSER_ONLY ? "browser" : "backend";
+/** Under the drop box when the browser does the analysis. 25 MB is the model (19 MB) and the code that runs it (5.5 MB), as measured; the progress line gives the model's own figure. */
+const BROWSER_PRIVACY_NOTE =
+  "Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once.";
+/** On the failure card, when the server cannot be reached and the browser can do the analysis instead. */
+const BROWSER_OFFER_NOTE = "Or analyse it in this browser: a depth model of about 25 MB downloads once, and the photo stays on this device. Surfaces shade a little flatter than with the server's detailed normals.";
+/** In the Geometry panel, for a scene the browser worked out. */
+const BROWSER_GEOMETRY_NOTE =
+  "Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.";
+const DETAIL_HINT = "Slower to analyse, much better surface detail.";
+const DETAIL_HINT_SAMPLE = "Always on for a sample photo: its maps were made ahead of time with detailed normals.";
+const DETAIL_HINT_BROWSER_ONLY = "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs.";
+const DETAIL_HINT_BROWSER = "Off: this photo was analysed in your browser. Turn on to ask the Relight server for detailed normals.";
+const DEPTH_DEVICE_LABEL: Record<DepthDevice, string> = { webgpu: "graphics chip (WebGPU)", wasm: "processor (WebAssembly)" };
+/** Mock mode only, and only when asked for on the failure card: why the photo has a round edge. */
 const STAND_IN_SHAPE_NOTE =
   "No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or start the backend to light your own photo properly.";
 
@@ -169,7 +190,12 @@ export default function RelightPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // The scene request failed and there is nothing to shade: shown on the photo itself, not as a banner.
-  const [sceneError, setSceneError] = useState<string | null>(null);
+  // `route` is what was tried; `offline` is the server not answering at all, which the browser can stand in for.
+  const [sceneError, setSceneError] = useState<{ message: string; route: SceneRoute; offline: boolean } | null>(null);
+  // The browser is analysing the photo: how far it has got.
+  const [progress, setProgress] = useState<LocalProgress | null>(null);
+  // How the depth model was run for the scene on screen, when the browser worked it out.
+  const [depthDevice, setDepthDevice] = useState<DepthDevice | null>(null);
   const [picking, setPicking] = useState<string | null>(null); // sample being fetched
   const [sampleError, setSampleError] = useState<string | null>(null);
 
@@ -205,7 +231,9 @@ export default function RelightPage() {
   const adopted = useRef<{ scene: RelightScene; id: Promise<string> } | null>(null);
 
   const withBackendScene = useCallback<WithBackendScene>(async (scene, offlineMessage, call) => {
-    if (!isSampleScene(scene)) return call(scene.scene_id);
+    // A scene the browser worked out is sent the same way. The backend analyses the photo again with detailed normals,
+    // so its renders are a little more detailed than the live preview of such a scene.
+    if (!isSampleScene(scene) && !isLocalScene(scene)) return call(scene.scene_id);
     const sceneId = () => {
       if (adopted.current?.scene !== scene) {
         const id = relightAdoptScene(scene);
@@ -266,37 +294,54 @@ export default function RelightPage() {
   }, [stopSweep, resetEnhance]);
 
   /**
-   * Ask the backend for the photo's scene. With `keep`, the scene on screen
-   * stays up while waiting and survives a failure (used when a working sample
-   * is re-analysed). Resolves false if the request failed.
+   * Get the photo's scene: from the backend, or worked out in this browser.
+   * With `keep`, the scene on screen stays up while waiting and survives a
+   * failure (used when a scene that already works is analysed again). Resolves
+   * false if it failed.
    */
   const load = useCallback(
-    async (image: LoadedImage, withDetail: boolean, keep = false): Promise<boolean> => {
+    async (image: LoadedImage, withDetail: boolean, keep = false, route: SceneRoute = FIRST_ROUTE): Promise<boolean> => {
       const id = ++request.current;
       clearResults();
       setPhoto(image);
       if (!keep) {
         setScene(null);
+        setDepthDevice(null);
         resetShading();
       }
+      setProgress(route === "browser" ? { stage: "prepare" } : null);
       setLoading(true);
       try {
-        const result = await relightScene({ image: image.base64, detail: withDetail });
+        let result: RelightScene;
+        let device: DepthDevice | null = null;
+        if (route === "browser") {
+          const local = await localScene(image.base64, (next) => {
+            if (request.current === id) setProgress(next);
+          });
+          result = local.scene;
+          device = local.device;
+        } else result = await relightScene({ image: image.base64, detail: withDetail });
         if (request.current === id) {
           resetShading();
           setScene(result);
+          setDepthDevice(device);
+          // The browser has no detailed normals model: the switch says what the scene has.
+          if (device !== null) setDetail(false);
         }
         return true;
       } catch (e) {
-        if (request.current !== id) return true;
-        if (keep) setError(`${errorMessage(e)} The sample keeps the geometry it came with.`);
-        else setSceneError(errorMessage(e));
+        if (request.current !== id || isAbort(e)) return true;
+        if (keep) setError(`${errorMessage(e)} ${scene !== null && isLocalScene(scene) ? "The photo keeps the shape worked out in this browser." : "The sample keeps the geometry it came with."}`);
+        else setSceneError({ message: errorMessage(e), route, offline: e instanceof ApiError && e.status === 0 });
         return false;
       } finally {
-        if (request.current === id) setLoading(false);
+        if (request.current === id) {
+          setLoading(false);
+          setProgress(null);
+        }
       }
     },
-    [clearResults, resetShading],
+    [clearResults, resetShading, scene],
   );
 
   /** A built-in sample: its scene comes from static files, so this works with no backend. */
@@ -311,6 +356,7 @@ export default function RelightPage() {
       setPhoto({ base64: result.image, mime: "image/jpeg", width: result.width, height: result.height, name: `${sample.name}.jpg` });
       resetShading();
       setDetail(true); // samples are baked with the detailed normals
+      setDepthDevice(null);
       setScene(result);
       setPicking(null);
     } catch (e) {
@@ -325,7 +371,9 @@ export default function RelightPage() {
     stopSweep();
     setPhoto(null);
     setScene(null);
+    setDepthDevice(null);
     setLoading(false);
+    setProgress(null);
     setError(null);
     setSceneError(null);
     setPicking(null);
@@ -442,7 +490,7 @@ export default function RelightPage() {
   if (!photo) {
     const samples = (
       <div className="mt-4">
-        <p className="text-sm text-zinc-400">{DEMO ? "Pick a sample photo:" : "Or try a sample photo:"}</p>
+        <p className="text-sm text-zinc-400">Or try a sample photo:</p>
         <div className="mt-2 grid grid-cols-4 gap-2">
           {SAMPLES.map((sample) => (
             <button
@@ -465,34 +513,26 @@ export default function RelightPage() {
         <ErrorBanner message={sampleError} onDismiss={() => setSampleError(null)} className="mt-3" />
       </div>
     );
-    // The static demo has no server to analyse an upload, so it says so where the drop box would be.
-    if (DEMO) {
-      return (
-        <PageIntro
-          eyebrow="Move the light"
-          title="Relight a photo by dragging the light."
-          lead="Pick a sample photo. Its depth and surface normals were estimated ahead of time, and your browser shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly."
-        >
-          <div className="rounded-2xl border border-white/10 bg-white/[0.025] px-5 py-4 text-sm leading-6 text-zinc-400">
-            <p className="font-medium text-zinc-200">This is the in-browser demo.</p>
-            <p className="mt-1">
-              {DEMO_UPLOAD_NOTE} To try your own photos, run it on your computer:{" "}
-              <a href={REPO_URL} target="_blank" rel="noreferrer" className="break-words font-medium text-accent underline-offset-2 hover:underline">
-                {REPO_URL.replace("https://", "")}
-              </a>
-            </p>
-          </div>
-          {samples}
-        </PageIntro>
-      );
-    }
     return (
       <PageIntro
         eyebrow="Move the light"
         title="Relight a photo by dragging the light."
-        lead="Upload a photo. We estimate its depth and surface normals once, then your browser shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly."
+        lead={
+          BROWSER_ONLY
+            ? "Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly."
+            : "Upload a photo. We estimate its depth and surface normals once, then your browser shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly."
+        }
       >
-        <UploadDropzone onImage={(image) => void load(image, detail)} title="Drop a photo here" footer={samples} />
+        <UploadDropzone
+          onImage={(image) => void load(image, detail)}
+          title="Drop a photo here"
+          footer={
+            <>
+              {BROWSER_ONLY && <p className="mt-3 text-sm leading-5 text-zinc-400">{BROWSER_PRIVACY_NOTE}</p>}
+              {samples}
+            </>
+          }
+        />
       </PageIntro>
     );
   }
@@ -521,9 +561,10 @@ export default function RelightPage() {
           : `Live shading is unavailable (${localProblem}). Showing server renders instead, which lag slightly behind the light.`;
   const onProcessor = path !== null && path.kind.startsWith("cpu");
   // A quiet line for the slower ways of shading that still work. The red bar above is for when none does.
-  // In mock mode there is no backend to work out a photo's shape, so an upload
-  // is lit as a made-up dome. A tester reported that dome as a bug: say what it is.
-  const standInShape = MOCK && scene !== null && !isSampleScene(scene);
+  // Mock mode's own answer to a scene request is a made-up dome. It is only used when the browser's
+  // analysis failed and the user asked for it. A tester reported that dome as a bug: say what it is.
+  const standInShape = MOCK && scene !== null && !isSampleScene(scene) && !isLocalScene(scene);
+  const localShape = scene !== null && isLocalScene(scene);
 
   const shadingNote =
     localProblem !== null || !ready || path === null
@@ -548,8 +589,14 @@ export default function RelightPage() {
         : path.kind === "gpu-packed"
           ? `The photo is shaded live by the graphics chip (${path.chip}). Shadows are kept in 8-bit buffers because ${path.why}; the picture is the same to within a level or two of brightness.`
           : `The photo is shaded by the processor${path.kind === "cpu-worker" ? ", in a background thread," : ""} because the graphics chip could not be used: ${path.why}.`;
-  // A built-in sample comes with detailed normals. Only a real backend can work them out again without.
-  const detailFixed = scene !== null && isSampleScene(scene) && (DEMO || MOCK);
+  // A built-in sample comes with detailed normals; a photo analysed in the browser never has them.
+  // Only a real backend can change either, so with none the switch just says which it is.
+  const sampleScene = scene !== null && isSampleScene(scene);
+  const detailHint = BROWSER_ONLY ? (sampleScene ? DETAIL_HINT_SAMPLE : DETAIL_HINT_BROWSER_ONLY) : localShape ? DETAIL_HINT_BROWSER : DETAIL_HINT;
+  // The server did not answer, and this browser can do the analysis itself.
+  const offerBrowser = !BROWSER_ONLY && sceneError !== null && sceneError.route === "backend" && sceneError.offline;
+  // Mock mode, and the browser's analysis failed: the made-up dome is still there for someone working on the page itself.
+  const offerDome = MOCK && sceneError !== null && sceneError.route === "browser";
   const enhanceError = enhance.status === "error" ? enhance.error : null;
   const failedCard = (
     <div role="alert" className="flex max-w-sm animate-rise flex-col items-center gap-2.5 rounded-2xl border border-rose-500/40 bg-ink/90 px-5 py-4 text-center shadow-2xl backdrop-blur max-lg:mx-auto">
@@ -557,11 +604,22 @@ export default function RelightPage() {
         <AlertIcon className="text-rose-400" />
         This photo could not be analysed
       </span>
-      <p className="break-words text-sm leading-5 text-rose-100/90">{sceneError}</p>
-      <div className="flex gap-2">
-        <Button size="sm" variant="primary" onClick={() => void load(photo, detail)}>
+      <p className="break-words text-sm leading-5 text-rose-100/90">{sceneError?.message}</p>
+      {offerBrowser && <p className="text-sm leading-5 text-zinc-300">{BROWSER_OFFER_NOTE}</p>}
+      <div className="flex flex-wrap justify-center gap-2">
+        {offerBrowser && (
+          <Button size="sm" variant="primary" onClick={() => void load(photo, detail, false, "browser")}>
+            Analyse in this browser
+          </Button>
+        )}
+        <Button size="sm" variant={offerBrowser ? "secondary" : "primary"} onClick={() => void load(photo, detail, false, sceneError?.route)}>
           Retry
         </Button>
+        {offerDome && (
+          <Button size="sm" title="Mock mode only: lights the photo as a made-up dome, not its real shape." onClick={() => void load(photo, detail, false, "backend")}>
+            Use a stand-in dome
+          </Button>
+        )}
         <Button size="sm" onClick={startOver}>
           Choose another photo
         </Button>
@@ -712,7 +770,7 @@ export default function RelightPage() {
               ) : undefined
             }
           >
-            <p className="mb-2.5 text-xs leading-4 text-zinc-500">What the models recovered from the photo. The shader lights these.</p>
+            <p className="mb-2.5 text-xs leading-4 text-zinc-500">{localShape ? BROWSER_GEOMETRY_NOTE : "What the models recovered from the photo. The shader lights these."}</p>
             {scene ? (
               <div className="grid grid-cols-2 gap-2.5">
                 {[
@@ -737,14 +795,14 @@ export default function RelightPage() {
             <div className="mt-3">
               <Toggle
                 label="Detailed normals"
-                hint={detailFixed ? "Always on for a sample photo: its maps were made ahead of time with detailed normals." : "Slower to analyse, much better surface detail."}
-                checked={detail}
-                disabled={detailFixed}
+                hint={detailHint}
+                checked={BROWSER_ONLY ? sampleScene : detail}
+                disabled={BROWSER_ONLY}
                 onChange={(next) => {
-                  // A sample already works without the backend: keep it on screen unless the new analysis succeeds.
-                  const keep = scene !== null && isSampleScene(scene);
+                  // A sample, or a photo analysed in the browser, already works without the backend: keep it on screen unless the new analysis succeeds.
+                  const keep = sampleScene || localShape;
                   setDetail(next);
-                  void load(photo, next, keep).then((ok) => {
+                  void load(photo, next, keep, "backend").then((ok) => {
                     if (!ok && keep) setDetail(!next);
                   });
                 }}
@@ -753,6 +811,11 @@ export default function RelightPage() {
             {scene && (
               <p className="mt-2.5 font-mono text-[11px] text-zinc-500">
                 {scene.width} x {scene.height} px, relief {scene.relief}
+                {depthDevice && (
+                  <span className="mt-0.5 block" data-depth-device={depthDevice} title="The depth model ran in this browser. The photo was not sent anywhere.">
+                    depth: this browser, {DEPTH_DEVICE_LABEL[depthDevice]}
+                  </span>
+                )}
                 {shadingLine && (
                   <span className="mt-0.5 block" title={shadingDetail}>
                     shading: {shadingLine}
@@ -812,7 +875,7 @@ export default function RelightPage() {
                     <img src={toDataUrl(server.image)} alt="Relit photo" draggable={false} className="absolute inset-0 h-full w-full" />
                   )}
                   {comparing && <span className="absolute left-2 top-2 rounded-md bg-black/65 px-2 py-0.5 text-[11px] font-medium text-zinc-200 backdrop-blur">Original</span>}
-                  {(loading || (scene !== null && !canShade)) && <BusyOverlay>{loading ? "Estimating depth and surface normals…" : "Preparing the shader…"}</BusyOverlay>}
+                  {(loading || (scene !== null && !canShade)) && <BusyOverlay>{loading ? (progress ? progressText(progress) : "Estimating depth and surface normals…") : "Preparing the shader…"}</BusyOverlay>}
                 </div>
 
                 {canLight && (
@@ -878,8 +941,8 @@ export default function RelightPage() {
             )}
           </div>
           <Button size="sm" variant="glass" className="pointer-events-auto" onClick={startOver}>
-            {!DEMO && <UploadIcon />}
-            {DEMO ? "Other samples" : "New photo"}
+            <UploadIcon />
+            New photo
           </Button>
         </div>
 

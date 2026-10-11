@@ -146,8 +146,8 @@ export function HowItWorks() {
                 title="Once per photo"
                 note={
                   DEMO
-                    ? "For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo."
-                    : "Done by the Relight server when you upload a photo. For the four samples it was done ahead of time and the two maps ship with the page."
+                    ? "For the four samples this was done ahead of time and the two maps ship with the page. For your own photo, this demo runs the depth model in your browser and takes the normals from the slope of the depth map, which shades faces flatter: the normals model is too large for a browser. The photo is not uploaded."
+                    : "Done by the Relight server when you upload a photo. For the four samples it was done ahead of time and the two maps ship with the page. With no server, the depth model runs in your browser instead and the normals are taken from the slope of the depth map, which shades faces flatter."
                 }
               >
                 <Step

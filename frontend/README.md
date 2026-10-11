@@ -29,16 +29,18 @@ npm run build:demo                                             # served from the
 NEXT_PUBLIC_BASE_PATH=/BanannaHacksSubmission npm run build:demo   # served from a sub-folder
 ```
 
-This writes a plain static site to `out/` (about 2.3 MB). Upload the contents of that folder to any
-static host. In it the four sample photos work fully in the browser: drag, sliders, presets, Sweep,
-hold to compare, Export PNG and the Geometry maps. Nothing calls a backend: the status pill reads
-`demo: runs in your browser`, the drop box is replaced by a note that uploading needs the Relight
-server, and Enhance is switched off with the same reason.
+This writes a plain static site to `out/` (about 3.3 MB). Upload the contents of that folder to any
+static host. In it the four sample photos and your own photos work fully in the browser: drag, sliders,
+presets, Sweep, hold to compare, Export PNG and the Geometry maps. Nothing calls a backend: the status
+pill reads `demo: runs in your browser`, an uploaded photo is analysed in the browser (next section),
+and Enhance is switched off because it needs the Relight server.
 
 - `NEXT_PUBLIC_BASE_PATH` is the folder the site is served from. For
   `https://example.github.io/BanannaHacksSubmission/` it is `/BanannaHacksSubmission`. Leave it unset
   when the site sits at the root of its address. A build only works at the path it was built for.
 - The build adds an empty `out/.nojekyll`, which GitHub Pages needs before it will serve the `_next` folder.
+- The build also deletes a 27 MB `ort-wasm-*.wasm` that the bundler copies into `out/_next/static/media/`.
+  The page never asks for that copy: the code that runs the depth model is fetched from jsDelivr (next section).
 - To look at it locally, serve it from a folder that matches the base path:
 
   ```bash
@@ -47,6 +49,32 @@ server, and Enhance is switched off with the same reason.
   ```
 
 `npm run build:demo` sets `NEXT_PUBLIC_DEMO=1`. Without it, `npm run dev` and `npm run build` behave as described above.
+
+## Your own photo without a server
+
+When there is no backend to ask (the static demo, mock mode) an uploaded photo is analysed in the browser.
+In the normal app the backend comes first; if it cannot be reached, the failure card offers
+"Analyse in this browser".
+
+- **Model:** Depth Anything V2 Small, the depth model the backend runs, as the ONNX build
+  [`onnx-community/depth-anything-v2-small`](https://huggingface.co/onnx-community/depth-anything-v2-small)
+  (Apache-2.0), pinned to one revision in `lib/depth.worker.js`. It is run by
+  [`@huggingface/transformers`](https://www.npmjs.com/package/@huggingface/transformers) 4.3.1 (Apache-2.0),
+  the only dependency this adds.
+- **Where it runs:** in a Web Worker, on the graphics chip through WebGPU when the browser has it
+  (about 0.1 s a photo on an Apple-chip laptop), otherwise on the processor through WebAssembly (about 2 s).
+  The Geometry panel says which.
+- **What is downloaded, once:** the model file `onnx/model_q4f16.onnx` (19 MB) from `huggingface.co` and its
+  download host, and the code that runs it (5.5 MB) from `cdn.jsdelivr.net`: 24.7 MB in all. The browser keeps
+  both (Cache Storage, under `transformers-cache`), so later photos and later visits download nothing.
+  The photo itself is never sent anywhere.
+- **What is different from a backend scene:** the depth map goes through the same steps (`lib/sceneGeometry.ts`
+  is a port of `estimate_height` and `build_geometry` in `backend/app/ideas/relight.py`; if the Python changes,
+  change it too). The backend's detailed normals come from a second model, Marigold, which is too large for a
+  browser, so these scenes take their normals from the slope of the depth map: surfaces shade flatter and
+  outlines get a darker rim. The page says so in the Geometry panel, and "Detailed normals" is off for them.
+- **The library is loaded only when a photo is analysed.** It is a separate 576 KB file that the first page
+  does not fetch.
 
 ## Built-in samples
 
@@ -89,6 +117,8 @@ its first lines).
 
 - `lib/types.ts` mirrors `backend/app/schemas.py` field for field. Change them together.
 - `lib/api.ts` has one typed function per endpoint; `lib/mock.ts` answers them in mock mode.
+- `lib/localScene.ts` works out a photo's scene in the browser; `lib/depth.worker.js` runs the depth model and
+  `lib/sceneGeometry.ts` turns its output into the depth and normal maps.
 - `lib/useJob.ts` submits a background job and polls `/jobs/{id}`.
 - `lib/image.ts` handles files, base64, canvases and downloads.
 - `lib/relightGL.ts` is the live shader; `lib/relightMath.ts` is the same math on the CPU.

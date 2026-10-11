@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:demo": "NEXT_PUBLIC_DEMO=1 next build && node -e \"require('fs').writeFileSync('out/.nojekyll', '')\"",
+    "build:demo": "NEXT_PUBLIC_DEMO=1 next build && node -e \"const fs = require('fs'), media = 'out/_next/static/media'; fs.writeFileSync('out/.nojekyll', ''); for (const f of fs.existsSync(media) ? fs.readdirSync(media) : []) if (/^ort-wasm.*\\.wasm$/.test(f)) fs.rmSync(media + '/' + f);\"",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@huggingface/transformers": "4.3.1",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"

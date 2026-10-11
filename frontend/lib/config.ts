@@ -19,7 +19,8 @@ export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 /**
  * Static demo (`npm run build:demo`): a plain folder of files with no server
- * anywhere. Only the built-in samples work; nothing may call a backend.
+ * anywhere. Samples and uploads are handled in the browser (lib/localScene.ts);
+ * nothing may call a backend.
  */
 export const DEMO = isOn(rawDemo);
 

@@ -3,7 +3,9 @@
 // when mock mode is on, so the page works end to end with no backend.
 //
 // Nothing in here is a model. The scene's geometry is a synthetic dome, and
-// Enhance is a contrast-and-bloom filter over the shaded preview.
+// Enhance is a contrast-and-bloom filter over the shaded preview. The page does
+// not ask for that dome on its own: in mock mode an upload is analysed in the
+// browser (lib/localScene.ts), and the dome is offered only if that fails.
 
 import { ApiError } from "./api";
 import { base64ToCanvas, canvasToBase64, ctx2d, makeCanvas, stripDataUrl } from "./image";

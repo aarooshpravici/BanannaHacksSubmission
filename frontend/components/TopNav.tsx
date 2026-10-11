@@ -53,7 +53,7 @@ function BackendStatus() {
     prefix = "demo:";
     label = "runs in your browser";
     shortLabel = "demo";
-    title = "Static demo: the sample photos are shaded entirely in your browser and no server is contacted. Uploading your own photo and Enhance need the Relight server.";
+    title = "Static demo: everything runs in your browser. Your own photo is analysed on this device and is not uploaded; the depth model for that is downloaded once from Hugging Face. Enhance needs the Relight server.";
   } else if (status.kind === "mock") {
     dot = "bg-accent";
     label = "mock";
