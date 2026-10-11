@@ -41,7 +41,7 @@ If setup fails, that is a result too. Report it (see [Reporting](#reporting-what
 | [Reporting what you found](#reporting-what-you-found) (bottom of this page) | The two links for reporting a bug or a finished test run, and how to take a screenshot |
 | [results/TEMPLATE.md](results/TEMPLATE.md) | Results form to fill in **only** if you cannot use GitHub |
 | [photos/](photos/README.md) | The test photos. Everyone uses the same ones. The first four are also built into the app as the samples Portrait, Coffee cup, Cat and Rocket |
-| [screenshots/](screenshots/) | What each screen should look like: 191 pictures, all taken early on Sunday Oct 11 on a Mac in Chrome (every one retaken and 16 added in that morning's update), window 1440 x 900 unless the test case says otherwise |
+| [screenshots/](screenshots/) | What each screen should look like: 191 pictures, all taken early on Sunday Oct 11 on a Mac in Chrome (every one retaken and 16 added in that morning's update; 11 of them retaken at midday for the rim fix), window 1440 x 900 unless the test case says otherwise |
 
 ## Splitting the work between three testers
 
@@ -54,7 +54,9 @@ Everyone does the smoke test first. Then pick one share and say which in your re
 | C | Layout (W), Kinds of photos (T), Errors (R), Shading paths (F), Speed (D), What a judge would try (J) |
 | Everyone, if an address was given | Hosted demo (H). On a real phone if you have one |
 
-**New in the depth check update of Oct 11, after a tester's report (issue 4):** if you have a Snapdragon (Qualcomm) laptop with Windows, do **P-15** before anything else; nobody else can. On any other computer, do **P-14**: two minutes, and it gives us one line from your browser's console that we cannot get any other way.
+**New in the rim fix of Oct 11, after a tester's report (issue 6):** a photo of your own no longer gets a bright and a dark rim round every object in it. If you have a photo taken outdoors, with things or people in front of open sky, choose it on the hosted demo, click **Left** and send a screenshot (step 5 of **Q-12**; two minutes, on any device). A rim round an object is now a bug to report. What the fix costs, and the few places where a thin rim can stay, are K72 to K75 in [PENDING.md](PENDING.md#already-known-no-need-to-report).
+
+**New in the depth check update of Oct 11, after a tester's report (issue 4):** if you have a Snapdragon (Qualcomm) laptop with Windows, do run 1 of **P-15** in Edge or Chrome; nobody else can. (All four runs have passed on such a laptop, but only in the Claude app's built-in browser.) On any other computer, do **P-14**: two minutes, and it gives us one line from your browser's console that we cannot get any other way.
 
 Everyone starts with **H-12** (your own photo with no backend, on your phone and your computer; without a demo address, **P-10** in Plan B). Next come the two things that are new on Oct 11: **Q-13** and **L-13** (the sun grows as the light comes nearer, and scrolling on the sun changes Height; on a phone **L-16**), and, if you have an iPhone and a Mac, **U-27** (a photo sent by AirDrop). Everyone also does three cases, whatever their share: **W-16** (which shading path your device uses, and whether the light works), on every device you own; **Q-11** (the face under side light); and **G-07** (is the "How it works" card clear and right to a newcomer). In group F, most cases can only be done if your device takes that path by itself; mark the others NOT RUN. If you have time left, do the rest of the "Picture quality (Q)" group as well. It needs human judgement, and three opinions are better than one.
 
