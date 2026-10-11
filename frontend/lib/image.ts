@@ -100,23 +100,42 @@ export async function base64ToCanvas(base64: string, raw = false): Promise<HTMLC
 
 // --- files ----------------------------------------------------------------------
 
+/** Can the file's bytes be had at all? A photo kept online by a phone's gallery, or one the browser was not allowed to open, can arrive as a name whose contents cannot be read. (An empty file reads without complaint: it is simply not a picture.) */
+async function unreadable(file: Blob): Promise<boolean> {
+  try {
+    await file.slice(0, 16).arrayBuffer();
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 /** `heic`: the file is a HEIC or HEIF photo, which only some browsers decode; `maxSide` is how large the picture needs to be. */
 async function decodeFile(file: Blob, heic: boolean, maxSide: number): Promise<ImageBitmap | HTMLImageElement | HTMLCanvasElement> {
   try {
     // Applies the EXIF orientation, so phone photos come out upright.
     return await createImageBitmap(file, { imageOrientation: "from-image" });
-  } catch {
-    // Formats createImageBitmap refuses (some SVGs) still load through <img>.
+  } catch (bitmapError) {
+    // What createImageBitmap refuses may still load through <img>: some SVGs, and on a phone a photo too large to decode at
+    // full size (a 108-megapixel one is 430 MB unpacked), which <img> can decode smaller. The load event is waited for, not
+    // decode(): that insists on the full size.
     const url = URL.createObjectURL(file);
     try {
       const img = new Image();
       img.decoding = "async";
-      img.src = url;
-      await img.decode();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => (img.naturalWidth > 0 ? resolve() : reject(new Error("the picture has no size")));
+        img.onerror = () => reject(new Error("the picture did not load"));
+        img.src = url;
+      });
       return img;
-    } catch {
+    } catch (imgError) {
       // Safari reads an iPhone's HEIC photos itself and never gets here. For the others, a decoder is fetched when the first one arrives.
       if (heic) return decodeHeic(file, maxSide);
+      console.warn("Relight: a chosen file could not be opened as a picture.", { type: file.type, bytes: file.size }, bitmapError, imgError);
+      if (await unreadable(file)) {
+        throw new Error("That file could not be read from this device. If it is kept online (Google Photos, OneDrive, iCloud), save it to the device first, then choose it again.");
+      }
       throw new Error("That file is not an image this browser can read.");
     } finally {
       URL.revokeObjectURL(url);

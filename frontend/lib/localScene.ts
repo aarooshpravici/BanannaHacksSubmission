@@ -234,8 +234,10 @@ export async function localScene(image: string, onProgress: (progress: LocalProg
   let bitmap: ImageBitmap;
   try {
     bitmap = await base64ToBitmap(base64);
-  } catch {
-    throw new Error("That file is not an image this browser can read.");
+  } catch (error) {
+    // Not the same words as a file that would not open (lib/image.ts): this is the copy the page itself made of the photo.
+    console.warn("Relight: the photo could not be opened again to work out its shape.", { characters: base64.length, starts: base64.slice(0, 12) }, error);
+    throw new Error("This browser could not open the photo again to work out its shape. Try a smaller photo, or one of the samples.");
   }
   // The backend's steps, in its order: transparency onto white, then down to the scene's size limit.
   const scale = Math.min(1, SCENE_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
