@@ -113,9 +113,12 @@ class Geometry:
 # ends and what is behind it begins: the depth jumps, the slope there is very
 # steep, and the normal points sideways. Lit from the side, every object then
 # gets a bright rim towards the light and a dark rim away from it, like a
-# cut-out. A surface that really is that steep fills almost no pixels in a
-# photo, so a slope this steep is taken for a jump between objects and the
+# cut-out. So a slope this steep is taken for a jump between objects, and the
 # normal there is turned to face the viewer, like the flat ground beside it.
+# The price is paid by surfaces that really are that steep: on a ball as deep
+# as it is wide the flattening starts at about 83% of the radius and is
+# complete at 97%, and a thin pole is lit evenly right across. Nothing is
+# shown tilted more than 61 degrees.
 #
 # The slope (rise over run, both in image widths) below which a normal is kept
 # as it is, and above which it faces the viewer; in between, a mix. 1.5 is a
