@@ -1925,7 +1925,7 @@ No need to report: the card's last sentence, "The live shader has been tested on
 
 The **static demo** is a copy of the app made of plain files, with no backend anywhere. It can sit on any web host, so a judge can open it from a link. It has only the four sample photos. Uploading and **Enhance** are switched off, and the page says why.
 
-**Which address?** The demo is online at **https://aarooshpravici.github.io/BanannaHacksSubmission/** (since Oct 10, 10:40 PM; built from version `ada3fc2`, so it can be a little behind the newest code). If you were given none, you can build the demo on a Mac with [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) and use `http://localhost:3142/BanannaHacksSubmission/`. If you have neither, mark this group NOT RUN.
+**Which address?** The demo is online at **https://aarooshpravici.github.io/BanannaHacksSubmission/** (since Oct 10, 11:15 PM; built from version `ada3fc2`, so it can be a little behind the newest code). If you were given none, you can build the demo on a Mac with [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) and use `http://localhost:3142/BanannaHacksSubmission/`. If you have neither, mark this group NOT RUN.
 
 **Reporting.** The bug form asks what the top-right pill reads. For this group write "demo". For the version, write "hosted demo" and the address you opened.
 
