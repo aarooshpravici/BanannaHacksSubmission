@@ -47,11 +47,11 @@
     "name": "scene-default-light",
     "status": "ok",
     "about": "Portrait photo loaded, nothing touched: the light is at its starting place.",
-    "see": "The round white sun is on the flag at the left edge, about a third of the way down. Readouts: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, Cast shadows on. The left side of the face (your left) is bright and the right cheek is in shadow; the right of the picture is darker than the left.",
+    "see": "The round white sun is on the flag at the left edge, about a third of the way down. Readouts: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, Cast shadows on. Under the Height track, in grey: \"close to the surface\" at the left end and \"close to you\" at the right end. The left side of the face (your left) is bright and the right cheek is in shadow; the right of the picture is darker than the left.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 3.5,
+    "sceneSeconds": 1.6,
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -74,7 +74,7 @@
     "viewport": "1440x1300",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.4,
+    "sceneSeconds": 1.6,
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -97,7 +97,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 1.6,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -120,7 +120,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 1.5,
     "light": {
       "x": 1.1,
       "y": 0.4,
@@ -139,11 +139,11 @@
     "name": "preset-top",
     "status": "ok",
     "about": "Portrait photo after clicking the \"Top\" preset button.",
-    "see": "The sun is at the very top of the dark stage, above the photo in the middle. Readouts: x 0.50, y -0.15, Height 0.35, Intensity 1.30. These are the preset's own numbers on every window; that point is just above the stage here, so the sun is drawn at the stage's top edge. The hair and forehead are bright; under the chin is dark.",
+    "see": "The sun is at the very top of the dark stage, above the photo in the middle. Readouts: x 0.50, y -0.15, Height 0.35, Intensity 1.30. These are the preset's own numbers on every window; that point is just above the stage here, so the sun is drawn at the stage's top edge. The sun is a little larger than at the start (Height 0.35) and the top of its disc is cut off by the stage's edge. The hair and forehead are bright; under the chin is dark.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.1,
+    "sceneSeconds": 1.6,
     "light": {
       "x": 0.5,
       "y": -0.15,
@@ -166,7 +166,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.1,
+    "sceneSeconds": 1.7,
     "light": {
       "x": 0,
       "y": 0.9,
@@ -189,7 +189,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 2,
     "light": {
       "x": 0.03,
       "y": 0.5,
@@ -258,7 +258,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.7,
+    "sceneSeconds": 1.8,
     "light": {
       "x": 1.21,
       "y": 0.3,
@@ -281,7 +281,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 2.1,
     "light": {
       "x": 0.5,
       "y": 0.45,
@@ -300,11 +300,11 @@
     "name": "height-min",
     "status": "ok",
     "about": "Portrait photo, \"Left\" preset clicked, then the Height slider moved all the way left (0.03).",
-    "see": "Left preset with Height 0.03 (slider fully left). The light skims the surface: the picture is darker overall, with strong shadows across the face and suit.",
+    "see": "Left preset with Height 0.03 (slider fully left). The light skims the surface: the picture is darker overall, with strong shadows across the face and suit. The sun, left of the photo, is at its smallest (about two thirds of its usual size) with almost no glow round it.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.7,
+    "sceneSeconds": 2.6,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -323,11 +323,11 @@
     "name": "height-max",
     "status": "ok",
     "about": "Portrait photo, \"Left\" preset clicked, then the Height slider moved all the way right (2.00).",
-    "see": "Left preset with Height 2.00 (slider fully right). The light is far in front: the whole picture is evenly lit, almost like the original photo.",
+    "see": "Left preset with Height 2.00 (slider fully right). The light is far in front: the whole picture is evenly lit, almost like the original photo. The sun, left of the photo, is at its largest (not quite twice its usual size) with a wide soft glow.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 1.9,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -373,7 +373,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 3.4,
+    "sceneSeconds": 1.8,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -396,7 +396,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.3,
+    "sceneSeconds": 1.8,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -419,7 +419,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 1.6,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -442,7 +442,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.7,
+    "sceneSeconds": 1.6,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -488,7 +488,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.3,
+    "sceneSeconds": 1.1,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -557,7 +557,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 1.6,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -580,7 +580,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 1.6,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -603,7 +603,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -626,7 +626,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 2.6,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -649,7 +649,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.8,
+    "sceneSeconds": 1.7,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -696,7 +696,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.1,
+    "sceneSeconds": 1.8,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -719,7 +719,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "light": {
       "x": 0.12,
@@ -743,7 +743,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.4,
+    "sceneSeconds": 1.2,
     "light": {
       "x": 1.1,
       "y": 0.4,
@@ -766,7 +766,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.2,
+    "sceneSeconds": 1.1,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -789,7 +789,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.2,
+    "sceneSeconds": 1.1,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -812,7 +812,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 4.6,
+    "sceneSeconds": 0.9,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -835,7 +835,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.9,
+    "sceneSeconds": 0.7,
     "light": {
       "x": 0.5,
       "y": -0.15,
@@ -858,7 +858,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 1.4,
+    "sceneSeconds": 1.2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -881,7 +881,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 3.2,
+    "sceneSeconds": 2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -965,7 +965,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 3.9,
+    "sceneSeconds": 2,
     "error": "Cannot reach the backend at http://localhost:8123. Is it running?",
     "barIsAbovePhoto": true,
     "light": {
@@ -988,11 +988,11 @@
     "name": "phone-scene",
     "status": "ok",
     "about": "A phone-sized window (390 x 844) with the portrait photo loaded: what you see before scrolling.",
-    "see": "One column. Top bar: \"Relight\", \"How it works\" and a short pill that reads only \"online\" (amber dot; no word \"backend:\" and no \"mock providers\" at this width). Then the photo with the sun on the flag, \"Hold to see original\" and \"Export PNG\", and the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The helper lines under Height and Ambient show.",
+    "see": "One column. Top bar: \"Relight\", \"How it works\" and a short pill that reads only \"online\" (amber dot; no word \"backend:\" and no \"mock providers\" at this width). Then the photo with the sun on the flag, \"Hold to see original\" and \"Export PNG\", and the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. Under the Height track are the grey words \"close to the surface\" (left) and \"close to you\" (right), and under them the helper line \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\" on two lines.",
     "viewport": "390x844",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.4,
+    "sceneSeconds": 2.7,
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -1087,7 +1087,6 @@
     "tooltip": "Cannot reach the backend at http://localhost:8123",
     "light": null,
     "console": [
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health"
     ]
   },
@@ -1100,7 +1099,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "cpu",
-    "sceneSeconds": 2.4,
+    "sceneSeconds": 2.1,
     "shadingLine": "shading: processor, in the background",
     "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
     "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
@@ -1121,7 +1120,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "53-not-found-page.jpg": {
@@ -1193,7 +1192,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 0.8,
+    "sceneSeconds": 1.3,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1216,7 +1215,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 0.9,
+    "sceneSeconds": 1.2,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -1268,7 +1267,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Coffee cup",
     "light": {
       "x": 0.12,
@@ -1352,7 +1351,6 @@
     },
     "shadingPath": "gpu-full",
     "console": [
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health"
     ]
   },
@@ -1380,7 +1378,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "sweepTooltip": "Moves the light once around the subject in about six seconds, then gives it back. Handy for recording a demo.",
     "light": {
@@ -1405,11 +1403,11 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "light": {
-      "x": 0.91,
-      "y": 0.21,
+      "x": 0.92,
+      "y": 0.23,
       "height": "0.12",
       "intensity": "1.80",
       "ambient": "0.06",
@@ -1436,9 +1434,9 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
-    "sweepSeconds": 6,
+    "sweepSeconds": 6.1,
     "light": {
       "x": 0.12,
       "y": 0.35,
@@ -1516,7 +1514,7 @@
     "shading": "webgl",
     "sceneSeconds": 0.1,
     "sample": "Coffee cup",
-    "enhanceSeconds": 2.8,
+    "enhanceSeconds": 2.7,
     "light": {
       "x": 1.1,
       "y": 0.4,
@@ -1555,7 +1553,6 @@
     "shadingPath": "gpu-full",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
     ]
   },
@@ -1568,7 +1565,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.4,
+    "sceneSeconds": 0.1,
     "sample": "Rocket",
     "light": {
       "x": -0.1,
@@ -1592,7 +1589,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "error": "Cannot reach the backend at http://localhost:8123. Is it running? The sample keeps the geometry it came with.",
     "light": {
@@ -1620,7 +1617,7 @@
     "viewport": "1280x720",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "sidebarScrolls": false,
     "pageScrolls": false,
@@ -1665,7 +1662,7 @@
     "viewport": "1366x768",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2,
+    "sceneSeconds": 1.2,
     "sidebarScrolls": false,
     "light": {
       "x": 1.1,
@@ -1710,11 +1707,11 @@
     "name": "phone-sample",
     "status": "ok",
     "about": "A phone-sized window (390 x 844) with the \"Coffee cup\" sample: the stage is only as tall as the photo needs and the LIGHT panel starts right under it.",
-    "see": "The coffee cup sample on a phone: the top bar with \"How it works\" and the pill \"online\", a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35 and the helper lines showing.",
+    "see": "The coffee cup sample on a phone: the top bar with \"How it works\" and the pill \"online\", a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35. Under the Height track: \"close to the surface\" and \"close to you\", then the two-line helper \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\" Ambient has its helper line too.",
     "viewport": "390x844",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Coffee cup",
     "light": {
       "x": 0.12,
@@ -1796,11 +1793,11 @@
     "name": "tablet-768x1024-sample",
     "status": "ok",
     "about": "A tablet-sized window (768 x 1024) with the \"Cat\" sample: the page is stacked, with the sidebar panels under the photo.",
-    "see": "One column, wider: the cat sample in a stage across the top, then the LIGHT panel at full width with long sliders. Readouts x 0.12, y 0.35. The helper lines show.",
+    "see": "One column, wider: the cat sample in a stage across the top, then the LIGHT panel at full width with long sliders. Readouts x 0.12, y 0.35. Under the Height track: \"close to the surface\" at the left, \"close to you\" at the right, and under them on one line \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\" Ambient has its helper line too.",
     "viewport": "768x1024",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Cat",
     "light": {
       "x": 0.12,
@@ -1850,7 +1847,7 @@
     "picture": "full quality",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "84-mock-sample.jpg": {
@@ -1862,7 +1859,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.3,
     "sample": "Cat",
     "light": {
       "x": -0.1,
@@ -1895,7 +1892,7 @@
     },
     "light": {
       "x": 0.12,
-      "y": 0.34,
+      "y": 0.32,
       "height": "0.12",
       "intensity": "1.80",
       "ambient": "0.06",
@@ -1916,7 +1913,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "buttonStyle": {
       "textColour": "rgb(251, 209, 61)",
@@ -1944,7 +1941,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "resetTooltip": "Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone.",
     "row": {
@@ -1987,7 +1984,7 @@
     "viewport": "360x740",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Coffee cup",
     "row": {
       "labels": [
@@ -2026,7 +2023,7 @@
     "name": "phone-320-preset-row",
     "status": "ok",
     "about": "The narrowest phone (320 px wide): close-up of the LIGHT panel with the \"Coffee cup\" sample. The five preset buttons take two lines: \"Reset light\" drops to its own line and stretches across the panel.",
-    "see": "The LIGHT panel on a 320 px wide phone. Left, Right, Top and Low and warm fill one line; \"Reset light\" is alone on a second line, centred, as wide as the panel. The helper lines under Height and Ambient wrap onto two lines.",
+    "see": "The LIGHT panel on a 320 px wide phone. Left, Right, Top and Low and warm fill one line; \"Reset light\" is alone on a second line, centred, as wide as the panel. Under the Height track the two end labels (\"close to the surface\", \"close to you\") are on one line and the helper under them (\"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\") takes three lines; the helper under Ambient takes two.",
     "viewport": "320x740",
     "appMode": "backend",
     "shading": "webgl",
@@ -2069,11 +2066,11 @@
     "name": "laptop-1280x720-preset-top",
     "status": "ok",
     "about": "A small laptop window (1280 x 720), \"Portrait\" sample, \"Top\" preset: the readout shows the preset's own numbers although that point is above the stage, and the sun is drawn at the stage's top edge.",
-    "see": "Readouts x 0.50, y -0.15, Height 0.35, Intensity 1.30: the same numbers as in 08-preset-top. The sun is at the very top edge of the stage, just under the top bar, above the middle of the photo. The hair and forehead are bright.",
+    "see": "Readouts x 0.50, y -0.15, Height 0.35, Intensity 1.30: the same numbers as in 08-preset-top. The sun is at the very top edge of the stage, just under the top bar, above the middle of the photo, with the top of its disc cut off by the stage's edge. The hair and forehead are bright.",
     "viewport": "1280x720",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "sun": {
       "centreAbovePhotoPx": 46,
@@ -2101,7 +2098,7 @@
     "viewport": "1440x1300",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 2.6,
+    "sceneSeconds": 1.8,
     "before": {
       "x": 0,
       "y": 0.9,
@@ -2136,7 +2133,7 @@
     "viewport": "1280x720",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "error": "Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.",
     "sidebarScrolls": false,
@@ -2154,7 +2151,6 @@
     "shadingPath": "gpu-full",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
     ]
   },
@@ -2167,7 +2163,7 @@
     "viewport": "390x844",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Coffee cup",
     "error": "Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.",
     "barIsInEnhancePanel": true,
@@ -2184,7 +2180,6 @@
     "shadingPath": "gpu-full",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
-      "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
     ]
   },
@@ -2197,7 +2192,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "server",
-    "sceneSeconds": 3.1,
+    "sceneSeconds": 1.8,
     "sample": "Portrait",
     "errors": [
       "Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives."
@@ -2222,7 +2217,7 @@
       "detailedNormals": true
     },
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/render"
     ]
   },
@@ -2235,7 +2230,7 @@
     "viewport": "1440x900",
     "appMode": "mock",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Cat",
     "detailedNormals": {
       "on": true,
@@ -2305,7 +2300,7 @@
     "viewport": "1440x900",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.3,
     "sample": "Portrait",
     "enhance": {
       "buttonDisabled": true,
@@ -2399,7 +2394,7 @@
     "viewport": "1440x900",
     "appMode": "demo",
     "shading": "cpu",
-    "sceneSeconds": 0.4,
+    "sceneSeconds": 0.5,
     "sample": "Portrait",
     "shadingLine": "shading: processor, in the background",
     "shadingTooltip": "The photo is shaded by the processor, in a background thread, because the graphics chip could not be used: WebGL2 is not available in this browser.",
@@ -2425,7 +2420,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:413)\n    at http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:10740"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "104-how-it-works-button.jpg": {
@@ -2554,7 +2549,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "escapeCloses": true,
     "focusAfterClosing": "How it works",
@@ -2710,7 +2705,7 @@
     "viewport": "1440x1300",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "shadingLine": "shading: graphics chip, full quality",
     "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)), at full quality.",
@@ -2738,7 +2733,7 @@
     "viewport": "1440x1300",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "shadingLine": "shading: graphics chip, full quality",
     "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)), at full quality.",
@@ -2769,7 +2764,7 @@
     "viewport": "1440x1300",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "shadingLine": "shading: graphics chip, compatibility mode",
     "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)). Shadows are kept in 8-bit buffers because this graphics chip cannot draw into floating-point buffers; the picture is the same to within a level or two of brightness.",
@@ -2801,7 +2796,7 @@
     "viewport": "1440x1300",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.3,
     "sample": "Portrait",
     "shadingLine": "shading: graphics chip, compatibility mode",
     "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)). Shadows are kept in 8-bit buffers because this graphics chip cannot draw into floating-point buffers; the picture is the same to within a level or two of brightness.",
@@ -2848,7 +2843,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "126-processor-note.jpg": {
@@ -2886,7 +2881,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "127-shading-line-processor-in-background.jpg": {
@@ -2917,7 +2912,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "128-no-webgl-no-workers.jpg": {
@@ -2936,8 +2931,8 @@
     "greyNote": "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.",
     "redBars": [],
     "timings": {
-      "fullPictureMs": 85.9,
-      "previewMs": 30.3
+      "fullPictureMs": 86.4,
+      "previewMs": 36.5
     },
     "light": {
       "x": -0.1,
@@ -2952,7 +2947,7 @@
     "shadingPath": "cpu-main",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740",
       "console.warning: Relight: shading on the page's own thread because Workers are not available (blocked for this test)."
     ]
   },
@@ -2984,7 +2979,7 @@
     "shadingPath": "cpu-main",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740",
       "console.warning: Relight: shading on the page's own thread because Workers are not available (blocked for this test)."
     ]
   },
@@ -2997,10 +2992,10 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "cpu",
-    "sceneSeconds": 0.3,
+    "sceneSeconds": 0.5,
     "sample": "Portrait",
     "light": {
-      "x": 0.52,
+      "x": 0.51,
       "y": 0.33,
       "height": "0.12",
       "intensity": "1.80",
@@ -3015,10 +3010,10 @@
     "pictureAfterTheShot": "preview",
     "previewSize": {
       "canvasPx": "512 x 512",
-      "previewMs": 21.4
+      "previewMs": 23.2
     },
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "131-processor-sharp-after-drag.jpg": {
@@ -3033,8 +3028,8 @@
     "sceneSeconds": 0.4,
     "sample": "Portrait",
     "timings": {
-      "fullPictureMs": 87.2,
-      "previewMs": 29.5
+      "fullPictureMs": 76.4,
+      "previewMs": 23
     },
     "light": {
       "x": 0.9,
@@ -3049,7 +3044,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "132-processor-sweep-during.jpg": {
@@ -3078,7 +3073,7 @@
     "picture": "quick preview (the light was moving)",
     "pictureAfterTheSweep": "full",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "133-processor-enhance-done.jpg": {
@@ -3109,7 +3104,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "134-phone-processor-note.jpg": {
@@ -3141,7 +3136,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "135-phone-processor-full-page.jpg": {
@@ -3172,7 +3167,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "136-shader-compile-failed.jpg": {
@@ -3204,7 +3199,7 @@
     "picture": "full quality",
     "console": [
       "console.warning: Relight: a shader failed to compile. ",
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: the shader did not compile on this graphics chip\n    at RelightRenderer.compile (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3437:19)\n    at RelightRenderer.link (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3445:25)\n    at new RelightRenderer (http"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: the shader did not compile on this graphics chip\n    at F.compile (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:3304)\n    at F.link (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:3482)\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:968)\n    at http://localhost:3123/_ne"
     ]
   },
   "137-graphics-chip-stopped-waiting.jpg": {
@@ -3212,14 +3207,21 @@
     "name": "graphics-chip-stopped-waiting",
     "status": "ok",
     "about": "\"Portrait\" sample, \"Left\" preset, in the two and a half seconds after the graphics chip stops responding: the page is waiting for it to come back.",
-    "see": "For about two and a half seconds after the graphics chip stops, the photo is the plain original with even lighting, although the readout still says x -0.10, y 0.40 and the sun is in its place. There is no note and no message yet, and the controls look normal but the picture does not answer them. (Compare 06-preset-left, where the right cheek is in shadow.)",
+    "see": "For about two and a half seconds after the graphics chip stops, the photo's place is taken by a plain white box with a small broken-picture mark in its top left corner (last round's picture showed the plain original photo here; the app's canvas code has not changed since, so this is most likely how the current Chrome draws a canvas whose graphics chip has gone). The readout still says x -0.10, y 0.40 and the sun is in its place. There is no note and no message yet, and the controls look normal but the picture does not answer them.",
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "greyNote": null,
     "busyText": false,
+    "stage": {
+      "photoLoaded": true,
+      "canvasContextLost": true,
+      "canvasOpacity": "1",
+      "canvasVisibility": "visible",
+      "canvasClass": "absolute inset-0 h-full w-full"
+    },
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -3242,7 +3244,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "cpu",
-    "sceneSeconds": 0.2,
+    "sceneSeconds": 0.1,
     "sample": "Portrait",
     "secondsUntilTheNote": 2.6,
     "shadingLine": "shading: processor, in the background",
@@ -3268,16 +3270,16 @@
     "name": "slow-processor-server-renders",
     "status": "ok",
     "about": "A device with no WebGL2 and a slow processor, \"Portrait\" sample, \"Left\" preset, GEOMETRY open: a grey note says the server draws the photo instead, and the last line of GEOMETRY reads \"shading: server renders\".",
-    "see": "A grey one-line note above the stage: \"This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.\" The number is whatever the device measured. The portrait is the server's picture for the Left preset (x -0.10, y 0.40); the sun, the sliders, \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. GEOMETRY is open and its last line reads \"shading: server renders\".",
+    "see": "A grey one-line note above the stage: \"This device's processor is slow at shading (3.0 s a picture), so the server draws the photo instead. It lags slightly behind the light.\" The number is whatever the device measured. The portrait is the server's picture for the Left preset (x -0.10, y 0.40); the sun, the sliders, \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. GEOMETRY is open and its last line reads \"shading: server renders\".",
     "viewport": "1440x1300",
     "appMode": "backend",
     "shading": "server",
     "sample": "Portrait",
-    "slowNote": "This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
+    "slowNote": "This device's processor is slow at shading (3.0 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
     "how": "No WebGL2, no Workers, and the page's own thread slowed 40 times with Chrome's CPU throttle until the page noticed.",
     "shadingLine": "shading: server renders",
-    "shadingTooltip": "The photo is drawn by the server, because this device's processor takes 3.1 s to shade one picture. The graphics chip could not be used: WebGL2 is not available in this browser.",
-    "greyNote": "This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
+    "shadingTooltip": "The photo is drawn by the server, because this device's processor takes 3.0 s to shade one picture. The graphics chip could not be used: WebGL2 is not available in this browser.",
+    "greyNote": "This device's processor is slow at shading (3.0 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
     "redBars": [],
     "buttons": [
       "Sweep: enabled",
@@ -3296,7 +3298,7 @@
       "detailedNormals": true
     },
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740",
       "console.warning: Relight: shading on the page's own thread because Workers are not available (blocked for this test)."
     ]
   },
@@ -3310,7 +3312,7 @@
     "appMode": "backend",
     "shading": "cpu",
     "sample": "Portrait",
-    "slowNote": "This device's processor is slow at shading (3.3 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
+    "slowNote": "This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.",
     "how": "No WebGL2, no Workers, and the page's own thread slowed 40 times with Chrome's CPU throttle until the page noticed.",
     "shadingLine": "shading: processor",
     "shadingTooltip": "The photo is shaded by the processor because the graphics chip could not be used: WebGL2 is not available in this browser.",
@@ -3329,10 +3331,10 @@
     "shadingPath": "cpu-main",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740",
       "console.warning: Relight: shading on the page's own thread because Workers are not available (blocked for this test).",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/render",
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740",
       "console.warning: Relight: shading on the page's own thread because Workers are not available (blocked for this test)."
     ]
   },
@@ -3345,7 +3347,7 @@
     "viewport": "1440x900",
     "appMode": "backend",
     "shading": "server",
-    "sceneSeconds": 2.3,
+    "sceneSeconds": 2,
     "sample": "Portrait",
     "shadingLine": "shading: server renders",
     "shadingTooltip": "The photo is drawn by the server, because nothing on this device can shade it: WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.",
@@ -3371,7 +3373,7 @@
       "detailedNormals": true
     },
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "142-no-shading-at-all-backend-stopped.jpg": {
@@ -3409,7 +3411,7 @@
     "shading": "none",
     "console": [
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/health",
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new RelightRenderer (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:3314:24)\n    at RelightCanvas.useEffect (http://localhost:3123/_next/static/chunks/%5Broot-of-the-server%5D__1t2x5-_qlyx7_._.js:2461:39)",
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3123/_next/static/chunks/1lkqwgc_q14z6.js:179:10740",
       "log.error: Failed to load resource: net::ERR_CONNECTION_REFUSED http://localhost:8123/relight/scene"
     ]
   },
@@ -3521,7 +3523,7 @@
     "viewport": "1440x1300",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "shadingLine": "shading: graphics chip, compatibility mode",
     "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)). Shadows are kept in 8-bit buffers because this graphics chip cannot draw into floating-point buffers; the picture is the same to within a level or two of brightness.",
@@ -3549,7 +3551,7 @@
     "viewport": "1440x1300",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "shadingLine": "shading: graphics chip, full quality",
     "shadingTooltip": "The photo is shaded live by the graphics chip (ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)), at full quality.",
@@ -3596,7 +3598,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:413)\n    at http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:10740"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "151-demo-phone-no-webgl.jpg": {
@@ -3627,7 +3629,7 @@
     "shadingPath": "cpu-worker",
     "picture": "full quality",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:413)\n    at http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:10740"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "152-demo-no-shading-at-all.jpg": {
@@ -3664,7 +3666,7 @@
     },
     "shading": "none",
     "console": [
-      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:413)\n    at http://localhost:3199/_next/static/chunks/0q6vh-jclltvt.js:179:10740"
+      "console.warning: Relight: the GPU cannot shade this, using the CPU instead. Error: WebGL2 is not available in this browser\n    at new F (http://localhost:3199/_next/static/chunks/1lkqwgc_q14z6.js:179:413)\n    at http://localhost:3199/_next/static/chunks/1lkqwgc_q14z6.js:179:10740"
     ]
   },
   "153-drop-web-image-blocked.jpg": {
@@ -3679,8 +3681,8 @@
     "how": "A real drop, made by Chrome, of the address of a picture on a second web server the tool runs on another port. That server sends the picture without the header that lets other pages read it.",
     "light": null,
     "console": [
-      "log.error: Access to fetch at 'http://127.0.0.1:60376/closed/photo.jpg' from origin 'http://localhost:3123' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. http://localhost:3123/",
-      "log.error: Failed to load resource: net::ERR_FAILED http://127.0.0.1:60376/closed/photo.jpg"
+      "log.error: Access to fetch at 'http://127.0.0.1:49339/closed/photo.jpg' from origin 'http://localhost:3123' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. http://localhost:3123/",
+      "log.error: Failed to load resource: net::ERR_FAILED http://127.0.0.1:49339/closed/photo.jpg"
     ]
   },
   "154-drop-web-image-404.jpg": {
@@ -3695,7 +3697,7 @@
     "error": "That image's site answered 404, so it could not be loaded. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here.",
     "light": null,
     "console": [
-      "log.error: Failed to load resource: the server responded with a status of 404 (Not Found) http://127.0.0.1:60378/missing.jpg"
+      "log.error: Failed to load resource: the server responded with a status of 404 (Not Found) http://127.0.0.1:49341/missing.jpg"
     ]
   },
   "155-drop-web-image-too-slow.jpg": {
@@ -3795,7 +3797,7 @@
       "yellowButton": "Analyse in this browser"
     },
     "shading": "webgl",
-    "sceneSeconds": 3.7,
+    "sceneSeconds": 2.6,
     "geometryIntro": "Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.",
     "depthLine": "depth: this browser, graphics chip (WebGPU)",
     "depthTooltip": "The depth model ran in this browser. The photo was not sent anywhere.",
@@ -3835,7 +3837,6 @@
     "see": "A red bar above the stage with an x: \"Cannot reach the backend at http://localhost:8123. Is it running? The photo keeps the shape worked out in this browser.\" The portrait is still lit (Left preset, x -0.10, y 0.40), a little lower to make room for the bar. GEOMETRY is unchanged from 160: the \"Depth estimated in your browser\" text, the smooth Normals picture, the Detailed normals switch back OFF, and the \"depth: this browser\" line still there.",
     "viewport": "1440x1300",
     "appMode": "backend",
-    "error": "Cannot reach the backend at http://localhost:8123. Is it running? The photo keeps the shape worked out in this browser.",
     "cardBeforeTheClick": {
       "lines": [
         "Cannot reach the backend at http://localhost:8123. Is it running?",
@@ -3849,6 +3850,7 @@
       "yellowButton": "Analyse in this browser"
     },
     "shading": "webgl",
+    "error": "Cannot reach the backend at http://localhost:8123. Is it running? The photo keeps the shape worked out in this browser.",
     "geometryIntro": "Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.",
     "depthLine": "depth: this browser, graphics chip (WebGPU)",
     "depthTooltip": "The depth model ran in this browser. The photo was not sent anywhere.",
@@ -3980,7 +3982,7 @@
       "yellowButton": "Retry"
     },
     "shading": "webgl",
-    "domeNote": "No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or start the backend to light your own photo properly.",
+    "domeNote": "No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or click New photo and try again once the depth model can be downloaded.",
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -4072,7 +4074,7 @@
     "viewport": "1440x900",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.8,
+    "sceneSeconds": 1.3,
     "line": "Loading the depth model…",
     "how": "The page was loaded a second time; the first photo had stored the model. The Worker's messages were kept back from this one on until the picture was taken.",
     "light": {
@@ -4096,7 +4098,7 @@
     "viewport": "1440x900",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 2.3,
+    "sceneSeconds": 1.9,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -4119,7 +4121,7 @@
     "viewport": "1440x900",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.1,
+    "sceneSeconds": 0.2,
     "sample": "Portrait",
     "light": {
       "x": -0.1,
@@ -4143,7 +4145,7 @@
     "viewport": "1440x900",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.9,
+    "sceneSeconds": 1.4,
     "light": {
       "x": -0.1,
       "y": 0.4,
@@ -4175,7 +4177,7 @@
     "viewport": "1440x1300",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.8,
+    "sceneSeconds": 1.1,
     "geometryIntro": "Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter.",
     "depthLine": "depth: this browser, graphics chip (WebGPU)",
     "depthTooltip": "The depth model ran in this browser. The photo was not sent anywhere.",
@@ -4210,7 +4212,7 @@
     "viewport": "1440x1300",
     "appMode": "demo",
     "shading": "webgl",
-    "sceneSeconds": 0.8,
+    "sceneSeconds": 0.9,
     "detailedNormals": {
       "on": false,
       "disabled": true,
@@ -4280,6 +4282,468 @@
       "y": 0.35,
       "height": "0.12",
       "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": false
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "176-sun-height-close-ups.jpg": {
+    "file": "176-sun-height-close-ups.jpg",
+    "name": "sun-height-close-ups",
+    "status": "ok",
+    "about": "Three close-ups of the sun on the portrait side by side, nothing changed between them but the Height slider: 0.03 (fully left), 0.12 (where a new photo starts) and 2.00 (fully right). The sun's size, glow and shadow show how far in front of the photo the light is.",
+    "see": "Three squares cut from the same place on the portrait (the flag at the left edge; the black strip at the far left is the stage beside the photo), each under a line of text. Left, \"Height 0.03 (slider fully left): close to the surface\": a small sun, 26 px across, with its dark shadow tight round it. Middle, \"Height 0.12: where a new photo starts\": the sun at its usual 40 px with a soft shadow just under it. Right, \"Height 2.00 (slider fully right): close to you\": a large sun, 69 px across, whose shadow has dropped well below it onto the flag. The glow round the sun is white and hardly shows on this pale part of the photo; it is easier to see where the sun is over the dark stage (06-preset-left, 16-height-max). The flag is also lit differently in each square, because Height changes the lighting.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 4.4,
+    "sun": [
+      {
+        "height": "0.03",
+        "discPx": 26,
+        "buttonPx": 40,
+        "glowPx": 42,
+        "glowBlur": "blur(4px)",
+        "shadow": "rgba(0, 0, 0, 0.8) 0px 0px 4px",
+        "ariaLabel": "Light position, x 0.12, y 0.35, height 0.03. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back."
+      },
+      {
+        "height": "0.12",
+        "discPx": 40,
+        "buttonPx": 40,
+        "glowPx": 88,
+        "glowBlur": "blur(11.9px)",
+        "shadow": "rgba(0, 0, 0, 0.73) 0px 3.3px 10.6px",
+        "ariaLabel": "Light position, x 0.12, y 0.35, height 0.12. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back."
+      },
+      {
+        "height": "2.00",
+        "discPx": 69,
+        "buttonPx": 69,
+        "glowPx": 181,
+        "glowBlur": "blur(28px)",
+        "shadow": "rgba(0, 0, 0, 0.6) 0px 30px 24px",
+        "ariaLabel": "Light position, x 0.12, y 0.35, height 2.00. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back."
+      }
+    ],
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "2.00",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "console": []
+  },
+  "177-sun-scroll-hint.jpg": {
+    "file": "177-sun-scroll-hint.jpg",
+    "name": "sun-scroll-hint",
+    "status": "ok",
+    "about": "Close-up of the sun with the mouse resting on it for half a second: a line appears under it that says what the mouse wheel does there.",
+    "see": "Enlarged: the sun on the flag and, just under it, a dark rounded label in small pale letters: \"Scroll to bring the light nearer or push it back\". The label appears half a second after the mouse comes to rest on the sun and goes when the mouse leaves; it is not shown while the sun is being dragged. (The mouse pointer itself is never in these pictures.)",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 3.7,
+    "caption": {
+      "text": "Scroll to bring the light nearer or push it back",
+      "opacity": 1
+    },
+    "sun": {
+      "height": "0.12",
+      "discPx": 40,
+      "buttonPx": 40,
+      "glowPx": 88,
+      "glowBlur": "blur(11.9px)",
+      "shadow": "rgba(0, 0, 0, 0.73) 0px 3.3px 10.6px",
+      "ariaLabel": "Light position, x 0.12, y 0.35, height 0.12. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back."
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "178-sun-scrolled-nearer.jpg": {
+    "file": "178-sun-scrolled-nearer.jpg",
+    "name": "sun-scrolled-nearer",
+    "status": "ok",
+    "about": "The portrait after turning the mouse wheel five notches up with the pointer on the sun: the light has come nearer, so Height has risen from 0.12 and the sun is larger. The mouse is still on the sun, so the line under it shows.",
+    "see": "The whole window. Height now reads 0.36 (it was 0.12) and its slider has moved right; x 0.12 and y 0.35 have not changed. The sun on the flag is larger than in 04-scene-default-light and the label \"Scroll to bring the light nearer or push it back\" is under it. The face is more evenly lit than at 0.12. The page itself did not scroll.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2,
+    "heightBefore": "0.12",
+    "sun": {
+      "height": "0.36",
+      "discPx": 51,
+      "buttonPx": 51,
+      "glowPx": 124,
+      "glowBlur": "blur(18.2px)",
+      "shadow": "rgba(0, 0, 0, 0.68) 0px 10.5px 15.8px",
+      "ariaLabel": "Light position, x 0.12, y 0.35, height 0.36. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back."
+    },
+    "pageScrolledBy": 0,
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.36",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "heightAfterSevenNotchesDown": "0.08",
+    "console": []
+  },
+  "179-sun-keyboard-plus.jpg": {
+    "file": "179-sun-keyboard-plus.jpg",
+    "name": "sun-keyboard-plus",
+    "status": "ok",
+    "about": "Close-up of the sun with keyboard focus after pressing the + key three times: a white ring round it, the same line under it, and Height three steps up from 0.12.",
+    "see": "Enlarged: the sun with a thin white ring a little way outside it (keyboard focus) and the same label under it, \"Scroll to bring the light nearer or push it back\". Height went 0.12, 0.13, 0.15, 0.17 with the three presses, so the sun is slightly larger than at the start. Three presses of - bring it back to 0.12.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 3.3,
+    "heights": [
+      "0.12",
+      "0.13",
+      "0.15",
+      "0.17"
+    ],
+    "focusRing": true,
+    "caption": {
+      "text": "Scroll to bring the light nearer or push it back",
+      "opacity": 1
+    },
+    "sun": {
+      "height": "0.17",
+      "discPx": 43,
+      "buttonPx": 43,
+      "glowPx": 99,
+      "glowBlur": "blur(13.9px)",
+      "shadow": "rgba(0, 0, 0, 0.72) 0px 5.1px 12.3px",
+      "ariaLabel": "Light position, x 0.12, y 0.35, height 0.17. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back."
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.17",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "heightAfterThreeMinus": "0.12",
+    "console": []
+  },
+  "180-height-end-labels.jpg": {
+    "file": "180-height-end-labels.jpg",
+    "name": "height-end-labels",
+    "status": "ok",
+    "about": "Close-up of the Height control in the LIGHT panel on a window 900 px tall: under the track, the words that say what each end means.",
+    "see": "Enlarged: \"Height\" at the left, the value \"0.12\" at the right, the track with its white thumb near the left end, and under the track two grey labels: \"close to the surface\" at the left end, \"close to you\" at the right end. There is no longer a sentence under the track here; the sentence \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\" is the tooltip, which is not in the picture.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2.9,
+    "heightControl": {
+      "name": "Height",
+      "value": "0.12",
+      "tooltip": "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.",
+      "endLabels": [
+        "close to the surface",
+        "close to you"
+      ],
+      "endLabelsShown": true,
+      "helperLine": "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.",
+      "helperLineShown": false
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "181-laptop-1280x720-height-control.jpg": {
+    "file": "181-laptop-1280x720-height-control.jpg",
+    "name": "laptop-1280x720-height-control",
+    "status": "ok",
+    "about": "The same Height control on a short window (1280 x 720): no words under the track, so that the sidebar fits without scrolling. They are in the tooltip only.",
+    "see": "Enlarged: \"Height\", \"0.12\" and the track only. Nothing is written under the track, and the Intensity row starts straight below it (its top edge is at the bottom of the picture). On a window under 832 px tall the two end labels and the sentence are left out; the sentence is still the tooltip.",
+    "viewport": "1280x720",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.8,
+    "heightControl": {
+      "name": "Height",
+      "value": "0.12",
+      "tooltip": "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.",
+      "endLabels": [
+        "close to the surface",
+        "close to you"
+      ],
+      "endLabelsShown": false,
+      "helperLine": "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.",
+      "helperLineShown": false
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "182-phone-height-control.jpg": {
+    "file": "182-phone-height-control.jpg",
+    "name": "phone-height-control",
+    "status": "ok",
+    "about": "The Height control on a phone: the two end labels under the track, and under them the helper line that mentions pinching.",
+    "see": "Enlarged: \"Height\", \"0.12\", the track, then \"close to the surface\" (left) and \"close to you\" (right), and under them on two lines: \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\"",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2.4,
+    "heightControl": {
+      "name": "Height",
+      "value": "0.12",
+      "tooltip": "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.",
+      "endLabels": [
+        "close to the surface",
+        "close to you"
+      ],
+      "endLabelsShown": true,
+      "helperLine": "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.",
+      "helperLineShown": true
+    },
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "183-phone-pinch-nearer.jpg": {
+    "file": "183-phone-pinch-nearer.jpg",
+    "name": "phone-pinch-nearer",
+    "status": "ok",
+    "about": "A phone after putting two fingers on the photo and spreading them to twice as far apart: the light has come nearer (Height has risen from 0.12, the sun is larger) and has not moved sideways.",
+    "see": "A phone. Height reads 0.68 and its slider is about a third of the way along; x 0.12 and y 0.35 are unchanged, so the light did not move sideways. The sun on the flag is clearly larger than in 45-phone-scene, and the portrait is more evenly lit.",
+    "viewport": "390x844",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2.3,
+    "before": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "sun": {
+      "height": "0.68",
+      "discPx": 58,
+      "buttonPx": 58,
+      "glowPx": 145,
+      "glowBlur": "blur(21.8px)",
+      "shadow": "rgba(0, 0, 0, 0.65) 0px 16.6px 18.9px",
+      "ariaLabel": "Light position, x 0.12, y 0.35, height 0.68. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back."
+    },
+    "how": "Two touch points 80 px apart were put on the photo, the second straight after the first, moved to 160 px apart and lifted (Chrome's own touch input).",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.68",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "184-heic-converting.jpg": {
+    "file": "184-heic-converting.jpg",
+    "name": "heic-converting",
+    "status": "ok",
+    "about": "Just after choosing an iPhone photo (a .heic file) in Chrome, held still: the drop box reads \"Converting your photo…\" while the converter is fetched and the photo is turned into a picture the browser can show.",
+    "see": "The first page. Inside the dashed drop box, in place of the icon and \"Drop a photo here\", a small spinner and the words \"Converting your photo…\". Everything else is as in 01-landing. (For any other kind of file the box says \"Reading image…\".)",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "fileChooserAccepts": "image/*,.heic,.heif",
+    "line": "Converting your photo…",
+    "how": "The download of the converter from cdn.jsdelivr.net was held back until the picture was taken. In normal use the line shows for a second or two.",
+    "light": null,
+    "shading": "webgl",
+    "console": []
+  },
+  "185-heic-photo-lit.jpg": {
+    "file": "185-heic-photo-lit.jpg",
+    "name": "heic-photo-lit",
+    "status": "ok",
+    "about": "The iPhone photo 09-iphone-portrait.heic loaded and lit like any other photo, \"Left\" preset clicked.",
+    "see": "The astronaut portrait from the .heic file, lit exactly like the JPEG in 06-preset-left: sun left of the photo, x -0.10, y 0.40, Height 0.35, left of the face bright and right cheek in soft shadow. Colours and sharpness look the same as the JPEG. Nothing on the page says that the file was a HEIC.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.7,
+    "photoPixels": "512 x 512",
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "186-heic-sideways-photo.jpg": {
+    "file": "186-heic-sideways-photo.jpg",
+    "name": "heic-sideways-photo",
+    "status": "ok",
+    "about": "10-iphone-sideways.heic, a tall photo that the file stores lying on its side with a note to turn it: it comes out upright, taller than wide.",
+    "see": "A tall, narrow portrait of the astronaut, upright: head at the top, flag behind her at the left. The photo is taller than wide (288 x 512). The sun is at its starting place, x 0.12, y 0.35, on the left edge by the collar.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 1.4,
+    "photoPixels": "288 x 512",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "187-heic-12mp-photo.jpg": {
+    "file": "187-heic-12mp-photo.jpg",
+    "name": "heic-12mp-photo",
+    "status": "ok",
+    "about": "11-iphone-12mp.heic, a full-size iPhone photo (4032 x 3024): shrunk while it is converted, then lit as usual.",
+    "see": "The coffee cup, landscape, filling the stage's width, sharp, with the sun at its starting place at the left (x 0.12, y 0.35). The readouts are the starting ones. It loaded in two to three seconds.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "shading": "webgl",
+    "sceneSeconds": 2.5,
+    "photoPixels": "1024 x 768",
+    "light": {
+      "x": 0.12,
+      "y": 0.35,
+      "height": "0.12",
+      "intensity": "1.80",
+      "ambient": "0.06",
+      "colour": "neutral",
+      "shadows": true,
+      "detailedNormals": true
+    },
+    "shadingPath": "gpu-full",
+    "console": []
+  },
+  "188-heic-error-cannot-convert.jpg": {
+    "file": "188-heic-error-cannot-convert.jpg",
+    "name": "heic-error-cannot-convert",
+    "status": "ok",
+    "about": "A damaged iPhone photo (broken-photo.heic) was chosen: a red error under the drop box says it could not be converted and what to do instead.",
+    "see": "The first page is still showing, with the drop box back to \"Drop a photo here\". Under the four thumbnails is a red bar on two lines: \"This HEIC photo could not be converted. Export it as a JPEG (on a Mac: open it in Preview, then File, Export) and use that.\" with an x to close it.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "error": "This HEIC photo could not be converted. Export it as a JPEG (on a Mac: open it in Preview, then File, Export) and use that.",
+    "light": null,
+    "console": []
+  },
+  "189-heic-error-no-converter.jpg": {
+    "file": "189-heic-error-no-converter.jpg",
+    "name": "heic-error-no-converter",
+    "status": "ok",
+    "about": "An iPhone photo was chosen when the converter cannot be downloaded (no connection to the site that holds it): a red error under the drop box.",
+    "see": "The first page is still showing. Under the four thumbnails is a red bar on three lines: \"This is a HEIC photo, which this browser cannot read by itself, and the converter for it could not be downloaded from cdn.jsdelivr.net. Check the connection and try again, or export the photo as a JPEG and use that.\" with an x to close it.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "error": "This is a HEIC photo, which this browser cannot read by itself, and the converter for it could not be downloaded from cdn.jsdelivr.net. Check the connection and try again, or export the photo as a JPEG and use that.",
+    "how": "Requests to cdn.jsdelivr.net were refused inside Chrome.",
+    "light": null,
+    "console": []
+  },
+  "190-heic-error-too-large.jpg": {
+    "file": "190-heic-error-too-large.jpg",
+    "name": "heic-error-too-large",
+    "status": "ok",
+    "about": "An iPhone-format photo of 8192 x 8192 pixels (67 million, over the 64 million the page converts) was chosen: a red error under the drop box gives its size.",
+    "see": "The first page is still showing. Under the four thumbnails is a red bar on two lines: \"This HEIC photo is too large to convert in a browser (8192 x 8192 pixels). Export it as a JPEG (on a Mac: open it in Preview, then File, Export) and use that.\" with an x to close it. The two numbers are the chosen photo's own size.",
+    "viewport": "1440x900",
+    "appMode": "backend",
+    "error": "This HEIC photo is too large to convert in a browser (8192 x 8192 pixels). Export it as a JPEG (on a Mac: open it in Preview, then File, Export) and use that.",
+    "how": "The photo was made for this picture: one flat colour, saved as HEIC with the converter built into macOS.",
+    "light": null,
+    "console": []
+  },
+  "191-demo-heic-photo.jpg": {
+    "file": "191-demo-heic-photo.jpg",
+    "name": "demo-heic-photo",
+    "status": "ok",
+    "about": "The static demo build with the iPhone photo 09-iphone-portrait.heic: converted and analysed in the browser, \"Left\" preset clicked.",
+    "see": "The static demo (pill \"demo: runs in your browser\") with the astronaut from the .heic file, Left preset: sun left of the photo, x -0.10, y 0.40, Height 0.35. It looks the same as 169-demo-own-photo-left, which is the same photograph chosen as a JPEG. ENHANCE is greyed out, as always in the demo.",
+    "viewport": "1440x900",
+    "appMode": "demo",
+    "shading": "webgl",
+    "sceneSeconds": 1.1,
+    "light": {
+      "x": -0.1,
+      "y": 0.4,
+      "height": "0.35",
+      "intensity": "1.30",
       "ambient": "0.06",
       "colour": "neutral",
       "shadows": true,

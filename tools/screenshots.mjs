@@ -70,6 +70,12 @@
 //   - An image dragged from another web site: a real drop, made by Chrome itself, of the address of
 //     a picture on a small web server that the tool starts on another port for that one shot. That
 //     server answers the way a site does that lets no other page read its pictures (most do not).
+//   - An iPhone photo (HEIC): Chrome cannot read one itself, so the page fetches a converter from
+//     cdn.jsdelivr.net; those shots need the internet. "Converting your photo…" is kept on screen by
+//     holding that download back, and "the converter could not be downloaded" by refusing it. The
+//     photo that is too large to convert is made on the spot with macOS's own converter (sips).
+//   - The light's distance: the mouse wheel and a two-finger pinch are Chrome's own wheel and touch
+//     input, sent to the sun on the photo.
 //   - A tooltip (the text that appears when the mouse rests on a control) cannot be photographed
 //     headless. Where one matters, its text is read from the page into manifest.json instead.
 //
@@ -77,12 +83,13 @@
 // light position read from the page and how the photo was being shaded when it was taken
 // ("shading": webgl, cpu, server or none; "shadingPath": the exact path, such as gpu-packed).
 
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { crc32, deflateSync } from "node:zlib";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DESKTOP = { width: 1440, height: 900, scale: 1, mobile: false };
@@ -258,7 +265,7 @@ const IN_PAGE = `
   const alerts = () => [...document.querySelectorAll('[role="alert"]')].filter((e) => e.offsetParent !== null).map((e) => e.querySelector("p")?.textContent.trim() ?? e.textContent.trim());
 `;
 
-const KEYS = { Escape: 27, Home: 36, End: 35, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 };
+const KEYS = { Escape: 27, Home: 36, End: 35, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40, "+": 187, "-": 189 };
 
 class Page {
   constructor(browser, targetId, sessionId) {
@@ -417,6 +424,16 @@ class Page {
       await this.mouse("mouseMoved", from.x + ((to.x - from.x) * i) / steps, from.y + ((to.y - from.y) * i) / steps, 1);
     }
     await this.mouse("mouseReleased", to.x, to.y, 0);
+  }
+
+  /** Turn the mouse wheel at a point: `deltaY` in pixels, negative for "up" (a wheel's notch is about 100). */
+  async wheel(x, y, deltaY) {
+    await this.send("Input.dispatchMouseEvent", { type: "mouseWheel", x, y, deltaX: 0, deltaY, button: "none", buttons: 0, pointerType: "mouse" });
+  }
+
+  /** Fingers on a touch screen: `type` is touchStart, touchMove or touchEnd, `points` is where every finger now is ([] once all are lifted). */
+  async touch(type, points) {
+    await this.send("Input.dispatchTouchEvent", { type, touchPoints: points.map((p, id) => ({ x: p.x, y: p.y, id })) });
   }
 
   async key(name) {
@@ -694,6 +711,10 @@ const PHOTO = {
   wide: "06-wide-coffee-crop.jpg",
   tiny: "07-tiny-cat-200px.jpg",
   huge: "08-huge-astronaut-3000px.jpg",
+  heic: "09-iphone-portrait.heic",
+  heicSideways: "10-iphone-sideways.heic",
+  heic12mp: "11-iphone-12mp.heic",
+  heicBroken: "broken-photo.heic",
   notAnImage: "not-an-image.txt",
 };
 
@@ -931,6 +952,98 @@ async function dropOnBox(t, items) {
 
 /** A close-up of the first page from the drop box down to the red bar under the thumbnails. */
 const dropBoxClip = (t) => t.page.clipOf(`document.querySelector('div[role="button"]').parentElement`, "the drop box and what is under it", { pad: 16, scale: 1.5 });
+
+// ----- The sun and the light's distance (Height). -----
+
+/** How the sun is drawn at this moment, for the manifest: the Height it shows, and the sizes and shadow the page has given it. */
+const sunLook = (t) =>
+  t.page.js(`(() => {
+    const b = lightHandle(); const disc = b.querySelector("[data-sun]"); const glow = b.querySelector("span[aria-hidden]");
+    return { height: b.dataset.height, discPx: Math.round(parseFloat(disc.style.width)), buttonPx: Math.round(parseFloat(b.style.width)), glowPx: Math.round(parseFloat(glow.style.width)), glowBlur: glow.style.filter, shadow: disc.style.boxShadow, ariaLabel: b.getAttribute("aria-label") };
+  })()`);
+
+/** The side of the square close-up of the sun, in CSS pixels: the largest sun with its whole glow (about 180 across) and some photo round it. */
+const SUN_CLOSE_UP_PX = 240;
+
+/** A magnified square of the stage centred on the sun. */
+async function sunClip(t, width = SUN_CLOSE_UP_PX, height = SUN_CLOSE_UP_PX, scale = 2) {
+  const c = await t.page.centre("lightHandle()", "the light handle");
+  return { clip: { x: Math.max(0, c.x - width / 2), y: Math.max(0, c.y - height / 2), width, height, scale } };
+}
+
+/** The line under the sun ("Scroll to bring the light nearer or push it back"): its words and how visible it is, 0 to 1. */
+const sunCaption = (t) => t.page.js(`(() => { const e = [...lightHandle().querySelectorAll("span[aria-hidden]")].find((x) => x.textContent.trim()); return e ? { text: e.textContent.trim(), opacity: Number(getComputedStyle(e).opacity) } : null; })()`);
+
+/** Rest the mouse on the sun until the line under it has faded in (the page waits half a second first). */
+async function restOnSun(t) {
+  const c = await t.page.centre("lightHandle()", "the light handle");
+  await t.page.mouse("mouseMoved", c.x - 3, c.y - 3);
+  await t.page.mouse("mouseMoved", c.x, c.y);
+  await t.page.waitFor(`(() => { const e = [...lightHandle().querySelectorAll("span[aria-hidden]")].find((x) => x.textContent.trim()); return !!e && Number(getComputedStyle(e).opacity) > 0.99; })()`, "the line under the sun to appear", 5000);
+  return c;
+}
+
+/** The Height control as the page lays it out: the words at the two ends of its track, the helper line, and which of them can be seen. */
+const heightControl = (t) =>
+  t.page.js(`(() => {
+    const label = sliderOf("Height").closest("label");
+    const [name, value] = [...label.querySelectorAll("span span")].slice(0, 2).map((e) => e.textContent.trim());
+    const rows = [...label.children].filter((e) => e.tagName === "SPAN").slice(1);
+    const ends = rows.find((e) => e.children.length === 2); const hint = rows.find((e) => e.children.length === 0);
+    return { name, value, tooltip: label.title, endLabels: ends ? [...ends.children].map((e) => e.textContent.trim()) : null, endLabelsShown: !!ends && ends.offsetParent !== null, helperLine: hint?.textContent.trim() ?? null, helperLineShown: !!hint && hint.offsetParent !== null };
+  })()`);
+
+/** A close-up of the Height control: its name and value, the track, and whatever is under the track. */
+const heightClip = (t, scale = 3) => t.page.clipOf(`sliderOf("Height").closest("label")`, "the Height control", { pad: 14, scale });
+
+// ----- iPhone photos (HEIC). -----
+
+/** Where the page downloads its HEIC converter from (DECODER_URL in frontend/lib/heic.worker.js). */
+const HEIC_CONVERTER_HOST = "cdn.jsdelivr.net";
+
+/**
+ * The side, in pixels, of the square HEIC photo made for the "too large" shot.
+ * The page refuses anything over 64 million pixels (MAX_PIXELS in
+ * frontend/lib/heic.worker.js); 8192 squared is 67 million, just over, and one
+ * flat colour, so the file is small and made in under a second.
+ */
+const TOO_LARGE_SIDE = 8192;
+
+/** Make a HEIC photo too large for the page to convert, in a temporary folder, with the converter built into macOS (sips). Returns its path. */
+function tooLargeHeic(t) {
+  const folder = mkdtempSync(join(tmpdir(), "relight-heic-"));
+  t.cleanup.push(() => rmSync(folder, { recursive: true, force: true }));
+  // A PNG of one colour, written by hand: a length, a name, the data and a checksum for each of its three parts.
+  const part = (name, data) => {
+    const body = Buffer.concat([Buffer.from(name), data]);
+    const sizes = Buffer.alloc(8);
+    sizes.writeUInt32BE(data.length, 0);
+    sizes.writeUInt32BE(crc32(body), 4);
+    return Buffer.concat([sizes.subarray(0, 4), body, sizes.subarray(4)]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(TOO_LARGE_SIDE, 0);
+  header.writeUInt32BE(TOO_LARGE_SIDE, 4);
+  header.set([8, 2, 0, 0, 0], 8); // 8 bits a channel, RGB
+  const row = Buffer.concat([Buffer.from([0]), Buffer.alloc(TOO_LARGE_SIDE * 3, Buffer.from([120, 90, 60]))]);
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), part("IHDR", header), part("IDAT", deflateSync(Buffer.alloc(row.length * TOO_LARGE_SIDE, row), { level: 1 })), part("IEND", Buffer.alloc(0))]);
+  writeFileSync(join(folder, "flat.png"), png);
+  try {
+    execFileSync("sips", ["-s", "format", "heic", join(folder, "flat.png"), "--out", join(folder, "too-large.heic")], { stdio: "ignore" });
+  } catch (error) {
+    throw new Error(`The large HEIC test photo could not be made with sips (this shot needs macOS): ${error.message}`);
+  }
+  return join(folder, "too-large.heic");
+}
+
+/** Choose a file on the first page and wait for the red bar under the drop box. Its words go into the manifest. */
+async function dropBoxError(t, file, timeout = 90_000) {
+  await t.page.goto(t.url + "/");
+  await t.page.upload(file);
+  await t.page.waitFor(`alerts().length > 0 || !!photoBox()`, "the error under the drop box", timeout);
+  if (await t.page.js(`!!photoBox()`)) throw new Error("The file was accepted as a photo: no error was shown.");
+  t.note.error = (await t.page.js("alerts()"))[0];
+}
 
 /** How much of the dark stage the side-by-side picture keeps beside the photo, in CSS pixels: enough for a sun that a preset has put just outside it. */
 const SUN_MARGIN_PX = 120;
@@ -1225,13 +1338,16 @@ const SHOTS = [
     name: "enhance-running",
     about: "Straight after clicking Enhance, while the job is still running.",
     async run(t) {
+      // Set before the page loads, like the held upload in scene-loading: switched on later, Chrome now and then fails the Enhance request itself.
+      if (t.mode === "backend") await t.page.route("/jobs/", "hold");
       await openScene(t);
       await t.page.clickButton("Left");
-      if (t.mode === "backend") await t.page.route("/jobs/", "hold");
       await t.page.clickButton("Enhance");
       await t.page.waitFor(`document.body.innerText.includes("Enhancing in the background") && !!byText('button[role="tab"]', "Enhancing…")`, "the Enhancing pill and tab");
       await t.snap({ sidebar: "bottom" });
+      const still = await t.page.js(`document.body.innerText.includes("Enhancing in the background") && alerts().length === 0`);
       await t.page.release();
+      if (!still) throw new Error(`Enhance had stopped before the picture was taken: ${JSON.stringify(await t.page.js("alerts()"))}`);
     },
   },
   {
@@ -2492,6 +2608,8 @@ const SHOTS = [
       await sleep(600); // inside the 2.5 s the page gives the chip to come back (CONTEXT_RESTORE_WAIT_MS)
       t.note.greyNote = await t.page.js(`shadingNote()`);
       t.note.busyText = await t.page.js(`document.body.innerText.includes("Preparing the shader")`);
+      // What is on the stage while the chip is away: the photo under the canvas, and the canvas itself.
+      t.note.stage = await t.page.js(`(() => { const photo = document.querySelector('img[alt="Original photo"]'); const canvas = document.querySelector("canvas"); const c = getComputedStyle(canvas); return { photoLoaded: photo.complete && photo.naturalWidth > 0, canvasContextLost: canvas.getContext("webgl2")?.isContextLost() ?? null, canvasOpacity: c.opacity, canvasVisibility: c.visibility, canvasClass: canvas.className }; })()`);
       await t.snap({ quick: true });
       if (t.note.greyNote) throw new Error("The page had already switched to the processor.");
     },
@@ -3027,6 +3145,211 @@ const SHOTS = [
       await t.snap({ fullPage: true });
     },
   },
+  {
+    name: "sun-height-close-ups",
+    about: "Three close-ups of the sun on the portrait side by side, nothing changed between them but the Height slider: 0.03 (fully left), 0.12 (where a new photo starts) and 2.00 (fully right). The sun's size, glow and shadow show how far in front of the photo the light is.",
+    async run(t) {
+      await openScene(t);
+      const parts = [];
+      t.note.sun = [];
+      for (const [height, label] of [
+        [0.03, "Height 0.03 (slider fully left): close to the surface"],
+        [0.12, "Height 0.12: where a new photo starts"],
+        [2, "Height 2.00 (slider fully right): close to you"],
+      ]) {
+        await t.page.setSlider("Height", height);
+        t.note.sun.push(await sunLook(t));
+        parts.push({ label, jpeg: await t.page.capture(null, await sunClip(t)) });
+      }
+      t.note.light = await t.page.light();
+      await sideBySide(t, parts);
+    },
+  },
+  {
+    name: "sun-scroll-hint",
+    about: "Close-up of the sun with the mouse resting on it for half a second: a line appears under it that says what the mouse wheel does there.",
+    async run(t) {
+      await openScene(t);
+      await restOnSun(t);
+      t.note.caption = await sunCaption(t);
+      t.note.sun = await sunLook(t);
+      await t.snap({ asIs: true, ...(await sunClip(t, 420, 220)) });
+    },
+  },
+  {
+    name: "sun-scrolled-nearer",
+    about: "The portrait after turning the mouse wheel five notches up with the pointer on the sun: the light has come nearer, so Height has risen from 0.12 and the sun is larger. The mouse is still on the sun, so the line under it shows.",
+    async run(t) {
+      await openScene(t);
+      const c = await restOnSun(t);
+      t.note.heightBefore = (await t.page.light()).height;
+      for (let notch = 0; notch < 5; notch++) await t.page.wheel(c.x, c.y, -100);
+      await t.page.waitFor(`lightHandle().dataset.height !== "0.12"`, "the Height to change", 5000);
+      await t.page.painted();
+      t.note.sun = await sunLook(t);
+      t.note.pageScrolledBy = await t.page.js(`window.scrollY`);
+      await t.snap({ asIs: true });
+      // And back down past where it started: seven notches the other way.
+      for (let notch = 0; notch < 7; notch++) await t.page.wheel(c.x, c.y, 100);
+      await t.page.painted();
+      t.note.heightAfterSevenNotchesDown = (await t.page.light()).height;
+    },
+  },
+  {
+    name: "sun-keyboard-plus",
+    about: "Close-up of the sun with keyboard focus after pressing the + key three times: a white ring round it, the same line under it, and Height three steps up from 0.12.",
+    async run(t) {
+      await openScene(t);
+      await t.page.js(`(lightHandle().focus(), true)`);
+      t.note.heights = [(await t.page.light()).height];
+      for (let press = 0; press < 3; press++) {
+        await t.page.key("+");
+        await t.page.painted();
+        t.note.heights.push((await t.page.light()).height);
+      }
+      t.note.focusRing = await t.page.js(`lightHandle().matches(":focus-visible")`);
+      await t.page.waitFor(`(() => { const e = [...lightHandle().querySelectorAll("span[aria-hidden]")].find((x) => x.textContent.trim()); return !!e && Number(getComputedStyle(e).opacity) > 0.99; })()`, "the line under the sun to appear", 5000);
+      t.note.caption = await sunCaption(t);
+      t.note.sun = await sunLook(t);
+      await t.snap({ asIs: true, ...(await sunClip(t, 420, 220)) });
+      for (let press = 0; press < 3; press++) await t.page.key("-");
+      await t.page.painted();
+      t.note.heightAfterThreeMinus = (await t.page.light()).height;
+    },
+  },
+  {
+    name: "height-end-labels",
+    about: "Close-up of the Height control in the LIGHT panel on a window 900 px tall: under the track, the words that say what each end means.",
+    async run(t) {
+      await openScene(t);
+      t.note.heightControl = await heightControl(t);
+      await t.snap(await heightClip(t));
+    },
+  },
+  {
+    name: "laptop-1280x720-height-control",
+    viewport: { width: 1280, height: 720, scale: 1, mobile: false },
+    about: "The same Height control on a short window (1280 x 720): no words under the track, so that the sidebar fits without scrolling. They are in the tooltip only.",
+    async run(t) {
+      await openScene(t);
+      t.note.heightControl = await heightControl(t);
+      await t.snap(await heightClip(t));
+    },
+  },
+  {
+    name: "phone-height-control",
+    viewport: PHONE,
+    about: "The Height control on a phone: the two end labels under the track, and under them the helper line that mentions pinching.",
+    async run(t) {
+      await openScene(t);
+      t.note.heightControl = await heightControl(t);
+      await t.snap(await heightClip(t, 2));
+    },
+  },
+  {
+    name: "phone-pinch-nearer",
+    viewport: PHONE,
+    about: "A phone after putting two fingers on the photo and spreading them to twice as far apart: the light has come nearer (Height has risen from 0.12, the sun is larger) and has not moved sideways.",
+    async run(t) {
+      await openScene(t);
+      const box = await t.page.js("rectOf(photoBox())");
+      const before = await t.page.light();
+      const y = box.y + box.h * 0.6;
+      const mid = box.x + box.w / 2;
+      const fingers = (apart) => [{ x: mid - apart / 2, y }, { x: mid + apart / 2, y }];
+      await t.page.touch("touchStart", fingers(80).slice(0, 1));
+      await t.page.touch("touchStart", fingers(80));
+      for (let apart = 90; apart <= 160; apart += 10) await t.page.touch("touchMove", fingers(apart));
+      await t.page.touch("touchEnd", []);
+      await t.page.painted();
+      t.note.before = before;
+      t.note.sun = await sunLook(t);
+      t.note.how = "Two touch points 80 px apart were put on the photo, the second straight after the first, moved to 160 px apart and lifted (Chrome's own touch input).";
+      await t.snap();
+    },
+  },
+  {
+    name: "heic-converting",
+    about: "Just after choosing an iPhone photo (a .heic file) in Chrome, held still: the drop box reads \"Converting your photo…\" while the converter is fetched and the photo is turned into a picture the browser can show.",
+    async run(t) {
+      // Set before the page loads, like the other held requests. The converter's download is kept waiting, so the page stays on this line.
+      await t.page.route(HEIC_CONVERTER_HOST, "hold");
+      await t.page.goto(t.url + "/");
+      t.note.fileChooserAccepts = await t.page.js(`document.querySelector('input[type="file"]').accept`);
+      await t.page.upload(join(t.photos, PHOTO.heic));
+      await t.page.waitFor(`document.body.innerText.includes("Converting your photo…")`, "the line Converting your photo…", 20_000);
+      t.note.line = await t.page.js(`document.querySelector('div[role="button"]').innerText.trim()`);
+      t.note.how = `The download of the converter from ${HEIC_CONVERTER_HOST} was held back until the picture was taken. In normal use the line shows for a second or two.`;
+      await t.snap();
+      await t.page.release();
+      t.note.shading = await t.page.sceneReady();
+    },
+  },
+  {
+    name: "heic-photo-lit",
+    about: "The iPhone photo 09-iphone-portrait.heic loaded and lit like any other photo, \"Left\" preset clicked.",
+    async run(t) {
+      await openScene(t, PHOTO.heic);
+      await t.page.clickButton("Left");
+      t.note.photoPixels = await t.page.js(`(() => { const i = document.querySelector('img[alt="Original photo"]'); return i.naturalWidth + " x " + i.naturalHeight; })()`);
+      await t.snap();
+    },
+  },
+  {
+    name: "heic-sideways-photo",
+    about: "10-iphone-sideways.heic, a tall photo that the file stores lying on its side with a note to turn it: it comes out upright, taller than wide.",
+    async run(t) {
+      await openScene(t, PHOTO.heicSideways);
+      t.note.photoPixels = await t.page.js(`(() => { const i = document.querySelector('img[alt="Original photo"]'); return i.naturalWidth + " x " + i.naturalHeight; })()`);
+      await t.snap();
+    },
+  },
+  {
+    name: "heic-12mp-photo",
+    about: "11-iphone-12mp.heic, a full-size iPhone photo (4032 x 3024): shrunk while it is converted, then lit as usual.",
+    async run(t) {
+      await openScene(t, PHOTO.heic12mp);
+      t.note.photoPixels = await t.page.js(`(() => { const i = document.querySelector('img[alt="Original photo"]'); return i.naturalWidth + " x " + i.naturalHeight; })()`);
+      await t.snap();
+    },
+  },
+  {
+    name: "heic-error-cannot-convert",
+    about: "A damaged iPhone photo (broken-photo.heic) was chosen: a red error under the drop box says it could not be converted and what to do instead.",
+    async run(t) {
+      await dropBoxError(t, join(t.photos, PHOTO.heicBroken));
+      await t.snap();
+    },
+  },
+  {
+    name: "heic-error-no-converter",
+    about: "An iPhone photo was chosen when the converter cannot be downloaded (no connection to the site that holds it): a red error under the drop box.",
+    async run(t) {
+      await t.page.route(HEIC_CONVERTER_HOST, "fail");
+      await dropBoxError(t, join(t.photos, PHOTO.heic));
+      t.note.how = `Requests to ${HEIC_CONVERTER_HOST} were refused inside Chrome.`;
+      await t.snap();
+    },
+  },
+  {
+    name: "heic-error-too-large",
+    about: "An iPhone-format photo of 8192 x 8192 pixels (67 million, over the 64 million the page converts) was chosen: a red error under the drop box gives its size.",
+    async run(t) {
+      await dropBoxError(t, tooLargeHeic(t));
+      t.note.how = "The photo was made for this picture: one flat colour, saved as HEIC with the converter built into macOS.";
+      await t.snap();
+    },
+  },
+  {
+    name: "demo-heic-photo",
+    needs: "demo",
+    about: "The static demo build with the iPhone photo 09-iphone-portrait.heic: converted and analysed in the browser, \"Left\" preset clicked.",
+    async run(t) {
+      await openScene(t, PHOTO.heic);
+      await t.page.clickButton("Left");
+      await t.snap();
+    },
+  },
 ];
 
 // What a tester should see in each picture, written after looking at it: where the light is,
@@ -3035,19 +3358,19 @@ const SEE = {
   "landing": "Top bar: \"Relight  Banana Hacks 2026\" on the left; on the right the text button \"How it works\" and then the pill: amber dot, \"backend: online, mock providers\". Below: the yellow words \"MOVE THE LIGHT\", the heading \"Relight a photo by dragging the light.\", a dashed box \"Drop a photo here\", then \"Or try a sample photo:\" and four thumbnails: Portrait, Coffee cup, Cat, Rocket.",
   "upload-empty": "The same page at the address /relight. The dashed drop box is a little lighter because the mouse is on it.",
   "scene-loading": "The photo is dimmed with a pill \"Estimating depth and surface normals…\" in the middle. The whole sidebar is faded, the \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" buttons are greyed out, and the GEOMETRY row has no thumbnails yet. There is no sun on the photo.",
-  "scene-default-light": "The round white sun is on the flag at the left edge, about a third of the way down. Readouts: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, Cast shadows on. The left side of the face (your left) is bright and the right cheek is in shadow; the right of the picture is darker than the left.",
+  "scene-default-light": "The round white sun is on the flag at the left edge, about a third of the way down. Readouts: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, Cast shadows on. Under the Height track, in grey: \"close to the surface\" at the left end and \"close to you\" at the right end. The left side of the face (your left) is bright and the right cheek is in shadow; the right of the picture is darker than the left.",
   "scene-all-panels": "The same picture and readouts in a taller window. LIGHT, ENHANCE and the one-row GEOMETRY panel (two tiny thumbnails, \"Show\", down arrow) all show, with empty space under them.",
   "preset-left": "The sun is outside the photo on the left, a little above the middle. Readouts: x -0.10, y 0.40, Height 0.35, Intensity 1.30, Ambient 0.06. The left of the face and suit is bright; the right cheek is in soft shadow.",
   "preset-right": "The sun is outside the photo on the right. Readouts: x 1.10, y 0.40, Height 0.35, Intensity 1.30. The right side of the face and the helmet are bright; the left half of the face is dark.",
-  "preset-top": "The sun is at the very top of the dark stage, above the photo in the middle. Readouts: x 0.50, y -0.15, Height 0.35, Intensity 1.30. These are the preset's own numbers on every window; that point is just above the stage here, so the sun is drawn at the stage's top edge. The hair and forehead are bright; under the chin is dark.",
+  "preset-top": "The sun is at the very top of the dark stage, above the photo in the middle. Readouts: x 0.50, y -0.15, Height 0.35, Intensity 1.30. These are the preset's own numbers on every window; that point is just above the stage here, so the sun is drawn at the stage's top edge. The sun is a little larger than at the start (Height 0.35) and the top of its disc is cut off by the stage's edge. The hair and forehead are bright; under the chin is dark.",
   "preset-low-and-warm": "The sun is orange-tinted at the bottom left corner of the photo. Readouts: x 0.00, y 0.90, Height 0.12, Intensity 1.60, Ambient 0.20, Colour warm 100, and the colour dot is pale orange. The whole picture has a warm orange cast and the face is lit from below.",
   "drag-far-left": "The sun sits on the left edge of the photo, half way down. Readouts: x 0.03, y 0.50; the sliders are still at their starting values (0.12, 1.80, 0.06). The left of the face is bright, the right cheek dark.",
   "drag-far-right": "The sun sits on the right edge of the photo, half way down. Readouts: x 0.97, y 0.50. The right of the face and the white helmet rim are bright; the left half of the face is dark.",
   "drag-top": "The sun sits on the top edge of the photo in the middle, on the hair. Readouts: x 0.50, y 0.03. The hair glows; the face below it is evenly lit.",
   "drag-outside-photo": "The sun is on the dark stage to the right of the photo, next to the sidebar. Readouts: x 1.21, y 0.30 (as far right as the stage allows). The lighting looks like the Right preset: right side bright, left half of the face dark.",
   "drag-centre": "The sun is in the middle of the photo on the metal neck ring. Readouts: x 0.50, y 0.45. The neck ring and chest near the sun are brightest; the face is dimmer than in the other shots because the light is low and below it.",
-  "height-min": "Left preset with Height 0.03 (slider fully left). The light skims the surface: the picture is darker overall, with strong shadows across the face and suit.",
-  "height-max": "Left preset with Height 2.00 (slider fully right). The light is far in front: the whole picture is evenly lit, almost like the original photo.",
+  "height-min": "Left preset with Height 0.03 (slider fully left). The light skims the surface: the picture is darker overall, with strong shadows across the face and suit. The sun, left of the photo, is at its smallest (about two thirds of its usual size) with almost no glow round it.",
+  "height-max": "Left preset with Height 2.00 (slider fully right). The light is far in front: the whole picture is evenly lit, almost like the original photo. The sun, left of the photo, is at its largest (not quite twice its usual size) with a wide soft glow.",
   "intensity-low": "Left preset with Intensity 0.00 (slider fully left). The picture is very dark but still visible, lit only by the Ambient 0.06.",
   "intensity-high": "Left preset with Intensity 4.00 (slider fully right). The picture is very bright; the flag, the suit and the left of the face are close to white.",
   "ambient-low": "Left preset with Ambient 0.00 (slider fully left). Shadows are pure black: the right cheek and the right of the picture are darker than in 06-preset-left.",
@@ -3076,7 +3399,7 @@ const SEE = {
   "backend-offline": "The first page. Top right pill: red dot, \"backend: offline\". The four sample thumbnails are still there and still work.",
   "backend-offline-upload": "The photo is grey and dim. A red-bordered card in the middle reads \"This photo could not be analysed\", then \"Cannot reach the backend at http://localhost:8123. Is it running?\", then in lighter letters \"Or analyse it in this browser: a depth model of about 25 MB downloads once, and the photo stays on this device. Surfaces shade a little flatter than with the server's detailed normals.\" Under that a yellow \"Analyse in this browser\" button with a plain \"Retry\" beside it, and \"Choose another photo\" on a line of its own. The sidebar is faded, \"Hold to see original\" and \"Export PNG\" are greyed out, and the pill reads \"offline\".",
   "enhance-error": "The live preview is still there (Left preset). Above the photo, across the top of the stage column, a red bar reads \"Cannot reach the backend at http://localhost:8123. Is it running?\" with an x to close it. Nothing red is in the ENHANCE panel, the yellow button reads \"Enhance\" again, and the pill reads \"offline\".",
-  "phone-scene": "One column. Top bar: \"Relight\", \"How it works\" and a short pill that reads only \"online\" (amber dot; no word \"backend:\" and no \"mock providers\" at this width). Then the photo with the sun on the flag, \"Hold to see original\" and \"Export PNG\", and the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The helper lines under Height and Ambient show.",
+  "phone-scene": "One column. Top bar: \"Relight\", \"How it works\" and a short pill that reads only \"online\" (amber dot; no word \"backend:\" and no \"mock providers\" at this width). Then the photo with the sun on the flag, \"Hold to see original\" and \"Export PNG\", and the LIGHT panel straight under the stage: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. Under the Height track are the grey words \"close to the surface\" (left) and \"close to you\" (right), and under them the helper line \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\" on two lines.",
   "phone-full-page": "The whole phone page: stage, LIGHT (the five buttons Left, Right, Top, Low and warm, Reset light on one line), ENHANCE with its helper line and a two-row box that reads \"Optional: a mood, such as golden hour\", and the one-row GEOMETRY panel at the bottom.",
   "phone-landing": "The first page in one column: the top bar with \"Relight\", \"How it works\" and the pill \"online\"; the heading on two lines, the dashed drop box, \"Or try a sample photo:\" and the four thumbnails in one row.",
   "status-checking": "The right end of the top bar, enlarged: \"How it works\", then the pill with a grey dot and \"backend: checking\". It shows for a moment after the page opens.",
@@ -3110,18 +3433,18 @@ const SEE = {
   "laptop-1280x720-landing": "The first page fits with no scrolling: heading, a lower drop box, \"Or try a sample photo:\" and the four thumbnails, with a little space left under them.",
   "laptop-1366x768-scene": "The uploaded coffee cup with the Right preset (x 1.10, y 0.40; the sun is drawn at the right edge of the stage). The sidebar fits without scrolling, in the same compact form as at 1280 x 720: no helper lines, a one-row Enhance box.",
   "window-1440x820-scene": "The sidebar fits without scrolling. There are no grey helper lines under Height, Ambient or Cast shadows, but the line \"A photoreal pass over this lighting. Takes a few seconds.\" under ENHANCE is there and the Enhance box has two rows.",
-  "phone-sample": "The coffee cup sample on a phone: the top bar with \"How it works\" and the pill \"online\", a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35 and the helper lines showing.",
+  "phone-sample": "The coffee cup sample on a phone: the top bar with \"How it works\" and the pill \"online\", a short stage that hugs the wide photo, the two buttons under it, and the LIGHT panel starting about half way down the screen with x 0.12, y 0.35. Under the Height track: \"close to the surface\" and \"close to you\", then the two-line helper \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\" Ambient has its helper line too.",
   "phone-sample-full-page": "The whole phone page with GEOMETRY opened at the bottom: Depth and Normals pictures side by side, the Detailed normals switch on, \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
   "phone-load-failed-wide": "On a phone: the stage is short and holds only the grey, dimmed photo with \"New photo\" above it and the two greyed-out buttons below it. Under the stage, in its own red-bordered card: \"This photo could not be analysed\", \"Cannot reach the backend at http://localhost:8123. Is it running?\", the four-line offer that starts \"Or analyse it in this browser:\", a yellow \"Analyse in this browser\" with a plain \"Retry\" beside it, and \"Choose another photo\" under them. The LIGHT panel under the card is faded. Pill: \"offline\".",
-  "tablet-768x1024-sample": "One column, wider: the cat sample in a stage across the top, then the LIGHT panel at full width with long sliders. Readouts x 0.12, y 0.35. The helper lines show.",
+  "tablet-768x1024-sample": "One column, wider: the cat sample in a stage across the top, then the LIGHT panel at full width with long sliders. Readouts x 0.12, y 0.35. Under the Height track: \"close to the surface\" at the left, \"close to you\" at the right, and under them on one line \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\" Ambient has its helper line too.",
   "no-webgl-backend-stopped-sample": "Pill: red dot, \"backend: offline\". No red bar: only the grey note \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit with the Right preset (sun right of the photo, x 1.10, y 0.40, right side of the face bright). The LIGHT panel is at full brightness and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. The page asked the backend for nothing.",
   "mock-sample": "Frontend mock mode (pill \"mock\") with the Cat sample and the Left preset (x -0.10, y 0.40). The shading follows the cat's face, as in 35-cat-side-light: left side bright, right side in shade.",
   "sweep-stop-button": "Enlarged: the word LIGHT, \"Drag the sun on the photo.\", and at the right the button \"Stop sweep\" in yellow letters with a thin yellow outline. Under them the readout row (x, y, colour dot); its numbers change while the sweep runs.",
   "hold-original-button": "Enlarged: \"Hold to see original\" with yellow letters, a yellow eye icon and a yellow outline while it is held down. \"Export PNG\" to its right keeps white letters and a grey outline.",
   "preset-row": "The LIGHT panel, enlarged. Its last row holds five buttons on one line, from the panel's left edge to its right edge: Left, Right, Top, Low and warm (grey boxes) and Reset light (no box until the mouse is on it; here it is, so it has a faint grey background). The tooltip that appears when the mouse rests on \"Reset light\" is not in the picture. Its words are: \"Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone.\"",
   "phone-360-preset-row": "The LIGHT panel on a 360 px wide phone. Left, Right, Top, Low and warm and Reset light are on one line and reach from edge to edge of the panel, with less space inside each button than on a wider screen. Nothing is cut off.",
-  "phone-320-preset-row": "The LIGHT panel on a 320 px wide phone. Left, Right, Top and Low and warm fill one line; \"Reset light\" is alone on a second line, centred, as wide as the panel. The helper lines under Height and Ambient wrap onto two lines.",
-  "laptop-1280x720-preset-top": "Readouts x 0.50, y -0.15, Height 0.35, Intensity 1.30: the same numbers as in 08-preset-top. The sun is at the very top edge of the stage, just under the top bar, above the middle of the photo. The hair and forehead are bright.",
+  "phone-320-preset-row": "The LIGHT panel on a 320 px wide phone. Left, Right, Top and Low and warm fill one line; \"Reset light\" is alone on a second line, centred, as wide as the panel. Under the Height track the two end labels (\"close to the surface\", \"close to you\") are on one line and the helper under them (\"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\") takes three lines; the helper under Ambient takes two.",
+  "laptop-1280x720-preset-top": "Readouts x 0.50, y -0.15, Height 0.35, Intensity 1.30: the same numbers as in 08-preset-top. The sun is at the very top edge of the stage, just under the top bar, above the middle of the photo, with the top of its disc cut off by the stage's edge. The hair and forehead are bright.",
   "new-photo-starts-clean": "The coffee cup, freshly loaded. Sun on the table at the left, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, colour dot white, Cast shadows on (yellow). The Enhance box is empty and shows its grey \"Optional: a mood, such as golden hour\". GEOMETRY is open, Detailed normals is on (yellow), and the last two lines read \"600 x 400 px, relief 0.3\" and \"shading: graphics chip, full quality\".",
   "laptop-1280x720-enhance-error": "Above the photo a two-line red bar: \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. The photo is a little smaller to make room. The sidebar is exactly as without the error (LIGHT, ENHANCE, the GEOMETRY row) and does not scroll. Pill: \"offline\".",
   "phone-enhance-error": "The page is scrolled down to the ENHANCE panel. Under the yellow \"Enhance\" button a red box reads \"Enhance needs the backend, which cannot be reached at http://localhost:8123. The live preview and Export PNG still work without it.\" with an x. There is no red bar above the photo on a phone. Pill: \"offline\".",
@@ -3168,9 +3491,9 @@ const SEE = {
   "phone-processor-note": "On a phone the grey note is four lines tall and sits between the top bar and the stage, so the photo starts lower than in 79-phone-sample by the note's height. The coffee cup is lit as usual (sun at the left, x 0.12, y 0.35) and the LIGHT panel follows under the stage.",
   "phone-processor-full-page": "The whole phone page in a browser without WebGL2: the four-line grey note, the stage, LIGHT, ENHANCE, and GEOMETRY open, ending \"600 x 400 px, relief 0.3\" and \"shading: processor, in the background\".",
   "shader-compile-failed": "The same grey note with a different reason in its brackets: \"Shading on this device's processor, not its graphics chip (the shader did not compile on this graphics chip). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit for the Left preset (x -0.10, y 0.40) and everything works.",
-  "graphics-chip-stopped-waiting": "For about two and a half seconds after the graphics chip stops, the photo is the plain original with even lighting, although the readout still says x -0.10, y 0.40 and the sun is in its place. There is no note and no message yet, and the controls look normal but the picture does not answer them. (Compare 06-preset-left, where the right cheek is in shadow.)",
+  "graphics-chip-stopped-waiting": "For about two and a half seconds after the graphics chip stops, the photo's place is taken by a plain white box with a small broken-picture mark in its top left corner (last round's picture showed the plain original photo here; the app's canvas code has not changed since, so this is most likely how the current Chrome draws a canvas whose graphics chip has gone). The readout still says x -0.10, y 0.40 and the sun is in its place. There is no note and no message yet, and the controls look normal but the picture does not answer them.",
   "graphics-chip-stopped": "The grey note has appeared above the stage: \"Shading on this device's processor, not its graphics chip (the graphics chip stopped responding). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit again for the Left preset (x -0.10, y 0.40), a little smaller because of the note, and everything works.",
-  "slow-processor-server-renders": "A grey one-line note above the stage: \"This device's processor is slow at shading (3.1 s a picture), so the server draws the photo instead. It lags slightly behind the light.\" The number is whatever the device measured. The portrait is the server's picture for the Left preset (x -0.10, y 0.40); the sun, the sliders, \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. GEOMETRY is open and its last line reads \"shading: server renders\".",
+  "slow-processor-server-renders": "A grey one-line note above the stage: \"This device's processor is slow at shading (3.0 s a picture), so the server draws the photo instead. It lags slightly behind the light.\" The number is whatever the device measured. The portrait is the server's picture for the Left preset (x -0.10, y 0.40); the sun, the sliders, \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are all available. GEOMETRY is open and its last line reads \"shading: server renders\".",
   "slow-processor-server-lost": "Pill: red dot, \"backend: offline\". No red bar. The note above the stage has changed back to \"Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops.\" The portrait is lit by the processor for the Right preset (x 1.10, y 0.40, right side of the face bright), and the last line of GEOMETRY reads \"shading: processor\".",
   "no-shading-at-all-server-renders": "A red bar with a warning triangle above the stage, with no x and no \"Retry\": \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.). Showing server renders instead, which lag slightly behind the light.\" The portrait is the server's picture for the Left preset (x -0.10, y 0.40) with the sun on it, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are available. You will not meet this in normal use: it needs a browser in which neither the graphics chip nor the processor can shade.",
   "no-shading-at-all-backend-stopped": "One red bar above the stage: \"Live shading is unavailable (WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas.), and the server render that would replace it failed: Cannot reach the backend at http://localhost:8123. Is it running? The light controls are off until a render arrives.\" with the word \"Retry\" at its right end and no x. The photo is the plain original with no sun on it. The LIGHT panel is faded, and \"Sweep\", \"Enhance\", \"Hold to see original\" and \"Export PNG\" are greyed out. Pill: \"offline\".",
@@ -3207,6 +3530,22 @@ const SEE = {
   "demo-own-photo-detailed-normals": "Enlarged: \"Detailed normals\", under it in grey \"Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs.\", and at the right the switch: off (knob on the left), dull, and it does not react to a click.",
   "demo-depth-model-not-downloaded": "The photo is grey and dim under a red-bordered card: \"This photo could not be analysed\", \"The depth model could not be downloaded. Check your connection and try again. The sample photos work without it.\", a yellow \"Retry\" and \"Choose another photo\". No third button in the demo. The sidebar is faded.",
   "demo-phone-own-photo-full-page": "The whole phone page with an uploaded coffee cup: the pill \"demo\", a short stage with \"New photo\" and the sun at the left of the photo (x 0.12, y 0.35), LIGHT, the short ENHANCE panel with its greyed-out button, and GEOMETRY open: the five-line \"Depth estimated in your browser\" text, Depth and Normals pictures of the cup, the dull Detailed normals switch (off) with its three-line reason, then \"600 x 400 px, relief 0.3\", \"depth: this browser, graphics chip (WebGPU)\" and \"shading: graphics chip, full quality\".",
+  "sun-height-close-ups": "Three squares cut from the same place on the portrait (the flag at the left edge; the black strip at the far left is the stage beside the photo), each under a line of text. Left, \"Height 0.03 (slider fully left): close to the surface\": a small sun, 26 px across, with its dark shadow tight round it. Middle, \"Height 0.12: where a new photo starts\": the sun at its usual 40 px with a soft shadow just under it. Right, \"Height 2.00 (slider fully right): close to you\": a large sun, 69 px across, whose shadow has dropped well below it onto the flag. The glow round the sun is white and hardly shows on this pale part of the photo; it is easier to see where the sun is over the dark stage (06-preset-left, 16-height-max). The flag is also lit differently in each square, because Height changes the lighting.",
+  "sun-scroll-hint": "Enlarged: the sun on the flag and, just under it, a dark rounded label in small pale letters: \"Scroll to bring the light nearer or push it back\". The label appears half a second after the mouse comes to rest on the sun and goes when the mouse leaves; it is not shown while the sun is being dragged. (The mouse pointer itself is never in these pictures.)",
+  "sun-scrolled-nearer": "The whole window. Height now reads 0.36 (it was 0.12) and its slider has moved right; x 0.12 and y 0.35 have not changed. The sun on the flag is larger than in 04-scene-default-light and the label \"Scroll to bring the light nearer or push it back\" is under it. The face is more evenly lit than at 0.12. The page itself did not scroll.",
+  "sun-keyboard-plus": "Enlarged: the sun with a thin white ring a little way outside it (keyboard focus) and the same label under it, \"Scroll to bring the light nearer or push it back\". Height went 0.12, 0.13, 0.15, 0.17 with the three presses, so the sun is slightly larger than at the start. Three presses of - bring it back to 0.12.",
+  "height-end-labels": "Enlarged: \"Height\" at the left, the value \"0.12\" at the right, the track with its white thumb near the left end, and under the track two grey labels: \"close to the surface\" at the left end, \"close to you\" at the right end. There is no longer a sentence under the track here; the sentence \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\" is the tooltip, which is not in the picture.",
+  "laptop-1280x720-height-control": "Enlarged: \"Height\", \"0.12\" and the track only. Nothing is written under the track, and the Intensity row starts straight below it (its top edge is at the bottom of the picture). On a window under 832 px tall the two end labels and the sentence are left out; the sentence is still the tooltip.",
+  "phone-height-control": "Enlarged: \"Height\", \"0.12\", the track, then \"close to the surface\" (left) and \"close to you\" (right), and under them on two lines: \"Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.\"",
+  "phone-pinch-nearer": "A phone. Height reads 0.68 and its slider is about a third of the way along; x 0.12 and y 0.35 are unchanged, so the light did not move sideways. The sun on the flag is clearly larger than in 45-phone-scene, and the portrait is more evenly lit.",
+  "heic-converting": "The first page. Inside the dashed drop box, in place of the icon and \"Drop a photo here\", a small spinner and the words \"Converting your photo…\". Everything else is as in 01-landing. (For any other kind of file the box says \"Reading image…\".)",
+  "heic-photo-lit": "The astronaut portrait from the .heic file, lit exactly like the JPEG in 06-preset-left: sun left of the photo, x -0.10, y 0.40, Height 0.35, left of the face bright and right cheek in soft shadow. Colours and sharpness look the same as the JPEG. Nothing on the page says that the file was a HEIC.",
+  "heic-sideways-photo": "A tall, narrow portrait of the astronaut, upright: head at the top, flag behind her at the left. The photo is taller than wide (288 x 512). The sun is at its starting place, x 0.12, y 0.35, on the left edge by the collar.",
+  "heic-12mp-photo": "The coffee cup, landscape, filling the stage's width, sharp, with the sun at its starting place at the left (x 0.12, y 0.35). The readouts are the starting ones. It loaded in two to three seconds.",
+  "heic-error-cannot-convert": "The first page is still showing, with the drop box back to \"Drop a photo here\". Under the four thumbnails is a red bar on two lines: \"This HEIC photo could not be converted. Export it as a JPEG (on a Mac: open it in Preview, then File, Export) and use that.\" with an x to close it.",
+  "heic-error-no-converter": "The first page is still showing. Under the four thumbnails is a red bar on three lines: \"This is a HEIC photo, which this browser cannot read by itself, and the converter for it could not be downloaded from cdn.jsdelivr.net. Check the connection and try again, or export the photo as a JPEG and use that.\" with an x to close it.",
+  "heic-error-too-large": "The first page is still showing. Under the four thumbnails is a red bar on two lines: \"This HEIC photo is too large to convert in a browser (8192 x 8192 pixels). Export it as a JPEG (on a Mac: open it in Preview, then File, Export) and use that.\" with an x to close it. The two numbers are the chosen photo's own size.",
+  "demo-heic-photo": "The static demo (pill \"demo: runs in your browser\") with the astronaut from the .heic file, Left preset: sun left of the photo, x -0.10, y 0.40, Height 0.35. It looks the same as 169-demo-own-photo-left, which is the same photograph chosen as a JPEG. ENHANCE is greyed out, as always in the demo.",
 };
 
 const numbered = SHOTS.map((shot, i) => ({ ...shot, needs: shot.needs ?? "any", file: `${String(i + 1).padStart(2, "0")}-${shot.name}.jpg` }));
