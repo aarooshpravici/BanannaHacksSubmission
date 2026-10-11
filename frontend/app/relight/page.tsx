@@ -85,6 +85,21 @@ const PINCH_GRACE_MS = 350;
 const SUN_HINT = "Scroll to bring the light nearer or push it back";
 const HEIGHT_HINT = "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.";
 const HEIGHT_ENDS: [string, string] = ["close to the surface", "close to you"];
+/** Height spelt out, behind the "?" beside its name: beside the stage a laptop window has no room for HEIGHT_HINT, and a tester who lit an outdoor photo of his own from low down found the result odd and nothing to say why. */
+const HEIGHT_HELP = (
+  <>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Height</strong> is how far the light floats in front of the photo.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Low</strong>: the light skims across the surface. One side goes bright, shadows stretch, and every bump in the estimated shape shows. On a photo of your own, outdoors above all, that can look odd.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">High</strong>: the light faces the photo. The whole frame is lit evenly, shadows are short, and near and far things differ less.
+    </span>
+    <span className="block text-zinc-500">Scrolling or pinching on the sun changes it too.</span>
+  </>
+);
 
 const WARM: [number, number, number] = [1.0, 0.86, 0.68];
 const COOL: [number, number, number] = [0.7, 0.86, 1.0];
@@ -831,6 +846,7 @@ export default function RelightPage() {
                 onChange={(v) => setBase((b) => ({ ...b, height: v }))}
                 hint={HEIGHT_HINT}
                 ends={HEIGHT_ENDS}
+                help={HEIGHT_HELP}
               />
               <Slider label="Intensity" value={base.intensity} min={0} max={4} step={0.05} onChange={(v) => setBase((b) => ({ ...b, intensity: v }))} />
               <Slider

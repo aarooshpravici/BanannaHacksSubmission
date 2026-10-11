@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from "react";
+import { Help } from "./Help";
 import { Spinner } from "./Spinner";
 import { cn } from "@/lib/cn";
 
@@ -65,14 +66,19 @@ interface SliderProps {
   hint?: string;
   /** What the two ends of the track mean, in a few plain words each: [left, right]. Shown under the track where there is room, in place of the hint, which is then only read on a stacked page and in the tooltip. */
   ends?: [string, string];
+  /** A longer explanation, opened from a "?" beside the label. For what the hint and the ends cannot say in a line, and for the windows that show neither. */
+  help?: ReactNode;
 }
 
-export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends }: SliderProps) {
+export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends, help }: SliderProps) {
   const fill = ((value - min) / (max - min)) * 100;
   return (
-    <label className="block" title={hint}>
+    <label className="relative block" title={hint}>
       <span className="mb-1.5 flex items-baseline justify-between gap-3 text-[13px]">
-        <span className="font-medium text-zinc-200">{label}</span>
+        <span className="flex items-center gap-1.5">
+          <span className="font-medium text-zinc-200">{label}</span>
+          {help && <Help about={label}>{help}</Help>}
+        </span>
         <span className="font-mono text-xs tabular-nums text-zinc-400">{format ? format(value) : value.toFixed(2)}</span>
       </span>
       <input
