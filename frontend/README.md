@@ -107,7 +107,8 @@ until it has passed a check.
   `lib/depthCheckReference.ts`. Two scores: **agreement**, the correlation patch by patch
   (`CHECK_MIN_AGREEMENT`, 0.99 or more passes), and **roughness** of the flat areas as a multiple of the
   reference's own (`CHECK_MAX_ROUGHNESS`, 6 or less passes). The processor scores 1.00 by definition. The one
-  healthy chip measured, an Apple one in Chrome 155, scores 0.9999 and 3.27 on every run. Grid noise added by
+  healthy chip measured, an Apple one in Chrome 155, scores 0.9999 and 3.27 on every run; a tester's Intel chip
+  (gen-12lp, a Dell XPS 15) scored 0.9999 and 3.28, with the check taking 647 ms. Grid noise added by
   a program is rejected from about 0.1% to 0.3% of the depth range, which is about where it first shows on a
   blank wall under a low side light; at 3% it scored about 95 to 135. The check is one more run of the model:
   150 to 250 ms on that Mac (up to about 0.75 s the very first time in a new browser profile), once per page
@@ -153,7 +154,7 @@ until it has passed a check.
   `DepthCheckFailed: the graphics chip (…) got the depth model's test picture wrong: …` and the same numbers.
   For a listed chip, one `console.warn` that starts
   `Relight: the graphics chip (…) is on the list of chips known to get the depth model wrong.`
-- **What it does not catch, and what has not been run.** The limit of 6 rests on one healthy chip. A healthy
+- **What it does not catch, and what has not been run.** The limit of 6 rests on two healthy chips, an Apple one and an Intel one. A healthy
   chip of another make that scores higher is sent to the processor: the right picture, but on the Mac about
   4 to 5 s for the first photo and about 2 s for later ones, against about 0.9 s and 0.2 s. Only the test
   picture is checked, so a chip that gets it right and spoils real photos gets through. Broad noise that is

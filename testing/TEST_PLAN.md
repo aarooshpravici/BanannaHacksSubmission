@@ -534,7 +534,7 @@ New in the depth check update of Oct 11. Needs Plan B (pill "backend: mock") or 
 
 **Why this case exists.** On one tester's Snapdragon laptop, both photos they tried came out covered in a regular grid of dimples, like hammered metal (issue 4). The depth model had run on that laptop's graphics chip with no error and had given a wrong answer. So the page now tests the graphics chip first. Each time the page is loaded, before your first photo, it runs the depth model on a small test picture of its own (a wall, a floor, a ball, a box and a post) and compares the answer with the one a processor gives, which is stored in the page. If the chip's answer is wrong, the processor works out your photo instead: slower, and right. This is about the **depth line** only. The four samples and the shading line have no part in it.
 
-**Why we want one line from you.** The test lets the chip's answer be at most 6 times as rough as the processor's. That limit was set from one healthy chip, an Apple one, which scores 3.27, and we need the scores of other makes (Intel, NVIDIA, AMD and the rest) to know that the limit does not turn a healthy chip away. Your browser writes the scores in its **console**: a panel where a page leaves notes for developers.
+**Why we want one line from you.** The test lets the chip's answer be at most 6 times as rough as the processor's. That limit was set from one healthy chip, an Apple one, which scores 3.27. One other make has reported since (an Intel chip: 3.28), and we need the scores of the rest (NVIDIA, AMD, other Intel and Apple chips, phones) to know that the limit does not turn a healthy chip away. Your browser writes the scores in its **console**: a panel where a page leaves notes for developers.
 
 **How to open the console.**
 
