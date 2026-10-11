@@ -85,7 +85,7 @@ const PINCH_GRACE_MS = 350;
 const SUN_HINT = "Scroll to bring the light nearer or push it back";
 const HEIGHT_HINT = "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.";
 const HEIGHT_ENDS: [string, string] = ["close to the surface", "close to you"];
-/** Height spelt out, behind the "?" beside its name: beside the stage a laptop window has no room for HEIGHT_HINT, and a tester who lit an outdoor photo of his own from low down found the result odd and nothing to say why. */
+/** Height spelt out, behind "What is this?" beside its name: beside the stage a laptop window has no room for HEIGHT_HINT, and a tester who lit an outdoor photo of his own from low down found the result odd and nothing to say why. It opens by itself the first time the Height is changed by hand (heightUsed). */
 const HEIGHT_HELP = (
   <>
     <span className="block">
@@ -302,6 +302,8 @@ export default function RelightPage() {
   const [dragging, setDragging] = useState(false);
   // How close the drawn sun may come to the stage's sides: more on a touch screen (handleMarginX).
   const [sunMarginX, setSunMarginX] = useState(HANDLE_MARGIN_PX);
+  // The reader has changed the Height by hand (the slider, a scroll, a pinch or a key): the moment to explain it. Presets and Reset light do not count.
+  const [heightUsed, setHeightUsed] = useState(false);
   const [sweeping, setSweeping] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [tab, setTab] = useState<"live" | "enhanced">("live");
@@ -531,6 +533,7 @@ export default function RelightPage() {
     const changed = height !== heightNow.current.shown;
     heightNow.current = { shown: height, exact: next };
     if (changed) setBase((b) => ({ ...b, height }));
+    if (changed) setHeightUsed(true);
   }, []);
 
   /**
@@ -843,10 +846,14 @@ export default function RelightPage() {
                 min={HEIGHT_MIN}
                 max={HEIGHT_MAX}
                 step={0.01}
-                onChange={(v) => setBase((b) => ({ ...b, height: v }))}
+                onChange={(v) => {
+                  setBase((b) => ({ ...b, height: v }));
+                  setHeightUsed(true);
+                }}
                 hint={HEIGHT_HINT}
                 ends={HEIGHT_ENDS}
                 help={HEIGHT_HELP}
+                helpNow={heightUsed}
               />
               <Slider label="Intensity" value={base.intensity} min={0} max={4} step={0.05} onChange={(v) => setBase((b) => ({ ...b, intensity: v }))} />
               <Slider

@@ -68,16 +68,22 @@ interface SliderProps {
   ends?: [string, string];
   /** A longer explanation, opened from a "?" beside the label. For what the hint and the ends cannot say in a line, and for the windows that show neither. */
   help?: ReactNode;
+  /** True once the reader has changed this slider's value by hand: `help` then opens by itself, once. */
+  helpNow?: boolean;
 }
 
-export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends, help }: SliderProps) {
+export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends, help, helpNow }: SliderProps) {
   const fill = ((value - min) / (max - min)) * 100;
   return (
     <label className="relative block" title={hint}>
       <span className="mb-1.5 flex items-baseline justify-between gap-3 text-[13px]">
         <span className="flex items-center gap-1.5">
           <span className="font-medium text-zinc-200">{label}</span>
-          {help && <Help about={label}>{help}</Help>}
+          {help && (
+            <Help about={label} show={helpNow}>
+              {help}
+            </Help>
+          )}
         </span>
         <span className="font-mono text-xs tabular-nums text-zinc-400">{format ? format(value) : value.toFixed(2)}</span>
       </span>
