@@ -63,7 +63,8 @@ In the normal app the backend comes first; if it cannot be reached, the failure 
   the only dependency this adds.
 - **Where it runs:** in a Web Worker, on the graphics chip through WebGPU when the browser has it
   (about 0.1 s a photo on an Apple-chip laptop), otherwise on the processor through WebAssembly (about 2 s).
-  The Geometry panel says which.
+  The graphics chip is used only if it does 16-bit maths (`shader-f16`, which the model file needs) and
+  passes a check first (next section). The Geometry panel says which route was taken, and why.
 - **What is downloaded, once:** the model file `onnx/model_q4f16.onnx` (19 MB) from `huggingface.co` and its
   download host, and the code that runs it (5.5 MB) from `cdn.jsdelivr.net`: 24.7 MB in all. The browser keeps
   both (Cache Storage, under `transformers-cache`), so later photos and later visits download nothing.
@@ -75,6 +76,73 @@ In the normal app the backend comes first; if it cannot be reached, the failure 
   outlines get a darker rim. The page says so in the Geometry panel, and "Detailed normals" is off for them.
 - **The library is loaded only when a photo is analysed.** It is a separate 576 KB file that the first page
   does not fetch.
+
+## The check on the graphics chip
+
+Some graphics drivers run the depth model without any error and get it wrong. On a tester's Snapdragon X
+laptop (Adreno X1-85, Windows on ARM) the WebGPU route gave a depth map covered in a regular grid of bumps,
+one per 14-pixel patch of the model, on both photos the tester tried (GitHub issue 4). So the WebGPU route is not trusted
+until it has passed a check.
+
+- **The check** (`lib/depthCheck.ts`). Each time the model is set up on WebGPU, before any photo,
+  `lib/depth.worker.js` runs it on a 518 x 518 test picture built in code (a wall, a floor, a ball, a box and
+  a post) and scores the answer against the one the WebAssembly route gives for the same picture, stored in
+  `lib/depthCheckReference.ts`. Two scores: **agreement**, the correlation patch by patch
+  (`CHECK_MIN_AGREEMENT`, 0.99 or more passes), and **roughness** of the flat areas as a multiple of the
+  reference's own (`CHECK_MAX_ROUGHNESS`, 6 or less passes). The processor scores 1.00 by definition. The one
+  healthy chip measured, an Apple one in Chrome 155, scores 0.9999 and 3.27 on every run. Grid noise added by
+  a program is rejected from about 0.1% to 0.3% of the depth range, which is about where it first shows on a
+  blank wall under a low side light; at 3% it scored about 95 to 135. The check is one more run of the model:
+  150 to 250 ms on that Mac, once per page load, on WebGPU only. The chip gets `CHECK_TIMEOUT_MS` (20 s) to
+  answer.
+- **What happens on a failure.** After a failed check the Worker releases the WebGPU model and uses
+  WebAssembly for this photo and the later ones. After a throw on WebGPU (setting the model up, in the check
+  or on a photo), a photo's output on WebGPU that is not finite or is one single value, or no answer to the
+  check within 20 s, that Worker is of no more use (transformers.js runs one model at a time, each behind
+  the last, so a run that failed or never finished blocks the processor's too). The Worker's error reply
+  carries what it found out about the chip, and `localScene()` starts a new Worker on WebAssembly for the
+  same photo: about 4 s after an error and about 24 s after the time limit on the developer's Mac. A failure
+  while the files are still downloading is not blamed on the chip.
+- **The list** (`knownBad()` in `lib/depth.worker.js`). A chip whose adapter vendor matches `qualcomm`, in a
+  browser whose user agent says `Windows`, is not tried at all in normal use: that is the one family a tester
+  has seen go wrong. Qualcomm chips on Android have not reported and are left to the check. The list is
+  applied only on the normal route and only to an adapter that has `shader-f16`.
+- **What the Geometry panel says** after "depth: this browser," (`depthDeviceText()` in `lib/localScene.ts`):
+
+  | Words | When |
+  | --- | --- |
+  | `graphics chip (WebGPU)` | the chip passed the check |
+  | `processor (WebAssembly)` | no WebGPU adapter, or one without `shader-f16` |
+  | `processor (the graphics chip failed a check)` | the chip got the test picture wrong |
+  | `processor (the graphics chip failed)` | the chip threw, gave an unusable output, or did not answer |
+  | `processor (this graphics chip is known to get the depth model wrong)` | the chip is on the list |
+  | `processor (WebAssembly, asked for with ?depth=wasm)` | the address has `?depth=wasm` |
+  | `graphics chip (WebGPU, not checked: ?depth=webgpu)` | the address has `?depth=webgpu` |
+
+- **Options on the address, for testers** (`depthChoice()` in `lib/localScene.ts`):
+
+  | Option | Route |
+  | --- | --- |
+  | `?depth=wasm` | the processor, whatever the graphics chip can do |
+  | `?depth=webgpu` | the graphics chip with no check, ignoring the list, so that a faulty chip can be shown failing |
+  | `?depth=check` | the graphics chip with the check, ignoring the list: how to find out whether the check catches a listed chip |
+  | `?depth=auto`, nothing, or anything else | the normal route |
+
+- **Console lines**, written by the Worker. For a chip that passes, one `console.info`:
+  `Relight: the graphics chip (<vendor> <architecture>) passed the depth model's check: agreement 0.9999 (0.99 or more passes), roughness 3.27 times the processor's (6 or less passes), 175 ms.`
+  For a failed check, the `console.warn` that every failed route gets,
+  `Relight: the depth model failed on webgpu (start).`, with the error
+  `DepthCheckFailed: the graphics chip (…) got the depth model's test picture wrong: …` and the same numbers.
+  For a listed chip, one `console.warn` that starts
+  `Relight: the graphics chip (…) is on the list of chips known to get the depth model wrong.`
+- **What it does not catch, and what has not been run.** The limit of 6 rests on one healthy chip. A healthy
+  chip of another make that scores higher is sent to the processor: the right picture, but on the Mac about
+  4 to 5 s for the first photo and about 2 s for later ones, against about 0.9 s and 0.2 s. Only the test
+  picture is checked, so a chip that gets it right and spoils real photos gets through. Broad noise that is
+  not on the 14-pixel grid passes. Nobody has run any of this on a real Qualcomm chip, on a phone, or on any
+  graphics chip but one Apple one. `testing/PENDING.md` has the detail (K66 to K71, open items 52 to 54).
+- **If the model file, its revision or the test picture changes**, the reference has to be measured again;
+  the first lines of `lib/depthCheckReference.ts` say how.
 
 ## iPhone photos (HEIC and HEIF)
 
@@ -139,7 +207,9 @@ its first lines).
 - `lib/types.ts` mirrors `backend/app/schemas.py` field for field. Change them together.
 - `lib/api.ts` has one typed function per endpoint; `lib/mock.ts` answers them in mock mode.
 - `lib/localScene.ts` works out a photo's scene in the browser; `lib/depth.worker.js` runs the depth model and
-  `lib/sceneGeometry.ts` turns its output into the depth and normal maps.
+  `lib/sceneGeometry.ts` turns its output into the depth and normal maps. `lib/depthCheck.ts` is the check a
+  graphics chip has to pass before the model is trusted on it, against the answer in
+  `lib/depthCheckReference.ts`.
 - `lib/useJob.ts` submits a background job and polls `/jobs/{id}`.
 - `lib/image.ts` handles files, base64, canvases and downloads.
 - `lib/relightGL.ts` is the live shader; `lib/relightMath.ts` is the same math on the CPU.
