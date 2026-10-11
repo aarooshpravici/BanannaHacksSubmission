@@ -102,6 +102,19 @@ export function UploadDropzone({
   const [converting, setConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Open the file chooser. The last choice is forgotten first, so that picking
+   * the same file again still counts as a change. It is forgotten here and not
+   * straight after a choice: on an Android phone a chosen file can only be read
+   * while the input still holds it, and emptying the input at once left every
+   * photo unreadable there ("That file is not an image this browser can read.").
+   */
+  const openChooser = useCallback(() => {
+    if (!input.current) return;
+    input.current.value = "";
+    input.current.click();
+  }, []);
+
   const accept = useCallback(
     async (file: Blob | null | undefined) => {
       if (!file || disabled) return;
@@ -170,11 +183,11 @@ export function UploadDropzone({
         role="button"
         tabIndex={disabled ? -1 : 0}
         aria-disabled={disabled}
-        onClick={() => !disabled && input.current?.click()}
+        onClick={() => !disabled && openChooser()}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            input.current?.click();
+            openChooser();
           }
         }}
         onDragOver={(e) => {
@@ -201,10 +214,7 @@ export function UploadDropzone({
           type="file"
           accept="image/*,.heic,.heif"
           className="hidden"
-          onChange={(e) => {
-            void accept(e.target.files?.[0]);
-            e.target.value = ""; // so picking the same file again still fires
-          }}
+          onChange={(e) => void accept(e.target.files?.[0])}
         />
         {reading ? (
           <BusyLabel>{converting ? HEIC_BUSY_TEXT : "Reading image…"}</BusyLabel>
