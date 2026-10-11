@@ -6,6 +6,7 @@ import { BusyLabel } from "./Spinner";
 import { UploadIcon } from "./icons";
 import { errorMessage } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { HEIC_BUSY_TEXT, isHeic } from "@/lib/heic";
 import { type LoadedImage, fileToImage } from "@/lib/image";
 
 /**
@@ -97,16 +98,21 @@ export function UploadDropzone({
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [reading, setReading] = useState(false);
+  // The file being read is a HEIC photo, which takes a moment longer: the wait says why.
+  const [converting, setConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const accept = useCallback(
     async (file: Blob | null | undefined) => {
       if (!file || disabled) return;
-      if (file.type && !file.type.startsWith("image/")) {
+      // An iPhone photo (.heic) can arrive with a type that does not say "image": its name and first bytes are checked too.
+      const heic = await isHeic(file);
+      if (file.type && !file.type.startsWith("image/") && !heic) {
         setError("That file is not an image.");
         return;
       }
       setError(null);
+      setConverting(heic);
       setReading(true);
       try {
         onImage(await fileToImage(file, { format }));
@@ -132,6 +138,7 @@ export function UploadDropzone({
       const [address] = imageAddresses(data);
       if (!address) return false;
       setError(null);
+      setConverting(false);
       setReading(true);
       try {
         await accept(await fetchImage(address));
@@ -192,7 +199,7 @@ export function UploadDropzone({
         <input
           ref={input}
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           className="hidden"
           onChange={(e) => {
             void accept(e.target.files?.[0]);
@@ -200,7 +207,7 @@ export function UploadDropzone({
           }}
         />
         {reading ? (
-          <BusyLabel>Reading image…</BusyLabel>
+          <BusyLabel>{converting ? HEIC_BUSY_TEXT : "Reading image…"}</BusyLabel>
         ) : (
           <>
             <span className={cn("flex h-12 w-12 items-center justify-center rounded-2xl border transition-colors", dragging ? "border-accent/50 bg-accent/20 text-accent" : "border-white/10 bg-white/[0.06] text-zinc-300 group-hover:text-white")}>

@@ -1,6 +1,8 @@
 // Browser-side image plumbing: files, base64 strings and canvases.
 // Wire format (see lib/types.ts): raw base64 without a `data:` prefix.
 
+import { decodeHeic, isHeic } from "./heic";
+
 /** Longest side, in pixels, of anything we upload. */
 export const MAX_UPLOAD_SIDE = 1536;
 
@@ -98,7 +100,8 @@ export async function base64ToCanvas(base64: string, raw = false): Promise<HTMLC
 
 // --- files ----------------------------------------------------------------------
 
-async function decodeFile(file: Blob): Promise<ImageBitmap | HTMLImageElement> {
+/** `heic`: the file is a HEIC or HEIF photo, which only some browsers decode; `maxSide` is how large the picture needs to be. */
+async function decodeFile(file: Blob, heic: boolean, maxSide: number): Promise<ImageBitmap | HTMLImageElement | HTMLCanvasElement> {
   try {
     // Applies the EXIF orientation, so phone photos come out upright.
     return await createImageBitmap(file, { imageOrientation: "from-image" });
@@ -112,6 +115,8 @@ async function decodeFile(file: Blob): Promise<ImageBitmap | HTMLImageElement> {
       await img.decode();
       return img;
     } catch {
+      // Safari reads an iPhone's HEIC photos itself and never gets here. For the others, a decoder is fetched when the first one arrives.
+      if (heic) return decodeHeic(file, maxSide);
       throw new Error("That file is not an image this browser can read.");
     } finally {
       URL.revokeObjectURL(url);
@@ -122,14 +127,16 @@ async function decodeFile(file: Blob): Promise<ImageBitmap | HTMLImageElement> {
 /**
  * File (or pasted/dropped blob) -> base64, downscaled so the longest side is at
  * most `maxSide`. Photos (JPEG in) stay JPEG to keep uploads small; everything
- * else becomes PNG so transparency and flat design colours survive.
+ * else becomes PNG so transparency and flat design colours survive. An iPhone's
+ * HEIC photos are decoded here too (lib/heic.ts) and come out as JPEG.
  */
 export async function fileToImage(
   file: Blob,
   options: { maxSide?: number; format?: "auto" | "png" | "jpeg" } = {},
 ): Promise<LoadedImage> {
   const { maxSide = MAX_UPLOAD_SIDE, format = "auto" } = options;
-  const source = await decodeFile(file);
+  const heic = await isHeic(file);
+  const source = await decodeFile(file, heic, maxSide);
   const sw = "naturalWidth" in source ? source.naturalWidth : source.width;
   const sh = "naturalHeight" in source ? source.naturalHeight : source.height;
   if (!sw || !sh) throw new Error("That image has no size.");
@@ -142,8 +149,9 @@ export async function fileToImage(
   ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
   if ("close" in source) source.close();
 
+  // A HEIC file is a camera photo, like a JPEG.
   const mime: ImageMime =
-    format === "png" ? "image/png" : format === "jpeg" || file.type === "image/jpeg" ? "image/jpeg" : "image/png";
+    format === "png" ? "image/png" : format === "jpeg" || file.type === "image/jpeg" || heic ? "image/jpeg" : "image/png";
   return {
     base64: canvasToBase64(canvas, mime),
     mime,
