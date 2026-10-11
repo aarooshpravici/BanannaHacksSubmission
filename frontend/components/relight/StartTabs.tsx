@@ -84,7 +84,7 @@ function DraftsPanel({ drafts, opening, onOpen, note, focusTab }: DraftsPanelPro
                       <span className="block aspect-[4/3] w-full bg-black/40" />
                     )}
                     <span className="block truncate px-2 pt-1.5 text-xs font-medium text-zinc-300">{draft.name}</span>
-                    <span className="block truncate px-2 pb-1.5 text-[11px] leading-4 text-zinc-500">{when}</span>
+                    <span className="block truncate px-2 pb-1.5 text-[11px] leading-4 text-zinc-400">{when}</span>
                   </button>
                   <button
                     type="button"
@@ -100,11 +100,19 @@ function DraftsPanel({ drafts, opening, onOpen, note, focusTab }: DraftsPanelPro
             })}
           </ul>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            <p className="text-xs leading-4 text-zinc-500">{KEPT_NOTE}</p>
+            <p className="text-xs leading-4 text-zinc-400">{KEPT_NOTE}</p>
             {/* One draft has its own Delete, which is all "Delete all" could do. */}
             {count > 1 &&
               (confirm === "asking" ? (
-                <div role="group" aria-label={`Delete all ${count} drafts?`} className="flex flex-wrap items-center gap-2">
+                // Escape answers the question as Keep does.
+                <div
+                  role="group"
+                  aria-label={`Delete all ${count} drafts?`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setConfirm("declined");
+                  }}
+                  className="flex flex-wrap items-center gap-2"
+                >
                   <span className="text-[13px] font-medium text-zinc-200">Delete all {count} drafts?</span>
                   <Button size="sm" onClick={() => void deleteAllDrafts().then(focusTab)}>
                     Delete

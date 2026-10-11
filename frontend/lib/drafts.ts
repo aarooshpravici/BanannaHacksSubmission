@@ -21,7 +21,7 @@ import { isLocalScene } from "./localScene";
 import type { DepthDevice } from "./sceneGeometry";
 import type { Light, RelightScene } from "./types";
 
-/** How many drafts are kept. Saving one more drops the one that was changed longest ago. About 3 MB each, so 12 stay well inside what a browser allows a site. */
+/** How many drafts are kept. Saving one more drops the one that was changed longest ago. Up to about 2 MB each as measured (a photo 1024 pixels wide, analysed in the browser), so 12 stay well inside what a browser allows a site. */
 export const MAX_DRAFTS = 12;
 /** The longer side of a draft's small picture, in pixels: twice the width of its card, for a sharp screen. */
 const THUMB_SIDE = 320;
