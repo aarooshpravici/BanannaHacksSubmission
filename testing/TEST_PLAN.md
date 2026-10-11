@@ -5,15 +5,15 @@ Every test case has an ID (for example `L-03`), numbered steps, the expected res
 ## How to use this plan
 
 - **Standard start.** Unless a case says otherwise: the app runs as in [SETUP.md](SETUP.md), the top-right pill reads **backend: online, mock providers** (on a window narrower than 640 pixels just "online"), the photo file `testing/photos/01-portrait-astronaut.jpg` is loaded through the dashed box, and you have clicked **Reset light** in the LIGHT panel. The light is then at x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, with **Cast shadows** on.
-- **No backend?** If the pill reads "backend: mock" (Plan B in SETUP) or "backend: offline", click a sample thumbnail wherever a case says to load a test photo: **Portrait** for `01-portrait-astronaut.jpg`, **Coffee cup** for `02-object-coffee.jpg`, **Cat** for `03-animal-cat.jpg`, **Rocket** for `04-dark-rocket.jpg`. They are the same four photos with the same shape data, and they need no backend. Cases that need another photo file, the loading screen or the backend cannot be run that way: mark them NOT RUN.
-- **Hosted demo?** If you were given a web address for the static demo (the pill reads "demo: runs in your browser", or just "demo" on a phone), do group H. The demo has only the four samples. It cannot take a photo of your own, and Enhance is switched off there.
+- **No backend?** If the pill reads "backend: mock" (Plan B in SETUP) or "backend: offline", click a sample thumbnail wherever a case says to load a test photo: **Portrait** for `01-portrait-astronaut.jpg`, **Coffee cup** for `02-object-coffee.jpg`, **Cat** for `03-animal-cat.jpg`, **Rocket** for `04-dark-rocket.jpg`. They are the same four photos with the same shape data, and they need no backend. A case that needs another photo file can still be run. In Plan B, choose the file: the browser works out its shape (P-10). With the pill "backend: offline", choose the file and click **Analyse in this browser** on the card that appears (R-22). Such a photo shades a little flatter than with the backend, the words on the loading label are different, and **Detailed normals** is off (P-12). Cases about the backend's own loading screen, or about anything else the backend does, cannot be run that way: mark them NOT RUN.
+- **Hosted demo?** If you were given a web address for the static demo (the pill reads "demo: runs in your browser", or just "demo" on a phone), do group H. The demo has the four samples and it takes your own photo too: the browser works out the photo's shape and nothing is uploaded. **H-12 is the case to run first.** Only Enhance is switched off there.
 - **Recording results.** On GitHub, use the "Report a finished test run" link in [README.md](README.md#reporting-what-you-found) and write one line per case. Only if you cannot use GitHub, fill in a copy of [results/TEMPLATE.md](results/TEMPLATE.md). Mark each case **PASS** (matches "Expected"), **FAIL** (does not; open a bug issue) or **NOT RUN**.
-- **Screenshots** (152 of them) were all retaken on Saturday Oct 10 (night), on a Mac in Chrome, with a 1440 x 900 window unless the case says otherwise. Where a screenshot shows an address with port 8123, yours says 8000. Small differences in size and position on your screen are normal. Different words, missing parts, or lighting on the wrong side are not.
+- **Screenshots** (175 of them) were all taken on Saturday Oct 10, on a Mac in Chrome, with a 1440 x 900 window unless the case says otherwise. Where a screenshot shows an address with port 8123, yours says 8000. In the late night update 40 were retaken and 23 were added (153 to 175). Small differences in size and position on your screen are normal. Different words, missing parts, or lighting on the wrong side are not.
 - **Sizes mean the page area**, not the whole window: the part below the browser's tabs and address bar. An ordinary 1440 x 900 window has a page area about 800 pixels high. Below 832 the grey helper lines under Height, Ambient and Cast shadows are not shown (they become hover text). That is expected, and the screenshots show them only because they were taken with a page area of exactly 1440 x 900. To get an exact page size use Chrome's F12 device toolbar, as in W-13.
 - **The x and y numbers.** x 0.00 is the photo's left edge and 1.00 its right edge; y 0.00 is the top and 1.00 the bottom. Numbers below 0 or above 1 mean the light is outside the photo. **A preset always gives the same numbers**, on every window and every photo: **Left** x -0.10, y 0.40; **Right** x 1.10, y 0.40; **Top** x 0.50, y -0.15. If that point lies beyond the edge of the stage, the sun is drawn at the stage's edge and the readout still shows the preset's numbers. A drag or an arrow key is different: it stops at the stage's edge, and the readout shows where it stopped.
 - **Where an Enhance error shows.** On a window 1024 pixels wide or more, a failed Enhance shows a red bar **above the photo**. On a narrower window (a phone) the same message is a red box inside the ENHANCE panel, under the button. The cases say "above the photo"; on a phone look in the ENHANCE panel (R-21).
 - **GEOMETRY is folded.** The GEOMETRY panel at the bottom of the sidebar starts as a single row. Where a case says "open GEOMETRY", click that row.
-- **The size line and the shading line.** The opened GEOMETRY panel ends with two small grey lines in typewriter letters, under the **Detailed normals** switch. The first is the **size line**, for example "512 x 512 px, relief 0.3". The second is the **shading line**. It starts with "shading:" and says what is drawing the lit picture on your device, for example "shading: graphics chip, full quality". It appears once the lit picture is on screen. Its possible wordings, and what each means, are in the table at the top of [group F](#f-shading-paths). **Copy the shading line into every report.**
+- **The size line and the shading line.** The opened GEOMETRY panel ends with two small grey lines in typewriter letters, under the **Detailed normals** switch. The first is the **size line**, for example "512 x 512 px, relief 0.3". The second is the **shading line**. It starts with "shading:" and says what is drawing the lit picture on your device, for example "shading: graphics chip, full quality". It appears once the lit picture is on screen. Its possible wordings, and what each means, are in the table at the top of [group F](#f-shading-paths). For a photo whose shape was worked out in your browser there is a third line between those two, the **depth line**: "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)" (P-12). **Copy the shading line into every report, and the depth line when there is one.**
 - **"How it works".** The words "How it works" in the top bar, left of the pill, open a card that explains the app. Group G tests it. It is on every page.
 - **Known issues** are listed near the top of [PENDING.md](PENDING.md#already-known-no-need-to-report), under "Already known: no need to report". Read that list once before you start. Do not report those again unless they are worse than described.
 - **Test photos** are in the `testing/photos` folder of the project. Where that is on your disk: see the top of the smoke test in [README.md](README.md#10-minute-smoke-test).
@@ -26,13 +26,13 @@ Groups: [U Upload](#u-upload) · [P Scene preparation](#p-scene-preparation) · 
 
 ## U. Upload
 
-Start each case on the first page with no photo (click **New photo** if a photo is loaded). On the static demo there is no dashed box; its first page is covered by H-01 and H-02.
+Start each case on the first page with no photo (click **New photo** if a photo is loaded). The static demo has the same dashed box; its first page is covered by H-01 and H-02.
 
 ### U-01 First page
 
 1. Open http://localhost:3000.
 
-**Expected:** browser tab title "Relight: drag the light around any photo". Top bar: yellow square with a banana, "Relight", grey "Banana Hacks 2026", and at the right the words "How it works" and then the pill. Page: yellow "MOVE THE LIGHT"; title "Relight a photo by dragging the light."; a paragraph starting "Upload a photo."; a dashed box with "Drop a photo here" and "or click to browse, or paste from the clipboard"; under it the line "Or try a sample photo:" and four small pictures in one row, labelled "Portrait", "Coffee cup", "Cat" and "Rocket". There is no round black "N" badge in the bottom-left corner any more.
+**Expected:** browser tab title "Relight: drag the light around any photo". Top bar: yellow square with a banana, "Relight", grey "Banana Hacks 2026", and at the right the words "How it works" and then the pill. Page: yellow "MOVE THE LIGHT"; title "Relight a photo by dragging the light."; a paragraph starting "Upload a photo."; a dashed box with "Drop a photo here" and "or click to browse, or paste an image or its address" (before the late night update of Oct 10 it ended "or paste from the clipboard"); under it the line "Or try a sample photo:" and four small pictures in one row, labelled "Portrait", "Coffee cup", "Cat" and "Rocket". (In Plan B and on the demo the paragraph starts "Upload a photo or pick a sample." and there is a grey line under the box that starts "Your photo stays on this device": R-08, H-01.) There is no round black "N" badge in the bottom-left corner any more.
 
 ![U-01](screenshots/01-landing.jpg)
 
@@ -60,7 +60,7 @@ Start each case on the first page with no photo (click **New photo** if a photo 
 
 1. Copy a picture: on any web page right-click a picture and choose "Copy image", or take a screenshot to the clipboard (macOS: Ctrl+Shift+Cmd+4; Windows: Win+Shift+S). 2. Click an empty part of the Relight first page. 3. Press Cmd+V (macOS) or Ctrl+V (Windows).
 
-**Expected:** the pasted picture loads in the workspace, the same as choosing a file.
+**Expected:** the pasted picture loads in the workspace, the same as choosing a file. This is also the way that always works for a picture on another web site (U-23). Pasting a picture's **address** is U-24.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -138,19 +138,19 @@ Start each case on the first page with no photo (click **New photo** if a photo 
 
 1. On the first page: copy some words from anywhere, click an empty part of the page, press Cmd+V or Ctrl+V. 2. In Finder or File Explorer select `not-an-image.txt`, copy it (Cmd+C or Ctrl+C), go back to the page and paste. 3. Load the astronaut. Copy a picture (as in U-04). Click on the top bar of the page and paste. 4. Click in the ENHANCE text box and paste again.
 
-**Expected:** steps 1 and 2: nothing happens. No photo loads and no red bar appears. Step 3: nothing happens; the astronaut stays. Paste only loads a picture on the first page. Step 4: nothing is added to the text box (a picture is not text) and the photo does not change.
+**Expected:** step 1: nothing happens. No photo loads and no red bar appears. (Words that are a web address, starting `http://` or `https://`, are different: the page tries to load a picture from that address. That is U-24.) Step 2: either nothing happens, or a red bar reads "That file is not an image." It depends on whether your browser hands a copied file to the page. Write down the browser and which you got. Step 3: nothing happens; the astronaut stays. Paste only loads a picture on the first page. Step 4: nothing is added to the text box (a picture is not text) and the photo does not change.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
-### U-14 Dropping several files, a folder, or a picture from a web page
+### U-14 Dropping several files, a folder, or some words
 
 Do each on the first page, onto the dashed box. Click **New photo** between steps.
 
-1. Select `02-object-coffee.jpg` and `03-animal-cat.jpg` together and drop both at once. 2. Select `not-an-image.txt` and `03-animal-cat.jpg` together and drop both. Try twice, starting the drag from a different file each time. 3. Drop the whole `photos` folder. 4. Open any web page with a picture in another window. Drag that picture onto the dashed box.
+1. Select `02-object-coffee.jpg` and `03-animal-cat.jpg` together and drop both at once. 2. Select `not-an-image.txt` and `03-animal-cat.jpg` together and drop both. Try twice, starting the drag from a different file each time. 3. Drop the whole `photos` folder. 4. On any web page or in any document, select a few ordinary words with the mouse and drag them onto the dashed box.
 
-**Expected:** step 1: one photo loads, never both. The app uses only the first file the browser hands over; you cannot choose which. Step 2: either the cat loads, or a red bar reads "That file is not an image." It depends on which file the browser lists first. Write down which you got. Step 3: for a moment the box reads "Reading image…", then a red bar reads "That file is not an image this browser can read." (it may read "That file is not an image." in some browsers). Step 4: either the picture loads, or **nothing happens at all**: the yellow tint goes away, no photo, no message. Write down the browser and which you got.
+**Expected:** step 1: one photo loads, never both. The app uses only the first file the browser hands over; you cannot choose which. Step 2: the cat loads, both times. The app takes the first file that is a picture. (Before the late night update of Oct 10 it took whichever file the browser listed first, and could show a red bar here.) Step 3: for a moment the box reads "Reading image…", then a red bar reads "That file is not an image this browser can read." (it may read "That file is not an image." in some browsers). Step 4: the yellow tint goes away and a red bar under the thumbnails reads "Nothing in that drop was an image. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here." The X removes it. (Before the late night update of Oct 10 a drop with no file in it did nothing at all, with no message. If that still happens, it is a FAIL.) Dragging a **picture** from a web page is U-23.
 
-Developer note: possible bug (step 4, when nothing happens and no message is shown).
+![U-14 step 4, enlarged](screenshots/157-drop-nothing-an-image.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -233,11 +233,64 @@ Use whatever of these you have or can make. Skip the rest and say which you skip
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
+### U-23 Dragging a picture from another web page
+
+New in the late night update of Oct 10. A tester asked for it. It works in every mode: the normal app, Plan B and the demo.
+
+A browser lets one web page read a picture from another site only if that site allows it. Most sites do not. So this case has two right answers, and the page must tell you clearly which one you got.
+
+1. Put two browser windows side by side: the Relight first page in one, and in the other a web page with a photograph on it. 2. Press on the photograph, drag it over the dashed box, hold it there, then let go. 3. If a red bar appeared: go back to the other page, right-click the same photograph and choose "Copy image". Click an empty part of the Relight first page and press Cmd+V (macOS) or Ctrl+V (Windows). 4. Click **New photo** and do steps 2 and 3 with pictures from two more sites. Make one of them a photograph in a Wikipedia article.
+
+**Expected:** step 2: while the picture is over the box, the border turns yellow. After you let go, the box reads "Reading image…" for a moment. Then one of two things:
+
+- (a) **The picture loads**, exactly like a dropped file, and no red bar shows. This happens for sites that allow reading. Pictures in Wikipedia articles usually do.
+- (b) **A red bar** under the sample thumbnails: "That image's site does not let other pages read it. This is a browser security rule, not a fault in the image. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here." The page stays on the first page. The X removes the bar. This is what most sites give. It is not a bug in the app.
+
+Step 3: the pasted picture loads. Copy, then paste, works for every site.
+
+A FAIL is any of these: nothing happens and no message shows; the browser leaves Relight and opens the picture by itself; the picture loads but is not the one you dragged; or a red bar with other words than the ones here and in U-25. **Write down each site, the browser, and whether you got (a) or (b).** (The developer could not drag by hand. The screenshots were made with a second small web server standing in for "another site".)
+
+![U-23 (b): the site does not allow it](screenshots/153-drop-web-image-blocked.jpg)
+![U-23 (a): the site allows it; the picture loaded, here with the Left preset](screenshots/159-drop-web-image-accepted.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### U-24 Pasting a picture's address
+
+New in the late night update of Oct 10. The hint in the dashed box says "paste an image or its address".
+
+1. On a Wikipedia article, right-click a photograph and choose "Copy image address" (Firefox: "Copy Image Link"). 2. Click an empty part of the Relight first page and press Cmd+V or Ctrl+V. 3. Click **New photo**. Copy the address of an ordinary web page from the browser's address bar, for example `https://en.wikipedia.org`. Click an empty part of the Relight first page and paste. 4. Click the X on the red bar.
+
+**Expected:** step 2: the box reads "Reading image…" for a moment, then the picture loads like a chosen file. If the site does not allow reading, you get the red bar of U-23 (b); try another site and say which sites you tried. Step 3: no photo loads. A red bar under the thumbnails reads either "That address is a web page, not an image. Drag the picture itself, or save it and drop the file here." or "That image's site does not let other pages read it. …" (the second when the site refuses before the app can tell what the address is). Both are right. Write down which you got. Step 4: the X removes the bar. (Written from the code. The developer did not paste by hand.)
+
+![U-24 step 3, enlarged: an address that is a web page](screenshots/156-drop-web-page.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### U-25 The other messages for a picture's address (only if they happen)
+
+You do not have to cause these. If you see one while doing U-23 or U-24, check its words here. To try for the first one: copy a picture's address as in U-24, paste it into a text editor, change a few letters of the file name at its end, copy the changed address and paste it on the Relight first page.
+
+**Expected, if it happens:** always a red bar under the thumbnails, with an X, and the page stays on the first page.
+
+- The site says the picture does not exist: "That image's site answered 404, so it could not be loaded. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here." The number is the site's own answer and can be another one, such as 403 or 500.
+- The site does not answer: the box shows a spinner and "Reading image…" for **15 seconds**, then: "That image took too long to load. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here." Known: there is no way to stop the wait (K50).
+- The address is a damaged built-in picture (it starts with `data:`): "That image could not be read. Save it and drop the file here."
+- What was dropped holds no picture and no address: "Nothing in that drop was an image. Right-click the image and choose Copy image, then paste it on this page; or save it and drop the file here." (U-14 step 4).
+
+Any other words in the red bar: copy them whole into a bug issue, with the address you used.
+
+![U-25 the site answered 404, enlarged](screenshots/154-drop-web-image-404.jpg)
+![U-25 the site took too long, enlarged](screenshots/155-drop-web-image-too-slow.jpg)
+![U-25 a damaged address, enlarged](screenshots/158-drop-unreadable-address.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
 ---
 
 ## P. Scene preparation
 
-"Scene preparation" is the wait after choosing a photo, while the backend works out the photo's shape.
+"Scene preparation" is the wait after choosing a photo, while the backend works out the photo's shape. With no backend (Plan B, the static demo, or the **Analyse in this browser** button) your browser works it out by itself: cases P-10 to P-13, new in the late night update of Oct 10.
 
 ### P-01 Loading screen
 
@@ -321,9 +374,94 @@ Needs Plan B (pill "backend: mock") or the static demo (pill "demo: runs in your
 
 1. Click the **Cat** sample. Do not move the light. Open GEOMETRY. If the bottom of the sidebar is out of sight, scroll the sidebar down. 2. Look at the **Detailed normals** switch and the grey line under it. 3. Click the switch. Press Tab until you have passed the GEOMETRY row and see where the selection goes.
 
-**Expected:** step 2: the switch is **on** but dull (dark yellow, greyed). The line under it reads "Always on for a sample photo: its maps were made ahead of time with detailed normals." (On a window less than 832 pixels high that line is hover text on the switch.) Step 3: the click does nothing: no loading label, no change to the photo, to the Normals picture or to the light. The mouse pointer over the switch is a "not allowed" sign. Tab skips the switch. (Before the Oct 10 evening update the switch could be clicked in Plan B, and the sample then lost its shape and was lit as a round dome. If the cat ever turns into a dome, that is a FAIL.) In Plan B the switch still works on an **uploaded** file; it reloads the photo and changes nothing visible (R-08).
+**Expected:** step 2: the switch is **on** but dull (dark yellow, greyed). The line under it reads "Always on for a sample photo: its maps were made ahead of time with detailed normals." (On a window less than 832 pixels high that line is hover text on the switch.) Step 3: the click does nothing: no loading label, no change to the photo, to the Normals picture or to the light. The mouse pointer over the switch is a "not allowed" sign. Tab skips the switch. (Before the Oct 10 evening update the switch could be clicked in Plan B, and the sample then lost its shape and was lit as a round dome. If the cat ever turns into a dome, that is a FAIL.) On your **own** photo in Plan B or the demo the switch is greyed too, but **off**: P-12.
 
 ![P-09 (taken in Plan B at the starting light, x 0.12, y 0.35, with the sidebar scrolled to the bottom)](screenshots/95-mock-sample-detailed-normals.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### P-10 Your own photo with no backend: the first time
+
+New in the late night update of Oct 10. Needs Plan B (pill "backend: mock") or the static demo (pill "demo: runs in your browser"). For the normal app with the backend stopped, do R-22.
+
+With no backend, your browser works out the photo's shape by itself. The first time, it downloads a depth model of about 25 MB. To see that first time, use a browser window that has never done this on this address: a new **private** (incognito) window is the easy way. Have a stopwatch ready.
+
+1. Open the page in the new private window. Read the grey line under the dashed box. 2. Click the dashed box. Start the stopwatch as you choose `testing/photos/01-portrait-astronaut.jpg`. Watch the label on the dimmed photo. Stop the stopwatch when the sun appears. 3. Click **Left**. Drag the sun. 4. Open GEOMETRY and copy its three small grey lines.
+
+**Expected:** step 1: "Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once." Step 2: at once the workspace appears with the photo dimmed and a label with a spinner in the middle. Its words change in this order. Some pass too fast to read; that is fine.
+
+- "Preparing your photo…"
+- "Downloading the depth model, once…"
+- "Downloading the depth model, 19 MB, once… 42%" (the number counts up to 100%)
+- "Starting the depth model…"
+- "Working out the shape of your photo…"
+- for an instant, perhaps, "Preparing the shader…"
+
+It never reads "Estimating depth and surface normals…"; those are the backend's words. Then the photo brightens and the sun appears near the left edge, on the flag. Step 3: the left of the face is bright and the right half darker, and the lighting follows the sun at once. There is no red bar, no card and no round dome. The face is a little flatter than on the Portrait sample; that is known (Q-12). Step 4: see P-12.
+
+**How long is acceptable.** On the developer's Mac with fast internet: about 3 seconds, or about 5 where the depth line says "processor (WebAssembly)". On home internet the download decides. **Up to 1 minute is acceptable.** More than 2 minutes is a FAIL, and so is a label that stops changing for more than a minute: write down the last words you saw. Write down your time, your internet speed if you know it, the device and the browser. (This has run only in Chrome on one Apple-chip Mac. Every other browser and device is new ground.)
+
+![P-10 downloading](screenshots/165-demo-depth-downloading.jpg)
+![P-10 starting](screenshots/166-demo-depth-starting.jpg)
+![P-10 working out the shape](screenshots/167-demo-depth-working-out-shape.jpg)
+![P-10 done, Left preset](screenshots/169-demo-own-photo-left.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Time, device, browser and note:
+
+### P-11 Your own photo with no backend: the second photo, and after a reload
+
+Do this straight after P-10, in the same window. The depth model is now stored in the browser, so nothing should be downloaded again.
+
+1. Click **New photo**. Choose `02-object-coffee.jpg`. Time it and watch the label. 2. Reload the page (do not close the private window). Choose `03-animal-cat.jpg`. Time it and watch the label. 3. Switch the computer's Wi-Fi off. Click **New photo** and choose the astronaut file. Switch Wi-Fi on again.
+
+**Expected:** step 1: no "Downloading…" words. The label reads "Working out the shape of your photo…" for a moment and the cup is lit. On the developer's Mac: under half a second, or 2 to 3 seconds on the processor. Step 2: the label reads "Loading the depth model…" (not "Downloading…"), then "Starting the depth model…", then "Working out the shape of your photo…". On the developer's Mac: about 1 second, or 2.5 to 4 seconds on the processor. Step 3: the photo should still load, because nothing is fetched from another site any more. The developer did not try step 3; write down what happened. (On the hosted demo, do not reload while Wi-Fi is off.)
+
+**How long is acceptable** for steps 1 and 2: up to 15 seconds on a computer and up to 30 seconds on a phone. Longer is a FAIL. "Downloading the depth model" showing again after a reload is also a FAIL, with two exceptions that are known: you closed the private window in between, or you opened the page by a number address such as `http://192.168.1.23:3000` (W-16 step 8), where the browser is not allowed to store the model (K53).
+
+![P-11 after a reload: the stored model is loaded, not downloaded (taken with the coffee file)](screenshots/168-demo-depth-loading-stored.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Times and note:
+
+### P-12 GEOMETRY and Detailed normals for a photo analysed in the browser
+
+Needs Plan B or the static demo. (In the normal app, after **Analyse in this browser**, the panel reads the same but the switch can be clicked: R-22.)
+
+1. Choose the astronaut **file** (not the sample) and wait for the lit photo. Click **Left**. Open GEOMETRY. If the bottom of the sidebar is out of sight, scroll the sidebar down. 2. Read the panel from top to bottom. 3. Hold the mouse still for two seconds over the small grey line that starts "depth:". 4. Click the **Detailed normals** switch. Press Tab until you have passed the GEOMETRY row.
+
+**Expected:** step 2, in this order:
+
+- The first sentence: "Depth estimated in your browser by Depth Anything V2 Small, the model the Relight server uses. The normals are taken from the slope of that depth map, so they are smoother than the server's detailed normals: a face shades flatter." (For a sample it reads "What the models recovered from the photo. The shader lights these.")
+- "Depth", "white = near": a grey picture of the scene; the helmet at bottom right is whitest.
+- "Normals", "surface direction": **smooth** lilac and blue, with thin green, pink and red lines along the edges of the head, the collar and the helmet. You cannot make out the eyes, nose or mouth. (On the Portrait sample this picture is vivid and shows the face. The difference is expected.)
+- **Detailed normals**: the switch is **off**, dull and greyed. Under it: "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs." (On a window less than 832 pixels high that line is hover text on the switch.)
+- Three small grey lines in typewriter letters: the size line "512 x 512 px, relief 0.3"; the **depth line**, which is new, "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)"; and the shading line (F-01).
+
+**Copy the depth line into your report.** The developer has only ever seen "graphics chip (WebGPU)"; if yours says "processor (WebAssembly)", that is a result we want, with your time from P-10. Step 3: the hover text reads "The depth model ran in this browser. The photo was not sent anywhere." Step 4: the click does nothing: no loading label, no change to the photo. The mouse pointer over the switch is a "not allowed" sign. Tab skips the switch.
+
+![P-12 the panel, enlarged](screenshots/172-demo-own-photo-geometry.jpg)
+![P-12 the switch and its line, enlarged](screenshots/173-demo-own-photo-detailed-normals.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Depth line and note:
+
+### P-13 When the browser cannot analyse the photo
+
+Needs Plan B or the static demo. The easy way to cause it: the depth model cannot be downloaded.
+
+1. Open the page in a **new private window**, so that no depth model is stored. Wait until the four thumbnails show. 2. Switch the computer's Wi-Fi off. (Plan B still works: the page comes from your own computer. On the hosted demo, do not reload.) 3. Choose the astronaut **file**. Wait up to a minute. 4. Switch Wi-Fi on. Wait ten seconds. Click **Retry**. 5. Cause the card again (steps 1 to 3), then click **Choose another photo** and click the **Portrait** sample.
+
+**Expected:** step 3: the photo turns grey and dim. On top of it (on a phone: under the stage) sits a card with a red border: a warning sign, "This photo could not be analysed", and the line "The depth model could not be downloaded. Check your connection and try again. The sample photos work without it." On the demo the card has two buttons: a yellow **Retry** and **Choose another photo**. In Plan B there is a third between them, **Use a stand-in dome** (R-23). There is no red bar above the stage and no sun; the LIGHT panel and the buttons are faded, as in R-02. Step 4: the card goes, the label shows the download words of P-10, and the photo is lit. Step 5: the app returns to the first page and the sample opens at once: samples never need the model.
+
+The card can show five other lines. The developer has never seen any of them on screen. **If you see one, copy it whole, with the device, the browser and the size of the photo.** On a phone, any of the last three is among the most important things you can report.
+
+- "The depth model stopped downloading. Check your connection and try again. The sample photos work without it." (nothing arrived for 60 seconds while the percentage was counting up, or the label stayed on "Starting the depth model…" for three minutes. That stage, in which the last part of the download arrives with no percentage, was given three minutes in version `2b385ef`; before, it too stopped after 60 seconds. On very slow internet the line can still show although the download was still going: K52)
+- "That file is not an image this browser can read."
+- "Working out the shape took too long on this device, so it was stopped. The sample photos work without it." (after 90 seconds)
+- "This device ran out of memory running the depth model. Close other tabs and try again, or try a smaller photo. The sample photos work without it."
+- "This browser could not run the depth model. Try a current Chrome, Edge, Firefox or Safari. The sample photos work without it."
+
+(The screenshot was made by blocking the model's web address, not by switching Wi-Fi off. On the hosted demo, with Wi-Fi off, another of the lines above may show, because a part of the page itself is fetched late. Write down which.)
+
+![P-13 on the demo](screenshots/174-demo-depth-model-not-downloaded.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -885,7 +1023,7 @@ Needs the backend (pill "online, mock providers"). The case with the backend sto
 
 1. Export the astronaut (512 x 512), then `08-huge-astronaut-3000px.jpg`. 2. Check each file's size in pixels (macOS: select the file, press Cmd+I; Windows: right-click, Properties, Details).
 
-**Expected:** the first is 512 x 512 pixels. The second is 1024 x 1024 (the app shrinks big photos). The size always equals the size line of the opened GEOMETRY panel. In mock mode (Plan B, pill "backend: mock") the second file is 1536 x 1536. That is expected.
+**Expected:** the first is 512 x 512 pixels. The second is 1024 x 1024 (the app shrinks big photos). The size always equals the size line of the opened GEOMETRY panel. In Plan B and on the demo the second file is 1024 x 1024 too. (Before the late night update of Oct 10 it was 1536 x 1536 in Plan B. Now only a photo lit with **Use a stand-in dome**, R-23, is that size.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1079,7 +1217,7 @@ Use a real browser window for this, not the phone imitation (hover text does not
 
 **This is the most wanted result in the whole plan. Do it on every device you own, your phone included.** The app can draw the lit picture in several ways and picks the best one your device can do. The table at the top of [group F](#f-shading-paths) lists them. Only the first way has ever run on real hardware: Chrome on one Apple-chip Mac. The others were tried only by switching features off in that same Chrome. Nobody has seen what a real phone, an older laptop, Windows, Firefox or Safari does. So we need two things from every device: **which path the page reports**, and **whether the picture follows the light**.
 
-It needs no backend: the samples are enough. Plan B in [SETUP.md](SETUP.md#plan-b-no-backend-mock-mode) will do, and so will the hosted demo if you were given its address (there the button **New photo** is named **Other samples**). The hosted demo is the easy way to try a real phone.
+It needs no backend: the samples are enough. Plan B in [SETUP.md](SETUP.md#plan-b-no-backend-mock-mode) will do, and so will the hosted demo if you were given its address. The hosted demo is the easy way to try a real phone.
 
 1. Open the page. Click the **Portrait** sample. Look just above the photo: is there a grey note or a red bar? If so, copy its words.
 2. Go to the bottom of the sidebar (on a phone: scroll down the page). Click the **GEOMETRY** row. Read the last small grey line. It starts "shading:". Copy it exactly. On a computer, hold the mouse still over that line for two seconds and copy the hover text as well.
@@ -1088,7 +1226,7 @@ It needs no backend: the samples are enough. Plan B in [SETUP.md](SETUP.md#plan-
 5. Switch **Cast shadows** off and on.
 6. Click **New photo**, click the **Rocket** sample, click **Left**. Compare with the screenshot below.
 7. Click **Export PNG** and open the file.
-8. Optional, only if you have a phone or tablet on the same Wi-Fi as the computer and no demo address. Find the computer's address: macOS, in a new Terminal window type `ipconfig getifaddr en0`; Windows, type `ipconfig` and read the "IPv4 Address" line. On the phone open `http://` + that address + `:3000` (for example `http://192.168.1.23:3000`). Then do steps 1 to 6 with a finger. On the phone the pill reads "offline" (in Plan B: "mock"). That is expected: the phone cannot reach the backend on your computer. Use the samples only; do not upload a photo. This needs version `378919a` or later: with an older one the page opens on the phone but nothing reacts to a tap. Get the update first ("Getting fixes" in [SETUP.md](SETUP.md#what-to-expect)) and start the frontend again. One tester has used the app on a real phone this way. If the page does not open at all, the Wi-Fi is probably keeping its devices apart, as many campus and café networks do: write that down and stop; it is not a bug in the app.
+8. Optional, only if you have a phone or tablet on the same Wi-Fi as the computer and no demo address. Find the computer's address: macOS, in a new Terminal window type `ipconfig getifaddr en0`; Windows, type `ipconfig` and read the "IPv4 Address" line. On the phone open `http://` + that address + `:3000` (for example `http://192.168.1.23:3000`). Then do steps 1 to 6 with a finger. On the phone the pill reads "offline" (in Plan B: "mock"). That is expected: the phone cannot reach the backend on your computer. The samples work. Your own photo works too: in Plan B choose it; with the pill "offline" choose it and tap **Analyse in this browser** on the card. Known: at a number address the depth model is downloaded again on every page load and runs on the processor (K53). Write down the depth line and the time. This needs version `378919a` or later: with an older one the page opens on the phone but nothing reacts to a tap. Get the update first ("Getting fixes" in [SETUP.md](SETUP.md#what-to-expect)) and start the frontend again. One tester has used the app on a real phone this way. If the page does not open at all, the Wi-Fi is probably keeping its devices apart, as many campus and café networks do: write that down and stop; it is not a bug in the app.
 
 **Expected on most devices:** no grey note and no red bar. The shading line reads "shading: graphics chip, full quality". The photo responds to the light: the bright side follows the sun at once, with no delay. Cast shadows are soft. The rocket looks like the screenshot: soft, faint shading on the sky and no hard black stripes. Known: a soft, blurred darker column on the sky to the right of each tower can be seen (K13 in [PENDING.md](PENDING.md#already-known-no-need-to-report)). Only a column with a sharp, straight edge is a FAIL. The exported file matches the screen.
 
@@ -1229,7 +1367,7 @@ Developer note: possible bug (only if you get result (b)).
 
 1. With the backend still stopped, choose the astronaut **file** (click the dashed box; a sample would work without the backend). 2. Look at the whole page. Click **Retry** once while the backend is still stopped. 3. Start the backend again (SETUP step 5) and wait for "Uvicorn running". 4. Click **Retry**.
 
-**Expected:** step 1: after a moment the photo turns grey and dim. On top of it sits a card with a red border: a warning sign, "This photo could not be analysed", the line "Cannot reach the backend at http://localhost:8000. Is it running?", a yellow **Retry** button and a **Choose another photo** button. (On a window narrower than 1024 pixels the card is under the stage, not on the photo: R-19.) There is **no** red bar above the stage. No sun. The LIGHT panel is faded; **Sweep**, **Enhance**, **Hold to see original** and **Export PNG** are faded and do not react; the GEOMETRY row has no small pictures. Nobody could mistake this for a loaded photo. Step 2: the loading label shows for an instant, then the same card comes back. Step 4: the card goes, loading runs, the photo gets its colour back and the sun appears. (The screenshot shows port 8123; yours says 8000.)
+**Expected:** step 1: after a moment the photo turns grey and dim. On top of it sits a card with a red border: a warning sign, "This photo could not be analysed", the line "Cannot reach the backend at http://localhost:8000. Is it running?", then a grey line "Or analyse it in this browser: a depth model of about 25 MB downloads once, and the photo stays on this device. Surfaces shade a little flatter than with the server's detailed normals.", then a yellow **Analyse in this browser** button with a plain **Retry** beside it, and **Choose another photo** on a line of its own. (The grey line and **Analyse in this browser** are new in the late night update of Oct 10. Do not click that button here; it is case R-22.) (On a window narrower than 1024 pixels the card is under the stage, not on the photo: R-19.) There is **no** red bar above the stage. No sun. The LIGHT panel is faded; **Sweep**, **Enhance**, **Hold to see original** and **Export PNG** are faded and do not react; the GEOMETRY row has no small pictures. Nobody could mistake this for a loaded photo. Step 2: the loading label shows for an instant, then the same card comes back. Step 4: the card goes, loading runs, the photo gets its colour back and the sun appears. (The screenshot shows port 8123; yours says 8000.)
 
 ![R-02](screenshots/43-backend-offline-upload.jpg)
 
@@ -1303,14 +1441,16 @@ The words in the brackets say why the graphics chip was not used. Other reasons 
 
 Needs the frontend started as in [SETUP.md Plan B](SETUP.md#plan-b-no-backend-mock-mode). No backend needed.
 
-1. Open the page. 2. Click the **Cat** sample. Click **Left**. 3. Click **New photo**. Choose the astronaut **file**. Click **Left**. 4. Open GEOMETRY. Toggle **Detailed normals**. 5. Click **Enhance** and wait.
+1. Open the page. 2. Click the **Cat** sample. Click **Left**. 3. Click **New photo**. Choose the astronaut **file**. Click **Left**. 4. Open GEOMETRY. Click the **Detailed normals** switch. 5. Click **Enhance** and wait.
 
-**Expected:** A grey note above the photo reads "No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or start the backend to light your own photo properly." The note does not appear on the four samples. pill: yellow pulsing dot, "backend: mock". The first page shows the same four sample thumbnails. Step 2: the sample opens at once and is lit **correctly**: the shading follows the cat's face, because a sample carries its own real shape. Step 3: an uploaded file loads in about 1 second, but its lighting is a made-up round dome in the middle of the picture, not the real face: a large circle outline with soft shading inside it. That is expected in this mode. In GEOMETRY, Depth is a white round blob and Normals a rainbow circle, relief 0.3. Step 4: toggling Detailed normals on the uploaded file reloads but changes nothing visible. (On a sample the switch is greyed in this mode: P-09.) Step 5: Enhance takes about 4 seconds; the "Enhanced" half has a little more contrast and a faint soft glow. The difference is small. Report only if the two halves show different pictures.
+**Expected:** pill: yellow pulsing dot, "backend: mock". Step 1: the paragraph under the title reads "Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly." The dashed box reads "Drop a photo here" and "or click to browse, or paste an image or its address". Under it a grey line reads "Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once." Then the same four sample thumbnails. Step 2: the sample opens at once and is lit **correctly**: the shading follows the cat's face, because a sample carries its own real shape. Step 3: your browser works out the real shape of the photo. The first time this downloads a depth model and can take up to a minute; later photos take a few seconds (P-10, P-11). The astronaut is then lit from the left like the sample, only a little flatter on the face (Q-12). There is **no round dome**, no circle outline and **no grey note** above the photo. Step 4: GEOMETRY is as in P-12: the first sentence starts "Depth estimated in your browser", Depth shows the astronaut with the helmet whitest, Normals is smooth lilac with thin coloured lines along the edges, and there is a line "depth: this browser, …". The **Detailed normals** switch is **off** and greyed; clicking it does nothing. Step 5: Enhance takes about 4 seconds and ends on the **Enhanced** tab, with the button reading **Enhance again** and a small download button beside it. The "Enhanced" half has a little more contrast and a faint soft glow. The difference is small. Report only if the two halves show different pictures.
+
+(Before the late night update of Oct 10 an uploaded photo in this mode was lit as a made-up round dome, with a grey note saying so; a tester reported that as a bug. If you see a dome now without having clicked **Use a stand-in dome**, that is a FAIL. That button exists only on the card shown when the browser cannot analyse the photo: R-23.)
 
 ![R-08 first page](screenshots/54-mock-landing.jpg)
 ![R-08 pill](screenshots/55-mock-status.jpg)
 ![R-08 sample, lit correctly](screenshots/84-mock-sample.jpg)
-![R-08 uploaded file, made-up dome](screenshots/56-mock-scene.jpg)
+![R-08 uploaded file, Left: its real shape, no dome and no note](screenshots/56-mock-scene.jpg)
 ![R-08 enhancing](screenshots/57-mock-enhance-running.jpg)
 ![R-08 done](screenshots/58-mock-enhance-done.jpg)
 
@@ -1398,7 +1538,7 @@ The samples need no backend. This is also how a tester without a working backend
 
 1. Stop the backend (terminal 1, Ctrl+C). Reload the page. Wait for the pill to read "backend: offline". 2. Click the **Portrait** thumbnail. 3. Drag the sun. Click **Right**. Click **Sweep** and let it finish. Switch **Cast shadows** off and on. Hold **Hold to see original**. 4. Click **Export PNG** and open the file. 5. Click **New photo** and repeat steps 2 and 3 quickly with **Coffee cup**, **Cat** and **Rocket**.
 
-**Expected:** every sample opens at once, with no "Estimating…" label, no card and no red bar anywhere. The pill stays red "offline" the whole time; that is correct. Everything in step 3 works exactly as with the backend running. Step 4: `relit.png` downloads and shows the photo as lit on screen, 512 x 512 pixels for Portrait (600 x 400 for Coffee cup, 451 x 300 for Cat, 640 x 427 for Rocket). Only three things need the backend: uploading your own photo (R-02), **Enhance** (R-17) and the **Detailed normals** switch (R-18).
+**Expected:** every sample opens at once, with no "Estimating…" label, no card and no red bar anywhere. The pill stays red "offline" the whole time; that is correct. Everything in step 3 works exactly as with the backend running. Step 4: `relit.png` downloads and shows the photo as lit on screen, 512 x 512 pixels for Portrait (600 x 400 for Coffee cup, 451 x 300 for Cat, 640 x 427 for Rocket). Only two things need the backend: **Enhance** (R-17) and detailed normals (R-18). Your own photo no longer needs it: choose the file and click **Analyse in this browser** on the card (R-22).
 
 ![R-16](screenshots/64-sample-backend-stopped.jpg)
 
@@ -1428,7 +1568,7 @@ The samples need no backend. This is also how a tester without a working backend
 
 1. Backend stopped. Choose the astronaut **file**. Wait for the card "This photo could not be analysed" (as in R-02). 2. Try to drag on the grey photo. Click **Left**. 3. Click **Choose another photo**. 4. Choose the file again, wait for the card, then click **New photo**. 5. Imitate a phone (see group W). Choose `06-wide-coffee-crop.jpg`.
 
-**Expected:** step 2: nothing reacts and no sun appears. Step 3: the app returns to the first page, with every control back at its start. Step 4: **New photo** does the same. Step 5: on the phone (and on any window narrower than 1024 pixels) the card is **under** the stage, not on the photo. The stage is short, only as tall as the wide photo needs: **New photo**, the grey dimmed photo, and the two greyed buttons. The whole photo can be seen. Under the stage sits the red-bordered card with the same words, **Retry** and **Choose another photo**; both can be tapped. Under the card the LIGHT panel is faded. (Before the Oct 10 evening update the card covered the photo on a phone. The screenshot shows port 8123; yours says 8000.)
+**Expected:** step 2: nothing reacts and no sun appears. Step 3: the app returns to the first page, with every control back at its start. Step 4: **New photo** does the same. Step 5: on the phone (and on any window narrower than 1024 pixels) the card is **under** the stage, not on the photo. The stage is short, only as tall as the wide photo needs: **New photo**, the grey dimmed photo, and the two greyed buttons. The whole photo can be seen. Under the stage sits the red-bordered card with the same words and the same three buttons as in R-02: **Analyse in this browser** (yellow), **Retry** and **Choose another photo**. All three can be tapped. Under the card the LIGHT panel is faded. (Before the Oct 10 evening update the card covered the photo on a phone. The screenshot shows port 8123; yours says 8000.)
 
 ![R-19 on a phone](screenshots/81-phone-load-failed-wide.jpg)
 
@@ -1458,6 +1598,33 @@ Needs the full setup with the backend **stopped** (pill "offline"). R-03 and R-1
 
 ![R-21 at 1280 x 720](screenshots/92-laptop-1280x720-enhance-error.jpg)
 ![R-21 on a phone](screenshots/93-phone-enhance-error.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### R-22 Backend stopped: "Analyse in this browser", then Detailed normals
+
+New in the late night update of Oct 10. Normal app only (not Plan B, not the demo). An uploaded photo with the backend stopped used to be a dead end; now the browser can do the work.
+
+1. Stop the backend (terminal 1, Ctrl+C). Reload the page. Wait for the pill to read "backend: offline". Choose the astronaut **file**. Wait for the card (R-02). 2. Click **Analyse in this browser**. Watch the label on the photo. 3. Click **Left**. Drag the sun. Open GEOMETRY. 4. With the backend still stopped, click the **Detailed normals** switch. 5. Click the X on the red bar. Start the backend again (SETUP step 5). Wait until the pill reads "online, mock providers". 6. Click the **Detailed normals** switch again and wait.
+
+**Expected:** step 2: the card goes. The label shows the words of P-10 (the download the first time, "Loading the depth model…" on later visits), never "Estimating depth and surface normals…". Then the photo brightens and the sun appears. The first time this can take up to a minute. Step 3: the photo is lit from the left and follows the sun. The pill still reads "backend: offline"; that is correct. The **Enhance** button is bright (do not click it now; without a backend it gives the red bar of R-17). GEOMETRY reads as in P-12, with one difference: the **Detailed normals** switch is **off but not greyed**, and the line under it reads "Off: this photo was analysed in your browser. Turn on to ask the Relight server for detailed normals." The depth line is there: "depth: this browser, graphics chip (WebGPU)" or "…processor (WebAssembly)". Step 4: the photo stays on screen, still lit; the loading label may flash over it. A red bar appears **above the stage**: "Cannot reach the backend at http://localhost:8000. Is it running? The photo keeps the shape worked out in this browser." The switch goes back to **off** by itself. Depth, Normals and the light do not change, and the light still moves. Step 5: the X removes the bar. Known: the pill can go on reading "offline" for up to 10 seconds after the backend is up (K49). Step 6: the photo stays on screen while the label "Estimating depth and surface normals…" shows over it. Then the backend's result replaces the browser's: the Normals picture turns vivid and shows the face, the face on the photo gets more shape, the first sentence of GEOMETRY is "What the models recovered from the photo. The shader lights these.", the switch is **on** (yellow) with "Slower to analyse, much better surface detail.", and the "depth:" line is **gone**. The light stays where it was. (The screenshots show port 8123; yours says 8000.)
+
+![R-22 step 3: analysed in the browser, backend stopped](screenshots/160-backend-offline-analyse-in-browser.jpg)
+![R-22 step 4: Detailed normals with the backend still stopped](screenshots/161-browser-scene-detailed-normals-backend-stopped.jpg)
+![R-22 step 6: the backend is back and its result has replaced the browser's](screenshots/162-browser-scene-detailed-normals-from-server.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### R-23 Plan B: the stand-in dome, only when you ask for it
+
+Needs Plan B (pill "backend: mock"). Before the late night update of Oct 10, Plan B lit every uploaded photo as a made-up round dome. Now the browser works out the real shape (R-08). The dome is left only as a button on the failure card, for someone working on the page itself.
+
+1. Cause the failure card as in P-13 steps 1 to 3 (new private window, Wi-Fi off, choose the astronaut file). 2. Hold the mouse still over **Use a stand-in dome** for two seconds. Click it. 3. Click **Left**. Open GEOMETRY. 4. Switch Wi-Fi on. Wait ten seconds. Click **New photo** and choose the astronaut file again.
+
+**Expected:** step 1: the card of P-13 with three buttons: a yellow **Retry**, **Use a stand-in dome**, and **Choose another photo** on a line of its own. Step 2: the hover text reads "Mock mode only: lights the photo as a made-up dome, not its real shape." After the click the photo loads in about a second, lit as a **round dome** in the middle of the picture: a large circle outline with soft shading inside it, not the real face. A grey note above the stage reads "No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or click New photo and try again once the depth model can be downloaded." (The screenshot below was taken before the last sentence was reworded: it still ends "…or start the backend to light your own photo properly.") Step 3: in GEOMETRY, Depth is a white round blob and Normals a rainbow circle; the first sentence is "What the models recovered from the photo. The shader lights these."; there is **no** "depth:" line; the **Detailed normals** switch is off and greyed. Step 4: the photo is analysed for real this time (download words on the label): no dome and no grey note. The demo never offers this button.
+
+![R-23 step 1: the card in Plan B](screenshots/163-mock-analysis-failed.jpg)
+![R-23 step 2: the dome and its note, Left preset](screenshots/164-mock-stand-in-dome.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1546,7 +1713,7 @@ Use a phone stopwatch. Always write the number, your computer model and whether 
 
 1. Restart the backend. 2. Time from choosing the astronaut to the sun appearing. 3. Click **New photo** and time it again, three times, using the astronaut, coffee and cat photos.
 
-**Expected on an Apple-chip Mac:** about 7 seconds for the first, then 1.5 to 2.5 seconds each. **Other computers:** unknown; up to 60 seconds is acceptable, over 2 minutes is a FAIL. See the table in [SETUP.md](SETUP.md#what-to-expect).
+**Expected on an Apple-chip Mac:** about 7 seconds for the first, then 1.5 to 2.5 seconds each. **Other computers:** unknown; up to 60 seconds is acceptable, over 2 minutes is a FAIL. See the table in [SETUP.md](SETUP.md#what-to-expect). This case times the backend. With no backend the browser prepares the photo: time that in P-10 and P-11.
 
 `Result: PASS / FAIL / NOT RUN` Times:
 
@@ -1706,6 +1873,24 @@ Before the Oct 10 evening update, light from the side drew a **hard, straight, d
 
 `Result: PASS / FAIL / NOT RUN` Score and note:
 
+### Q-12 Your own photo next to the built-in sample (new in the late night update)
+
+Needs Plan B or the static demo. The Portrait sample and the file `01-portrait-astronaut.jpg` are the same photograph. The sample's shape was made ahead of time by two models. For a file you choose, your browser runs only the first of the two. This case asks how much that shows.
+
+1. Choose the file `testing/photos/01-portrait-astronaut.jpg` (do not click the sample). Click **Left**. Take a screenshot. 2. Click **New photo**. Click the **Portrait** sample. Click **Left**. Compare with the screenshot; two browser windows side by side are best. 3. Do the same with **Right** and **Top**. 4. If you have one, do steps 1 and 3 with a portrait of your own.
+
+**Expected, and known:** both are lit from the same side, with the same numbers (x -0.10, y 0.40 for Left). On the file you chose, the **face is flatter**: the nose, cheeks and chin have less light and shade on them. There is also a **thin light-and-dark outline round the hair and the shoulders**. The sample has neither. The reason: the sample's surface directions come from a second, much larger model (Marigold) that only the Relight server runs. The browser has only the depth map and takes the surface directions from its slope, which is smooth on a face and very steep at the edge of a head. It is the same look as **Detailed normals** off with a backend (K17). The page says so in the GEOMETRY panel and in "How it works". None of this is a FAIL.
+
+A FAIL would be: the light coming from the wrong side; speckle or blotches on a flat wall; blocky squares; a round dome; or a black picture.
+
+**Write down:** a score from 1 to 5 for the photo you chose (1 = fake, 5 = like a real photo), and the same for the sample. Does the outline bother you: (a) not noticeable, (b) noticeable but acceptable, (c) ugly, must not be shown in a demo? Would a judge who tries a selfie be let down after seeing the samples?
+
+![Q-12 side by side: the chosen file on the left, the sample on the right](screenshots/171-demo-own-photo-vs-sample.jpg)
+![Q-12 the chosen file, Left](screenshots/169-demo-own-photo-left.jpg)
+![Q-12 the Portrait sample, Left](screenshots/170-demo-sample-portrait-left.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Scores and note:
+
 ---
 
 ## J. What a judge would try
@@ -1821,7 +2006,7 @@ The words **How it works** in the top bar open a card that explains, in five ste
 
 **Expected:** in this order.
 - Opening text: "Two pretrained vision models measure the photo once. Everything that moves when you drag the light is our own shading code, running in your browser. Here is each step on the Portrait sample, and who does it." Then the three chips.
-- **ONCE PER PHOTO**, with the grey line "Done by the Relight server when you upload a photo. For the four samples it was done ahead of time and the two maps ship with the page."
+- **ONCE PER PHOTO**, with the grey line "Done by the Relight server when you upload a photo. For the four samples it was done ahead of time and the two maps ship with the page. With no server, the depth model runs in your browser instead and the normals are taken from the slope of the depth map, which shades faces flatter." It is three lines long on a computer and five on a phone. (Its last sentence is new in the late night update of Oct 10.)
 - **1 Estimate depth**, blue chip "Pretrained model: Depth Anything V2". Text starts "A pretrained model estimates how near every pixel is to the camera." Two square pictures side by side: the astronaut photo ("The photo") and a grey version with the helmet in front nearly white ("Depth map: lighter is nearer").
 - **2 Estimate surface direction**, blue chip "Pretrained model: Marigold". Text starts "A second pretrained model estimates which way every surface faces." One picture in purple, pink and green ("Normal map: colour is the way a surface faces"). Beside it a grey note: "A depth map is too smooth to shade a face: tilts worked out from it left faces almost flat. That is why there is a second model."
 - **EVERY FRAME, IN YOUR BROWSER**, with the grey line "Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor. If the processor is too slow or cannot do it, the Relight server runs our Python version instead. No AI model is involved in the dragging." (This line was reworded after the screenshots were taken. Screenshots 107 and 108, and 117 and 118 in G-05, still show the earlier sentence, which began "A WebGL2 shader we wrote".)
@@ -1923,7 +2108,9 @@ No need to report: the card's last sentence, "The live shader has been tested on
 
 ## H. Hosted demo (static build)
 
-The **static demo** is a copy of the app made of plain files, with no backend anywhere. It can sit on any web host, so a judge can open it from a link. It has only the four sample photos. Uploading and **Enhance** are switched off, and the page says why.
+The **static demo** is a copy of the app made of plain files, with no backend anywhere. It can sit on any web host, so a judge can open it from a link. It has the four sample photos, and since the late night update of Oct 10 it takes **your own photo** too: your browser works out the photo's shape by itself, and nothing is uploaded. Only **Enhance** is switched off, and the page says why.
+
+**Run H-12 first.** It is your own photo in the demo, on your phone and on your computer. That is the first thing a judge will try, and no phone has tried it yet.
 
 **Which address?** The demo is online at **https://aarooshpravici.github.io/BanannaHacksSubmission/** (since Oct 10, 11:15 PM; built from version `ada3fc2`, so it can be a little behind the newest code). If you were given none, you can build the demo on a Mac with [Plan C in SETUP.md](SETUP.md#plan-c-the-static-demo-on-your-own-computer) and use `http://localhost:3142/BanannaHacksSubmission/`. If you have neither, mark this group NOT RUN.
 
@@ -1933,29 +2120,31 @@ The screenshots were taken from a copy served on the developer's Mac, not from a
 
 ### H-01 The demo's first page
 
-1. Open the demo address. 2. Hold the mouse still over the pill for two seconds. 3. Reload the page and watch the pill in the first instant. 4. Click the yellow link in the card.
+1. Open the demo address. 2. Hold the mouse still over the pill for two seconds. 3. Reload the page and watch the pill in the first instant. 4. Move the mouse over the dashed box.
 
-**Expected:** browser tab title "Relight: drag the light around any photo". Top bar: the yellow square logo, "Relight", grey "Banana Hacks 2026", and at the right the words "How it works" and then the pill: a **green** pulsing dot and "demo: runs in your browser". Page: yellow "MOVE THE LIGHT"; the title "Relight a photo by dragging the light."; a paragraph that starts "Pick a sample photo. Its depth and surface normals were estimated ahead of time". There is **no dashed box**. In its place is a card: "This is the in-browser demo." in white, then in grey "Uploading your own photo needs the Relight server, which this demo runs without. To try your own photos, run it on your computer:" and a yellow link "github.com/aarooshpravici/BanannaHacksSubmission". Under the card the line "Pick a sample photo:" and four small pictures in one row: Portrait, Coffee cup, Cat, Rocket. None is missing or broken. Step 2: the hover text reads "Static demo: the sample photos are shaded entirely in your browser and no server is contacted. Uploading your own photo and Enhance need the Relight server." Step 3: the pill is green from the first instant. It never reads "checking", "offline" or "backend:". Step 4: the link opens `https://github.com/aarooshpravici/BanannaHacksSubmission` in a **new** tab; the demo stays open in the old one.
+**Expected:** browser tab title "Relight: drag the light around any photo". Top bar: the yellow square logo, "Relight", grey "Banana Hacks 2026", and at the right the words "How it works" and then the pill: a **green** pulsing dot and "demo: runs in your browser". Page: yellow "MOVE THE LIGHT"; the title "Relight a photo by dragging the light."; the paragraph "Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly." Then a **dashed box** with an upload icon, "Drop a photo here" and "or click to browse, or paste an image or its address". Under the box a grey line, two lines long: "Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once." Then the line "Or try a sample photo:" and four small pictures in one row: Portrait, Coffee cup, Cat, Rocket. None is missing or broken. Step 2: the hover text reads "Static demo: everything runs in your browser. Your own photo is analysed on this device and is not uploaded; the depth model for that is downloaded once from Hugging Face. Enhance needs the Relight server." Step 3: the pill is green from the first instant. It never reads "checking", "offline" or "backend:". Step 4: the box border and background get slightly lighter, as in U-02. (Before the late night update of Oct 10 the demo had a card in place of the dashed box: "This is the in-browser demo.", with a link to the repository. If you still see that card, you have an old copy of the demo: say so.)
 
 ![H-01](screenshots/96-demo-landing.jpg)
-![H-01 the card, enlarged](screenshots/97-demo-upload-note.jpg)
+![H-01 the dashed box and the grey line under it, enlarged](screenshots/97-demo-drop-box.jpg)
 ![H-01 the pill, enlarged](screenshots/98-demo-status.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
-### H-02 The demo takes no photo of your own
+### H-02 The demo's dashed box: click, drop, paste and the keyboard
 
-1. On the demo's first page: copy a picture (as in U-04), click an empty part of the page and press Cmd+V or Ctrl+V. 2. Drag a photo file from a folder over the card, then over the thumbnails. Hold it there. Do not let go yet. 3. Let go over the card. 4. If the demo disappeared, press the browser's Back button. Press Tab again and again through the page.
+The first photo you give the demo downloads a depth model (about 25 MB), so the first step can take up to a minute. H-12 looks at that wait; here only check that each way in works.
 
-**Expected:** step 1: nothing happens. No photo loads and no message appears. Step 2: nothing on the page turns yellow or changes. Step 3: the demo does nothing with the file. The browser itself will probably open the picture in place of the demo, as it does on any web page that takes no files. Write down what happened. Step 4: Back returns to the demo's first page. Tab goes to: the "Relight" logo, "How it works", the yellow link, then Portrait, Coffee cup, Cat, Rocket. Nothing on the page opens a file chooser. (No screenshot: there is nothing to see. This case was written from the code.)
+1. Click the dashed box and choose `testing/photos/02-object-coffee.jpg` (or any photo of your own). Wait for the lit photo. 2. Click **New photo**. Drag `03-animal-cat.jpg` from a folder over the dashed box, hold it there, then let go. 3. Click **New photo**. Copy a picture (as in U-04), click an empty part of the page and press Cmd+V or Ctrl+V. 4. Click **New photo**. Reload the page. Do not use the mouse: press Tab again and again, and press Enter when the dashed box has the yellow outline.
+
+**Expected:** step 1: the click opens your computer's file chooser, which offers pictures only. After choosing, the workspace appears with the photo dimmed and a label on it (its words are listed in P-10). Then the photo brightens, lit from the left, with the sun near its left edge and the readout x 0.12, y 0.35. Step 2: while the file is over the box, the border turns yellow and the background gets a yellow tint. After dropping, the cat loads and is lit. Step 3: the pasted picture loads and is lit. In all three there is no red bar, no card, and the pill stays green. Step 4: Tab goes to the "Relight" logo, "How it works", the dashed box (yellow outline), then Portrait, Coffee cup, Cat, Rocket. Enter on the dashed box opens the file chooser. (Before the late night update of Oct 10 the demo took no photo at all. This case was written from the code and from screenshots; nobody has dropped or pasted on the demo by hand.) The other drop and paste cases, U-06, U-13 to U-15 and U-23 to U-25, behave the same on the demo.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
 ### H-03 A sample in the demo: the light, Sweep, compare and export
 
-1. Click the **Portrait** thumbnail. 2. Drag the sun. Click **Left**, **Right**, **Top**, **Low and warm**, **Reset light**. 3. Move each of the four sliders. Switch **Cast shadows** off and on. 4. Click **Sweep** and let it finish. 5. Hold **Hold to see original**. 6. Click **Export PNG** and open the file. 7. Click **Other samples** (top right of the stage). Do steps 1 and 2 quickly with **Coffee cup**, **Cat** and **Rocket**.
+1. Click the **Portrait** thumbnail. 2. Drag the sun. Click **Left**, **Right**, **Top**, **Low and warm**, **Reset light**. 3. Move each of the four sliders. Switch **Cast shadows** off and on. 4. Click **Sweep** and let it finish. 5. Hold **Hold to see original**. 6. Click **Export PNG** and open the file. 7. Click **New photo** (top right of the stage). Do steps 1 and 2 quickly with **Coffee cup**, **Cat** and **Rocket**.
 
-**Expected:** step 1: the astronaut opens at once, already lit, with no "Estimating…" wait: sun on the flag, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The button at the top right of the stage reads **Other samples** and has no icon (the normal app says "New photo" there). Steps 2 to 6: everything behaves exactly as in the normal app. The presets give Left x -0.10, y 0.40; Right x 1.10, y 0.40; Top x 0.50, y -0.15; Low and warm x 0.00, y 0.90, orange. The lighting follows the sun with no delay. **Sweep** reads "Stop sweep" in yellow, takes about 6 seconds and gives the light back. While **Hold to see original** is held, the plain photo and the "Original" tag show and the button is yellow. `relit.png` downloads, is 512 x 512 pixels and matches the screen, without the sun. Step 7: **Other samples** returns to the first page; each sample opens at once and starts at x 0.12, y 0.35. There is no red bar at any time, and the pill stays green.
+**Expected:** step 1: the astronaut opens at once, already lit, with no "Estimating…" wait: sun on the flag, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The button at the top right of the stage reads **New photo**, with a small upload icon, as in the normal app (before the late night update of Oct 10 it read "Other samples"). Steps 2 to 6: everything behaves exactly as in the normal app. The presets give Left x -0.10, y 0.40; Right x 1.10, y 0.40; Top x 0.50, y -0.15; Low and warm x 0.00, y 0.90, orange. The lighting follows the sun with no delay. **Sweep** reads "Stop sweep" in yellow, takes about 6 seconds and gives the light back. While **Hold to see original** is held, the plain photo and the "Original" tag show and the button is yellow. `relit.png` downloads, is 512 x 512 pixels and matches the screen, without the sun. Step 7: **New photo** returns to the first page; each sample opens at once and starts at x 0.12, y 0.35. There is no red bar at any time, and the pill stays green.
 
 ![H-03](screenshots/99-demo-sample.jpg)
 
@@ -1965,7 +2154,7 @@ The screenshots were taken from a copy served on the developer's Mac, not from a
 
 1. Click the **Coffee cup** sample. Click **Right**. Look at the ENHANCE panel. Hold the mouse still over the **Enhance** button for two seconds, then click it. 2. Click the **GEOMETRY** row. Click the **Detailed normals** switch.
 
-**Expected:** step 1: the ENHANCE panel holds only two things: the grey line "Enhance needs the Relight server, which this demo runs without." and a dull, greyed **Enhance** button. There is **no text box**. The hover text on the button is the same sentence (some browsers show no hover text on a greyed button; say if yours does not). Clicking does nothing: no "Enhancing…", no tabs, no red bar. Step 2: GEOMETRY opens with the Depth and Normals pictures of the cup, the **Detailed normals** switch **on but dull**, the line "Always on for a sample photo: its maps were made ahead of time with detailed normals." the size line "600 x 400 px, relief 0.3" and the shading line (H-10). Clicking the switch does nothing. (On a window less than 832 pixels high the line under the switch is hover text. The screenshot was taken in a tall 1440 x 1300 window so the whole sidebar shows.)
+**Expected:** step 1: the ENHANCE panel holds only two things: the grey line "Enhance needs the Relight server, which this demo runs without." and a dull, greyed **Enhance** button. There is **no text box**. The hover text on the button is the same sentence (some browsers show no hover text on a greyed button; say if yours does not). Clicking does nothing: no "Enhancing…", no tabs, no red bar. Step 2: GEOMETRY opens with the Depth and Normals pictures of the cup, the **Detailed normals** switch **on but dull**, the line "Always on for a sample photo: its maps were made ahead of time with detailed normals." the size line "600 x 400 px, relief 0.3" and the shading line (H-10). Clicking the switch does nothing. For your **own** photo the panel is different (another first sentence, the switch off, and a "depth:" line): P-12. (On a window less than 832 pixels high the line under the switch is hover text. The screenshot was taken in a tall 1440 x 1300 window so the whole sidebar shows.)
 
 ![H-04](screenshots/100-demo-all-panels.jpg)
 
@@ -1977,7 +2166,7 @@ Use a real phone if you have a hosted address: type the address into the phone's
 
 1. Open the demo address. 2. Tap the **Cat** sample. 3. Drag the sun with a finger. Tap **Left**, **Right**, **Sweep**. 4. Scroll down the whole page. Tap the **GEOMETRY** row. Read the last grey line, which starts "shading:", and copy it into your report.
 
-**Expected:** step 1: one column. The top bar holds the logo, "Relight", "How it works" and a short pill that reads only "demo", with a green dot. Title, the "Pick a sample photo. Its depth…" paragraph, the card, "Pick a sample photo:" and the four thumbnails in one row with readable labels. Known: the yellow link is too long for the card, so it breaks in the middle of a word ("…BanannaHacksSubm" / "ission"). Step 2: a short stage with **Other samples** at its top right, the cat, and the two buttons under it; the LIGHT panel starts right below. Step 3: the sun follows the finger and the lighting follows the sun; the page does not scroll while you drag on the stage. Step 4: LIGHT with the five preset buttons on one line; a short ENHANCE panel (the reason line and a greyed button, no text box); GEOMETRY open with the two pictures, the dull **Detailed normals** switch with its "Always on…" line, the size line "451 x 300 px, relief 0.3" and under it the shading line. On most phones it should read "shading: graphics chip, full quality"; any other wording is a result we badly want (see the table at the top of group F). A grey note above the photo that starts "Shading on this device's processor" is not a failure: the photo should still follow the sun (H-07). Nothing is cut off at the sides and the page does not scroll sideways. If the picture is black, blocky or does not react on your phone, that is the most important thing to report: see W-16 for what to write down.
+**Expected:** step 1: one column. The top bar holds the logo, "Relight", "How it works" and a short pill that reads only "demo", with a green dot. Title, the "Upload a photo or pick a sample. Its depth…" paragraph, the dashed box (its second line wraps onto two lines), the grey line "Your photo stays on this device…" on three lines, "Or try a sample photo:" and the four thumbnails in one row with readable labels. Step 2: a short stage with **New photo** at its top right, the cat, and the two buttons under it; the LIGHT panel starts right below. Step 3: the sun follows the finger and the lighting follows the sun; the page does not scroll while you drag on the stage. Step 4: LIGHT with the five preset buttons on one line; a short ENHANCE panel (the reason line and a greyed button, no text box); GEOMETRY open with the two pictures, the dull **Detailed normals** switch with its "Always on…" line, the size line "451 x 300 px, relief 0.3" and under it the shading line. On most phones it should read "shading: graphics chip, full quality"; any other wording is a result we badly want (see the table at the top of group F). A grey note above the photo that starts "Shading on this device's processor" is not a failure: the photo should still follow the sun (H-07). Nothing is cut off at the sides and the page does not scroll sideways. If the picture is black, blocky or does not react on your phone, that is the most important thing to report: see W-16 for what to write down. Your **own** photo on the phone is H-12: do that one first.
 
 ![H-05 first page](screenshots/101-demo-phone-landing.jpg)
 ![H-05 the top bar, enlarged: the pill reads only "demo"](screenshots/144-demo-phone-top-bar.jpg)
@@ -1997,7 +2186,7 @@ Use a real phone if you have a hosted address: type the address into the phone's
 
 If you see the grey note below on the demo without causing it yourself, it is an important result: report the device, the browser, the words in the brackets and the shading line (W-16). To cause it on purpose, see R-06.
 
-1. Open the demo address. Click the **Portrait** sample. Click **Left**. 2. Drag the sun. Click **Sweep**. Hold **Hold to see original**. Click **Export PNG**. 3. Click **Other samples**, click the **Coffee cup** sample, click **Right**, open GEOMETRY. 4. On a phone, or imitating one: click the **Cat** sample.
+1. Open the demo address. Click the **Portrait** sample. Click **Left**. 2. Drag the sun. Click **Sweep**. Hold **Hold to see original**. Click **Export PNG**. 3. Click **New photo**, click the **Coffee cup** sample, click **Right**, open GEOMETRY. 4. On a phone, or imitating one: click the **Cat** sample.
 
 **Expected:** **no red bar.** Above the stage is the grey note "Shading on this device's processor, not its graphics chip (WebGL2 is not available in this browser). The picture is a quick preview while the light moves and sharpens when it stops." It has no X and no **Retry**. Step 1: the portrait is lit for the Left preset (x -0.10, y 0.40, left of the face bright), with the sun on the stage. Step 2: every light control works, exactly as in R-11: a quick preview while the light moves, sharp when it stops. **Enhance** is greyed, as it always is on the demo. Step 3: the last line of GEOMETRY reads "shading: processor, in the background". Step 4: on a phone the pill reads "demo", the note is four lines long, and the cat is lit from the left (x 0.12, y 0.35) with **Hold to see original** and **Export PNG** usable.
 
@@ -2023,7 +2212,7 @@ Only if you have a Mac with Node and the code. Follow [Plan C in SETUP.md](SETUP
 
 1. Open the demo address. Look at the right end of the top bar. 2. Click "How it works". Read the grey line under "ONCE PER PHOTO". 3. Scroll to the end. Read the grey line under "ONLY IF YOU PRESS ENHANCE". 4. Press Escape. 5. On a phone, or imitating one: look at the top bar, then tap "How it works".
 
-**Expected:** step 1: "How it works", then the pill: green dot, "demo: runs in your browser". Step 2: the same card as in the normal app (G-01, G-02). Three grey lines are the demo's own. Under "ONCE PER PHOTO": "For the four samples this was done ahead of time and the two maps ship with the page. This demo has no server, which is why it cannot take your own photo." Under "EVERY FRAME, IN YOUR BROWSER" the sentence about the Relight server is left out: "Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor. No AI model is involved in the dragging." Step 3: under "ONLY IF YOU PRESS ENHANCE": "Switched off in this demo, because it needs the server." Step 5 and "HONEST LIMITS" are word for word as in G-02. All seven pictures load. (If any picture is missing on a hosted demo, report the demo's address: the pictures are fetched from the demo's own folder.) Step 4: the card closes. Step 5: the phone's top bar holds the logo, "Relight", "How it works" and a pill that reads only "demo"; the panel fills the whole screen, as in G-05.
+**Expected:** step 1: "How it works", then the pill: green dot, "demo: runs in your browser". Step 2: the same card as in the normal app (G-01, G-02). Three grey lines are the demo's own. Under "ONCE PER PHOTO": "For the four samples this was done ahead of time and the two maps ship with the page. For your own photo, this demo runs the depth model in your browser and takes the normals from the slope of the depth map, which shades faces flatter: the normals model is too large for a browser. The photo is not uploaded." (three lines on a computer, six on a phone; reworded in the late night update of Oct 10) Under "EVERY FRAME, IN YOUR BROWSER" the sentence about the Relight server is left out: "Our lighting code runs steps 3 and 4 again each time the light moves: in a WebGL2 shader where the device allows, otherwise on the device's processor. No AI model is involved in the dragging." Step 3: under "ONLY IF YOU PRESS ENHANCE": "Switched off in this demo, because it needs the server." Step 5 and "HONEST LIMITS" are word for word as in G-02. All seven pictures load. (If any picture is missing on a hosted demo, report the demo's address: the pictures are fetched from the demo's own folder.) Step 4: the card closes. Step 5: the phone's top bar holds the logo, "Relight", "How it works" and a pill that reads only "demo"; the panel fills the whole screen, as in G-05.
 
 ![H-09 the top bar, enlarged](screenshots/143-demo-top-bar.jpg)
 ![H-09 the card, just opened](screenshots/145-demo-how-it-works-open.jpg)
@@ -2050,8 +2239,34 @@ The demo is what a judge will open, on whatever device they have. So this is W-1
 
 You cannot cause this on purpose. It needs a browser in which neither the graphics chip nor the processor can draw the picture. If you ever see this red bar on the demo, report the device, the browser and the bar's words, whole.
 
-**Expected, if it happens:** after you click a sample, **one** red bar above the stage: "Live shading is unavailable (…), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari." The brackets hold two reasons, for example "WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas." (the doubled ".)," is known). The bar has no **Retry** and no X. The photo is the plain original with **no sun**. The LIGHT panel is faded and does not react. **Sweep**, **Enhance**, **Hold to see original** and **Export PNG** are greyed. Clicking on the photo does nothing. **Other samples** still works, and the GEOMETRY row still opens; it has no shading line. Nothing on the page pretends the photo can be relit.
+**Expected, if it happens:** after you click a sample, **one** red bar above the stage: "Live shading is unavailable (…), and this demo has no server to shade the photo instead. Open it in a current Chrome, Edge, Firefox or Safari." The brackets hold two reasons, for example "WebGL2 is not available in this browser, and shading on the processor failed too: This browser could not create a 2D canvas." (the doubled ".)," is known). The bar has no **Retry** and no X. The photo is the plain original with **no sun**. The LIGHT panel is faded and does not react. **Sweep**, **Enhance**, **Hold to see original** and **Export PNG** are greyed. Clicking on the photo does nothing. **New photo** still works, and the GEOMETRY row still opens; it has no shading line. Nothing on the page pretends the photo can be relit.
 
 ![H-11](screenshots/152-demo-no-shading-at-all.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Note:
+
+### H-12 Your own photo in the demo, on your phone and on your computer (run this first)
+
+New in the late night update of Oct 10. **This is the case to run first.** A judge will open the demo and try a photo of their own, quite possibly on a phone. The demo then works out the photo's shape inside the browser. That has run only in Chrome on one Apple-chip Mac. No phone, no Windows computer, no Safari and no Firefox has tried it, and a phone has far less memory than a Mac.
+
+No demo address? Do this case on your computer in Plan B: it does exactly the same work (P-10).
+
+1. On your **phone**, on Wi-Fi (the first photo downloads about 25 MB), open the demo address. 2. Tap the dashed box. Take a photo or choose one from the phone's library; a face is best. Count the seconds from choosing it until the sun appears, and read the words on the dimmed photo while you wait. 3. Drag the sun with a finger. Tap **Left**, then **Right**. 4. Scroll down. Tap the **GEOMETRY** row. Copy the three small grey lines at its end. 5. Tap **New photo**. Choose a second photo and count the seconds again. 6. Do steps 1 to 5 on your **computer**, in the browser you normally use.
+
+**Expected:** step 2: the phone offers its camera or its photo library. The photo appears dimmed, the right way up, with a label whose words are listed in P-10: "Downloading the depth model, 19 MB, once…" with a rising number, then "Starting the depth model…", then "Working out the shape of your photo…". Then the photo brightens and the sun appears near its left edge. **Up to 1 minute is acceptable** for this first photo; most of it is the download. Step 3: the lighting follows the sun: the side nearest the sun is the bright side. A face looks a little flatter than on the Portrait sample, with a thin outline round the head; that is known (Q-12). Step 4: GEOMETRY starts with "Depth estimated in your browser by Depth Anything V2 Small…". The **Detailed normals** switch is off and greyed, with "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs." The three lines are the size line (the longer side is 1024 at most), the depth line "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)", and the shading line. Step 5: no download this time. On the developer's Mac the second photo took under a second; on a phone **up to 30 seconds is acceptable**.
+
+**Report this even if everything works.** For each device: the model and the browser; the two times; the depth line and the shading line, copied; whether the result looks right (yes / partly / no); and a screenshot.
+
+If it goes wrong, these are the results we most need:
+
+- A card "This photo could not be analysed": copy its line whole (P-13 lists them).
+- The page reloads by itself, goes blank, or the browser closes: the phone has probably run out of memory. Report it as a BLOCKER, with the phone model and the size of the photo.
+- The label stops changing for more than a minute: write down its last words.
+- The photo is sideways, black, blocky, or lit as a round dome.
+
+(The phone screenshot was made in Chrome on a Mac, imitating a phone. It shows the coffee photo chosen as a file.)
+
+![H-12 on a computer: the astronaut file, Left](screenshots/169-demo-own-photo-left.jpg)
+![H-12 on a phone, whole page with GEOMETRY open](screenshots/175-demo-phone-own-photo-full-page.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Devices, browsers, times, depth lines and note:

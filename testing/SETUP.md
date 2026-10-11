@@ -6,9 +6,9 @@ You will keep **two terminal windows** open the whole time: one runs the backend
 
 You need about **12 GB of free disk space** and a good internet connection for the first run.
 
-**In a hurry, or the backend will not install?** Go to [Plan B](#plan-b-no-backend-mock-mode). It needs only git and Node, takes about five minutes, and lets you test most of the app with the four built-in sample photos.
+**In a hurry, or the backend will not install?** Go to [Plan B](#plan-b-no-backend-mock-mode). It needs only git and Node, takes about five minutes, and lets you test most of the app, with the four built-in sample photos and with your own.
 
-**Were you given a demo address?** The static demo needs no setup: open the address in any browser and go to group H in [TEST_PLAN.md](TEST_PLAN.md#h-hosted-demo-static-build). It is not a replacement for this page: only the setup below can upload a photo or run Enhance.
+**Were you given a demo address?** The static demo needs no setup: open the address in any browser and go to group H in [TEST_PLAN.md](TEST_PLAN.md#h-hosted-demo-static-build). The demo takes your own photo too. It is not a replacement for this page: only the setup below can run Enhance or give a photo of yours detailed normals.
 
 > Honest note: the developer built and ran the app on one Apple-chip Mac, using Chrome. The Windows commands below were written carefully but **have not been run on a Windows computer**. If a command fails, copy the error text into an issue ([Reporting](README.md#reporting-what-you-found)). That is a useful result.
 
@@ -223,10 +223,10 @@ Look at the top-right pill.
 | Pill | Meaning | What to do |
 | --- | --- | --- |
 | amber dot, **backend: online, mock providers** | Correct. Everything is real except Enhance, which is a stand-in. | Start testing. |
-| red dot, **backend: offline** | The page cannot find the backend. The four sample photos still work; uploading a photo, Enhance and the Detailed normals switch do not. | See [Troubleshooting](#the-pill-says-backend-offline). |
+| red dot, **backend: offline** | The page cannot find the backend. The four sample photos still work. A photo you upload gets a card with the button **Analyse in this browser**, which works without the backend (case R-22). Enhance and detailed normals do not work. | See [Troubleshooting](#the-pill-says-backend-offline). |
 | yellow dot, **backend: mock** | The frontend was started without the two `NEXT_PUBLIC_` settings, so it is not using the backend at all. This is [Plan B](#plan-b-no-backend-mock-mode). | If you meant to use the backend: stop the frontend (Ctrl+C) and start it again with the full command from step 6. |
 | green dot, **backend: online** | The backend is running with real Enhance switched on. | Fine only if you meant to. See [Real Enhance](#enhance-mock_mode-and-keys). |
-| green dot, **demo: runs in your browser** | This is the static demo, not the app you set up here. It has the four samples only. | Fine if you opened a demo address or did [Plan C](#plan-c-the-static-demo-on-your-own-computer). If you see it at http://localhost:3000, report it. |
+| green dot, **demo: runs in your browser** | This is the static demo, not the app you set up here. It has the four samples and takes your own photo; Enhance is off. | Fine if you opened a demo address or did [Plan C](#plan-c-the-static-demo-on-your-own-computer). If you see it at http://localhost:3000, report it. |
 
 ![Correct pill](screenshots/49-status-online-mock-providers.jpg)
 
@@ -340,13 +340,13 @@ Open http://localhost:3000. The pill reads **backend: mock** (yellow dot).
 
 ![Plan B: a sample is lit correctly](screenshots/84-mock-sample.jpg)
 
-**Do not judge the lighting on a photo you upload.** In this mode the app cannot study an uploaded file. It pretends every uploaded photo is a round dome in the middle of the picture, so the lighting looks like a ball pressed into the photo. That is expected. Uploading is still useful for testing the dashed box, the error messages and the layout.
+**Your own photos work too.** Click the dashed box and choose any photo. Your browser works out its shape by itself; the photo is not sent anywhere. The **first** photo downloads a depth model of about 25 MB, so it can take up to a minute; the label on the dimmed photo says what is happening ("Downloading the depth model, 19 MB, once… 42%", then "Working out the shape of your photo…"). Later photos take a few seconds. The result is lit by its real shape. A face is a little flatter than on the Portrait sample, with a thin outline round the head: that is known (K48 in [PENDING.md](PENDING.md#already-known-no-need-to-report), case Q-12). Before the late night update of Oct 10 this mode lit every uploaded photo as a round dome. That is gone; if you see a dome without having clicked **Use a stand-in dome**, report it.
 
-![Plan B: an uploaded file gets a made-up dome](screenshots/56-mock-scene.jpg)
+![Plan B: an uploaded file, lit by its real shape (Left preset)](screenshots/56-mock-scene.jpg)
 
-What you can test this way: the smoke test (click **Portrait** in step 2), case W-16 (the most wanted one: which shading path your device uses), case Q-11 (the face under side light), group G (the "How it works" card), cases F-01 and F-02, the sample cases U-05 and U-18 to U-21, and groups L, C, S, K, X and W, using the samples wherever a case names one of the four main test photos. Group U also works, with the dome. What you cannot test: the loading screen, the failed-load card, and anything that says it needs the backend. Mark those NOT RUN.
+What you can test this way: the smoke test (in step 2 choose the file as written, or click **Portrait**), case W-16 (the most wanted one: which shading path your device uses), case Q-11 (the face under side light), group G (the "How it works" card), cases F-01 and F-02, the sample cases U-05 and U-18 to U-21, and groups L, C, S, K, X and W, using the samples or the photo files. Group U works, and so do the new cases for your own photo with no backend: P-10 to P-13, Q-12, R-08 and R-23. What you cannot test: the backend's own loading screen (P-01), the backend's failed-load card (R-02, R-19, R-22), and anything that says it needs the backend. Mark those NOT RUN.
 
-Three differences in this mode. **Enhance** finishes in about 4 seconds and returns a copy with a little more contrast and a soft glow; nothing is sent anywhere. The **Detailed normals** switch: on an uploaded file it changes nothing visible; on a sample it is on, greyed, and cannot be clicked, with the line "Always on for a sample photo: its maps were made ahead of time with detailed normals." (case P-09). An uploaded big photo is shrunk to 1536 pixels on its longest side, not 1024 (this matters for case X-02).
+Three differences in this mode. **Enhance** finishes in about 4 seconds and returns a copy with a little more contrast and a soft glow; nothing is sent anywhere. The **Detailed normals** switch is greyed and cannot be clicked: on a sample it is on, with the line "Always on for a sample photo: its maps were made ahead of time with detailed normals." (case P-09); on your own photo it is off, with the line "Off for your own photo: detailed normals come from a second, much larger model that only the Relight server runs." (case P-12). The words on the loading label are the browser's, not the backend's "Estimating depth and surface normals…".
 
 Say "Plan B" or "mock mode" in your report.
 
@@ -354,7 +354,7 @@ Say "Plan B" or "mock mode" in your report.
 
 ## Plan C: the static demo on your own computer
 
-The **static demo** is a copy of the web page made of plain files. It needs no backend and no running program of ours, so it can be put on a web address for the judges. It has the four samples only: uploading and Enhance are switched off, and the page says why. If Aaroosh gave you a demo address, use that and skip this part.
+The **static demo** is a copy of the web page made of plain files. It needs no backend and no running program of ours, so it can be put on a web address for the judges. It has the four samples and takes your own photo too: the browser works out the photo's shape, as in Plan B. Only Enhance is switched off, and the page says why. If Aaroosh gave you a demo address, use that and skip this part.
 
 This part is **optional** and **macOS only**. The build command is written for macOS and Linux and is expected to fail on Windows; on Windows wait for a demo address. The developer ran these steps once, on one Mac. You need git, Node and the code (steps 1 and 2 for macOS).
 
@@ -381,7 +381,7 @@ Leave that window open. Open http://localhost:3142/BanannaHacksSubmission/ in th
 
 ![The demo's first page](screenshots/96-demo-landing.jpg)
 
-Now do group H in [TEST_PLAN.md](TEST_PLAN.md#h-hosted-demo-static-build), starting with H-08. Say "Plan C" in your report.
+Now do group H in [TEST_PLAN.md](TEST_PLAN.md#h-hosted-demo-static-build), starting with H-08 and then H-12 (your own photo). Say "Plan C" in your report.
 
 Things to know:
 

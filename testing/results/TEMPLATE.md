@@ -70,6 +70,9 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | U-20 | | |
 | U-21 | | |
 | U-22 | | |
+| U-23 | | |
+| U-24 | | |
+| U-25 | | |
 | P-01 | | |
 | P-02 | | |
 | P-03 | | |
@@ -79,6 +82,10 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | P-07 | | |
 | P-08 | | |
 | P-09 | | |
+| P-10 | | |
+| P-11 | | |
+| P-12 | | |
+| P-13 | | |
 | L-01 | | |
 | L-02 | | |
 | L-03 | | |
@@ -184,6 +191,8 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | R-19 | | |
 | R-20 | | |
 | R-21 | | |
+| R-22 | | |
+| R-23 | | |
 | F-01 | | |
 | F-02 | | |
 | F-03 | | |
@@ -223,6 +232,7 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | H-09 | | |
 | H-10 | | |
 | H-11 | | |
+| H-12 | | |
 
 ## Picture quality (group Q)
 
@@ -241,6 +251,7 @@ Score 1 (fake) to 5 (like a real photo), and one sentence why.
 | Q-09 | | |
 | Q-10 | | |
 | Q-11 | | |
+| Q-12 | | |
 
 ## Bugs
 
@@ -252,6 +263,7 @@ Copy this block once per bug.
 - Seriousness (BLOCKER / WRONG / UGLY / IDEA):
 - Photo used:
 - Shading line:
+- Where the photo's shape came from (the GEOMETRY line that starts "depth:", or "server", or "sample"):
 - Light readout (x, y, Height, Intensity, Ambient, Colour, Cast shadows, Detailed normals):
 - Steps:
   1.

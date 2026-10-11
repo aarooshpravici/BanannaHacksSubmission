@@ -19,6 +19,8 @@ labels: bug
 
 **Shading line** (click the GEOMETRY row at the bottom of the sidebar and copy its last grey line, for example "shading: graphics chip, full quality"; write "none" if there is no such line. Also copy any grey note above the photo):
 
+**Where the photo's shape came from** (open GEOMETRY. If it has a small grey line that starts "depth:", copy that line, for example "depth: this browser, graphics chip (WebGPU)". If not, write "server" for a photo you uploaded or "sample" for a sample):
+
 **Photo used** (sample name: Portrait / Coffee cup / Cat / Rocket; or file name from testing/photos; or describe your own):
 
 **Light readout** (x, y, Height, Intensity, Ambient, Colour, Cast shadows on or off, Detailed normals on or off):
