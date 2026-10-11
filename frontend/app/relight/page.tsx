@@ -78,7 +78,7 @@ const DETAIL_HINT_BROWSER = "Off: this photo was analysed in your browser. Turn 
 const DEPTH_DEVICE_LABEL: Record<DepthDevice, string> = { webgpu: "graphics chip (WebGPU)", wasm: "processor (WebAssembly)" };
 /** Mock mode only, and only when asked for on the failure card: why the photo has a round edge. */
 const STAND_IN_SHAPE_NOTE =
-  "No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or start the backend to light your own photo properly.";
+  "No backend is running (mock mode), so this photo is lit as a made-up dome, not its real shape. The round edge you see is that dome. Use a sample photo, or click New photo and try again once the depth model can be downloaded.";
 
 const DEMO_ENHANCE_NOTE = "Enhance needs the Relight server, which this demo runs without.";
 /**
