@@ -197,7 +197,8 @@ kept: they open at once anyway. The first page lists the drafts on its "Drafts" 
 
 - **Where.** IndexedDB, database `relight-drafts`, version 1, on the device only. **No cookie is used.** The
   request was worded as "a cookie", but a cookie holds about 4 KB and is sent to the server with every request;
-  a draft is 0.4 to 2 MB (a 1024 x 1024 scene is about 1.9 MB of base64 text) and must never be sent anywhere.
+  a draft is 0.1 to 2 MB (measured: 0.12 MB for a photo 200 pixels wide, about 1.9 MB of base64 text for a
+  1024 x 1024 scene) and must never be sent anywhere.
 - **A draft is two records under one id.** The id is a fingerprint of the photo as the page holds it: the first
   16 bytes of the SHA-256 of its base64 text, or, where `crypto.subtle` is missing (a page opened by a number
   address over plain http), its length and two running sums. The store `drafts` holds the small record: the name
@@ -217,7 +218,11 @@ kept: they open at once anyway. The first page lists the drafts on its "Drafts" 
 - **Reading back.** Every record is checked field by field (`asDraft`, `asScene`) and one that does not fit is
   skipped. Numbers are held to the controls' ranges when a draft is opened. A small picture that is not a
   `data:image/` address is ignored, so a stored record cannot make the page fetch anything. A draft whose scene
-  is missing or damaged is removed when its card is clicked, with the line "That draft could not be opened."
+  is missing, or lacks a field, is removed when its card is clicked, with the line "That draft could not be
+  opened." `asScene` does not decode the pictures: a scene whose photo or depth map is a string that is not a
+  picture opens, and the workspace shows its red "Live shading is unavailable (…)" bar (seen only with a
+  database edited by hand). A record that is skipped stays in the database until "Delete all drafts" clears
+  both stores.
 - **When storage fails** (a private window in some browsers, storage switched off, the disk full, another tab
   holding an older version of the database, or no answer at all): every call goes through one queue that cannot
   reject and that gives up after 5 s (`WAIT_MS`). Nothing is thrown at the page and no red bar is shown. The
@@ -230,16 +235,23 @@ kept: they open at once anyway. The first page lists the drafts on its "Drafts" 
 - **An opened draft and the backend.** A scene the browser made keeps its `local:` id. A scene a server made is
   given the id `draft:<id>` when it is opened and is treated like a sample: Enhance and a server render first
   send the photo to the backend again (`relightAdoptScene`), and "Detailed normals" analyses it again with the
-  picture kept on screen. Opening a draft and lighting it never calls the backend.
+  picture kept on screen. Opening a draft never calls the backend, and neither does lighting it wherever the
+  browser itself does the shading.
 - **The logo** (`components/TopNav.tsx`, `lib/home.ts`) is still a `<Link href="/">`. Its `onNavigate` fires a
   cancelable `relight:home` event on `window`. The page listens, runs its "New photo" function (which keeps the
   draft first), selects the Samples tab and cancels the navigation, so nothing is loaded again and the depth
   model stays set up. Where no page listens (the "not found" page) the link is followed as usual.
 - **What has and has not been run.** Headless Chrome 155 on one Mac: the static demo, a build against a mock
-  backend, and `next dev`. Not run: Safari, Firefox, Edge, a phone, a real private window, a full disk. Safari
-  deletes a site's stored data after about seven days without a visit, so drafts do not last there.
-  `testing/PENDING.md` has the detail (K77 to K90, open items 58 to 61) and `testing/TEST_PLAN.md` the cases
-  (group M).
+  backend, and `next dev`. One person has run six test cases by hand, in Chrome on a Mac, on `next dev`. An
+  independent check (headless Chrome again, builds of the commits before and after) found the lit pictures of
+  the four samples and of five photos byte-identical before and after, a reopened draft pixel-identical to how
+  it was left with no network request, and the page working through ten simulated storage failures and one
+  real one (Chrome blocking all site data). Changed after it: the two small grey lines on the Drafts tab are
+  `text-zinc-400` (they measured under 4.5:1 in `text-zinc-500`), and Escape at "Delete all N drafts?" answers
+  as "Keep" does. Not run: Safari, Firefox, Edge, a phone, a real private window, a full disk, the `onblocked`
+  path of opening the database, and a backend with real models. Safari deletes a site's stored data after
+  about seven days without a visit, so drafts do not last there. `testing/PENDING.md` has the detail (K77 to
+  K93, open items 58 to 62) and `testing/TEST_PLAN.md` the cases (group M).
 
 ## Built-in samples
 
