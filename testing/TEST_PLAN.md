@@ -8,7 +8,7 @@ Every test case has an ID (for example `L-03`), numbered steps, the expected res
 - **No backend?** If the pill reads "backend: mock" (Plan B in SETUP) or "backend: offline", click a sample thumbnail wherever a case says to load a test photo: **Portrait** for `01-portrait-astronaut.jpg`, **Coffee cup** for `02-object-coffee.jpg`, **Cat** for `03-animal-cat.jpg`, **Rocket** for `04-dark-rocket.jpg`. They are the same four photos with the same shape data, and they need no backend. A case that needs another photo file can still be run. In Plan B, choose the file: the browser works out its shape (P-10). With the pill "backend: offline", choose the file and click **Analyse in this browser** on the card that appears (R-22). Such a photo shades a little flatter than with the backend, the words on the loading label are different, and **Detailed normals** is off (P-12). Cases about the backend's own loading screen, or about anything else the backend does, cannot be run that way: mark them NOT RUN.
 - **Hosted demo?** If you were given a web address for the static demo (the pill reads "demo: runs in your browser", or just "demo" on a phone), do group H. The demo has the four samples and it takes your own photo too: the browser works out the photo's shape and nothing is uploaded. **H-12 is the case to run first.** Only Enhance is switched off there.
 - **Recording results.** On GitHub, use the "Report a finished test run" link in [README.md](README.md#reporting-what-you-found) and write one line per case. Only if you cannot use GitHub, fill in a copy of [results/TEMPLATE.md](results/TEMPLATE.md). Mark each case **PASS** (matches "Expected"), **FAIL** (does not; open a bug issue) or **NOT RUN**.
-- **Screenshots** (191 of them) were all taken early on Sunday Oct 11, on a Mac in Chrome, with a 1440 x 900 window unless the case says otherwise. Where a screenshot shows an address with port 8123, yours says 8000. In the early morning update of Oct 11 every one was retaken and 16 were added (176 to 191). In the rim fix of Oct 11, at midday, 11 were retaken, because they show a photo analysed in the browser or **Detailed normals** off: 26, 56 to 58, 160, 161, 169, 171, 172, 175 and 191. Small differences in size and position on your screen are normal. Different words, missing parts, or lighting on the wrong side are not.
+- **Screenshots** (195 of them) were nearly all taken early on Sunday Oct 11, on a Mac in Chrome, with a 1440 x 900 window unless the case says otherwise. Where a screenshot shows an address with port 8123, yours says 8000. In the early morning update of Oct 11 every one was retaken and 16 were added (176 to 191). In the rim fix of Oct 11, at midday, 11 were retaken, because they show a photo analysed in the browser or **Detailed normals** off: 26, 56 to 58, 160, 161, 169, 171, 172, 175 and 191. In the drafts update of Oct 11, in the afternoon, the 22 that show the first page were retaken, because it now has two tabs under the dashed box (01, 02, 41, 42, 47, 54, 59, 60, 65, 76, 96, 101, 153 to 158, 184 and 188 to 190), and 4 were added for group M (192 to 195). Small differences in size and position on your screen are normal. Different words, missing parts, or lighting on the wrong side are not.
 - **Sizes mean the page area**, not the whole window: the part below the browser's tabs and address bar. An ordinary 1440 x 900 window has a page area about 800 pixels high. Below 832 the grey words under Height (its two end labels, "close to the surface" and "close to you") and the grey helper lines under Ambient and Cast shadows are not shown (the helper lines become hover text). That is expected, and the screenshots show them only because they were taken with a page area of exactly 1440 x 900. To get an exact page size use Chrome's F12 device toolbar, as in W-13.
 - **The x and y numbers.** x 0.00 is the photo's left edge and 1.00 its right edge; y 0.00 is the top and 1.00 the bottom. Numbers below 0 or above 1 mean the light is outside the photo. **A preset always gives the same numbers**, on every window and every photo: **Left** x -0.10, y 0.40; **Right** x 1.10, y 0.40; **Top** x 0.50, y -0.15. If that point lies beyond the edge of the stage, the sun is drawn at the stage's edge and the readout still shows the preset's numbers. A drag or an arrow key is different: it stops at the stage's edge, and the readout shows where it stopped.
 - **Where an Enhance error shows.** On a window 1024 pixels wide or more, a failed Enhance shows a red bar **above the photo**. On a narrower window (a phone) the same message is a red box inside the ENHANCE panel, under the button. The cases say "above the photo"; on a phone look in the ENHANCE panel (R-21).
@@ -20,7 +20,7 @@ Every test case has an ID (for example `L-03`), numbered steps, the expected res
 - **"Developer note: possible bug"** under a case means: the Expected text says what the code does today, but the developer suspects that behaviour is wrong. If you see what Expected describes, mark PASS **and** open a bug issue saying you saw it and how much it bothered you.
 - **Cases written from the code.** Cases without a screenshot were not run by the developer. Their Expected text was read from the program code. If the app does something else, that is a FAIL worth reporting.
 
-Groups: [U Upload](#u-upload) · [P Scene preparation](#p-scene-preparation) · [L Moving the light](#l-moving-the-light) · [C Controls](#c-controls) · [S Shadows](#s-shadows) · [K Compare](#k-compare-with-the-original) · [E Enhance](#e-enhance) · [X Export](#x-export) · [W Layout](#w-layout-and-window-sizes) · [T Kinds of photos](#t-kinds-of-photos) · [R Errors](#r-error-handling) · [F Shading paths](#f-shading-paths) · [D Speed](#d-speed) · [Q Picture quality](#q-picture-quality-human-judgement) · [J Judge](#j-what-a-judge-would-try) · [G How it works](#g-the-how-it-works-panel) · [H Hosted demo](#h-hosted-demo-static-build)
+Groups: [U Upload](#u-upload) · [P Scene preparation](#p-scene-preparation) · [L Moving the light](#l-moving-the-light) · [C Controls](#c-controls) · [S Shadows](#s-shadows) · [K Compare](#k-compare-with-the-original) · [E Enhance](#e-enhance) · [X Export](#x-export) · [W Layout](#w-layout-and-window-sizes) · [T Kinds of photos](#t-kinds-of-photos) · [R Errors](#r-error-handling) · [F Shading paths](#f-shading-paths) · [D Speed](#d-speed) · [Q Picture quality](#q-picture-quality-human-judgement) · [J Judge](#j-what-a-judge-would-try) · [G How it works](#g-the-how-it-works-panel) · [H Hosted demo](#h-hosted-demo-static-build) · [M Drafts and the logo](#m-drafts-and-the-logo)
 
 ---
 
@@ -32,7 +32,7 @@ Start each case on the first page with no photo (click **New photo** if a photo 
 
 1. Open http://localhost:3000.
 
-**Expected:** browser tab title "Relight: drag the light around any photo". Top bar: yellow square with a banana, "Relight", grey "Banana Hacks 2026", and at the right the words "How it works" and then the pill. Page: yellow "MOVE THE LIGHT"; title "Relight a photo by dragging the light."; a paragraph starting "Upload a photo."; a dashed box with "Drop a photo here" and "or click to browse, or paste an image or its address" (before the late night update of Oct 10 it ended "or paste from the clipboard"); under it the line "Or try a sample photo:" and four small pictures in one row, labelled "Portrait", "Coffee cup", "Cat" and "Rocket". (In Plan B and on the demo the paragraph starts "Upload a photo or pick a sample." and there is a grey line under the box that starts "Your photo stays on this device": R-08, H-01.) There is no round black "N" badge in the bottom-left corner any more.
+**Expected:** browser tab title "Relight: drag the light around any photo". Top bar: yellow square with a banana, "Relight", grey "Banana Hacks 2026", and at the right the words "How it works" and then the pill. Page: yellow "MOVE THE LIGHT"; title "Relight a photo by dragging the light."; a paragraph starting "Upload a photo."; a dashed box with "Drop a photo here" and "or click to browse, or paste an image or its address" (before the late night update of Oct 10 it ended "or paste from the clipboard"); under it the line "Or try a sample photo:" and four small pictures in one row, labelled "Portrait", "Coffee cup", "Cat" and "Rocket". At the right end of the line "Or try a sample photo:" are two small tabs, new in the drafts update of Oct 11: **SAMPLES**, yellow with a yellow line under it, and **DRAFTS**, grey (group M). (In Plan B and on the demo the paragraph starts "Upload a photo or pick a sample." and there is a grey line under the box that starts "Your photo stays on this device": R-08, H-01.) There is no round black "N" badge in the bottom-left corner any more.
 
 ![U-01](screenshots/01-landing.jpg)
 
@@ -98,7 +98,7 @@ Start each case on the first page with no photo (click **New photo** if a photo 
 
 1. Load the astronaut. 2. Click **New photo**. 3. Choose the same astronaut file again.
 
-**Expected:** it loads again normally.
+**Expected:** it loads again normally, and starts with the starting light, x 0.12, y 0.35, whatever light it had the first time. (Since the drafts update of Oct 11 the photo is also kept as a draft, and choosing it again replaces that draft: one card on the **DRAFTS** tab, not two. That is M-09.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -128,9 +128,9 @@ Start each case on the first page with no photo (click **New photo** if a photo 
 
 ### U-12 Keyboard on the first page
 
-1. Reload the page. Do not use the mouse. 2. Press Tab once, a second time, and a third time. 3. Press Enter. Close the file chooser with Escape. 4. Press the Space bar. Close the file chooser again. 5. Press Tab four more times, slowly. 6. Press Shift+Tab three times, then Enter.
+1. Reload the page. Do not use the mouse. 2. Press Tab once, a second time, and a third time. 3. Press Enter. Close the file chooser with Escape. 4. Press the Space bar. Close the file chooser again. 5. Press Tab five more times, slowly. 6. Press Shift+Tab three times, then Enter.
 
-**Expected:** step 2: the first Tab selects the "Relight" logo. The second Tab selects "How it works" in the top bar. The third Tab puts a yellow outline round the dashed box. Step 3: Enter opens the file chooser. Step 4: Space opens it too, and the page does not scroll. Step 5: each Tab moves a yellow outline to the next thumbnail: **Portrait**, **Coffee cup**, **Cat**, **Rocket**. Step 6: the outline is back on **Portrait**, and Enter opens the Portrait sample. In Safari the Tab key may skip buttons unless "Press Tab to highlight each item" is on in Safari's settings; say so if it does.
+**Expected:** step 2: the first Tab selects the "Relight" logo. The second Tab selects "How it works" in the top bar. The third Tab puts a yellow outline round the dashed box. Step 3: Enter opens the file chooser. Step 4: Space opens it too, and the page does not scroll. Step 5: the first of these Tabs puts the yellow outline on the word **SAMPLES**, the selected one of the two tabs that are new in the drafts update of Oct 11 (the two are one stop, and the arrow keys move between them: M-04). Each Tab after that moves the outline to the next thumbnail: **Portrait**, **Coffee cup**, **Cat**, **Rocket**. Step 6: the outline is back on **Portrait**, and Enter opens the Portrait sample. In Safari the Tab key may skip buttons unless "Press Tab to highlight each item" is on in Safari's settings; say so if it does.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -216,7 +216,7 @@ Use whatever of these you have or can make. Skip the rest and say which you skip
 
 1. Look at the row under "Or try a sample photo:". 2. Move the mouse over each thumbnail. 3. Click **Portrait** and watch the other three in the instant before the photo opens. 4. Click **New photo**. Click **Cat**. Click **New photo**. Click **Portrait** again.
 
-**Expected:** step 1: four pictures of the same size in one row, each a small crop of its photo, with its label underneath: Portrait (the astronaut), Coffee cup, Cat, Rocket. No picture is missing, broken or stretched. Step 2: the border of the one under the mouse turns yellow. Step 3: for an instant the other three go dim and none can be clicked. This lasts well under a second; if you cannot see it, that is fine. Step 4: each sample opens every time, always starting at x 0.12, y 0.35.
+**Expected:** step 1: four pictures of the same size in one row, each a small crop of its photo, with its label underneath: Portrait (the astronaut), Coffee cup, Cat, Rocket. No picture is missing, broken or stretched. Step 2: the border of the one under the mouse turns yellow. Step 3: for an instant the other three go dim and none can be clicked. This lasts well under a second; if you cannot see it, that is fine. Step 4: each sample opens every time, always starting at x 0.12, y 0.35. (Since the drafts update of Oct 11 the right end of the line "Or try a sample photo:" also holds the two tabs **SAMPLES** and **DRAFTS**, as the first screenshot shows: group M.)
 
 ![U-21 the row](screenshots/59-sample-thumbnails.jpg)
 ![U-21 while one loads](screenshots/60-sample-loading.jpg)
@@ -534,7 +534,7 @@ New in the depth check update of Oct 11. Needs Plan B (pill "backend: mock") or 
 
 **Why this case exists.** On one tester's Snapdragon laptop, both photos they tried came out covered in a regular grid of dimples, like hammered metal (issue 4). The depth model had run on that laptop's graphics chip with no error and had given a wrong answer. So the page now tests the graphics chip first. Each time the page is loaded, before your first photo, it runs the depth model on a small test picture of its own (a wall, a floor, a ball, a box and a post) and compares the answer with the one a processor gives, which is stored in the page. If the chip's answer is wrong, the processor works out your photo instead: slower, and right. This is about the **depth line** only. The four samples and the shading line have no part in it.
 
-**Why we want one line from you.** The test lets the chip's answer be at most 6 times as rough as the processor's. That limit was set from one healthy chip, an Apple one, which scores 3.27. One other make has reported since (an Intel chip: 3.28), and we need the scores of the rest (NVIDIA, AMD, other Intel and Apple chips, phones) to know that the limit does not turn a healthy chip away. Your browser writes the scores in its **console**: a panel where a page leaves notes for developers.
+**Why we want one line from you.** The test lets the chip's answer be at most 6 times as rough as the processor's. That limit was set from one healthy chip, an Apple one, which scores 3.27. Two other makes have reported since (an Intel chip: 3.28; an NVIDIA chip: 3.26), and we need the scores of the rest (AMD, other Intel, NVIDIA and Apple chips, phones) to know that the limit does not turn a healthy chip away. Your browser writes the scores in its **console**: a panel where a page leaves notes for developers.
 
 **How to open the console.**
 
@@ -1349,7 +1349,7 @@ To imitate a phone on a computer: in Chrome press F12, then click the small phon
 
 1. Imitate a phone (see above), reload, and look at the first page. 2. Load the astronaut. 3. Scroll down the whole page.
 
-**Expected:** first page: the title wraps to two lines, the dashed box is as wide as the screen, the four sample thumbnails sit in one row with their labels readable, nothing is cut off at the sides. Workspace: the top bar shows the logo, "Relight", the words "How it works" and a short pill that reads only "online" (no "backend:", no "mock providers"), all on one line. The stage is on top and is only as tall as it needs to be: **New photo** top right, the photo, then **Hold to see original** and **Export PNG**. There are no big black bands above and below the photo. The LIGHT panel starts straight under the stage, so its title, the x and y readout and the first sliders are on the first screen. Below: ENHANCE, then the folded GEOMETRY row. Under the Height slider are the grey labels "close to the surface" (left) and "close to you" (right), and under them the line "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows." (two lines of text on a phone 360 or 390 wide, three at 320, one on a tablet). The helper lines under Ambient and Cast shadows are shown. The five buttons Left, Right, Top, Low and warm, Reset light are on **one line** (on a phone 360 pixels wide or more; see W-17). The ENHANCE box shows the grey words "Optional: a mood, such as golden hour" in full.
+**Expected:** first page: the title wraps to two lines, the dashed box is as wide as the screen, under it is a row of two tabs with a thin line under the row (**SAMPLES**, yellow, and **DRAFTS**; new in the drafts update of Oct 11, M-14), the four sample thumbnails sit in one row with their labels readable, nothing is cut off at the sides. Workspace: the top bar shows the logo, "Relight", the words "How it works" and a short pill that reads only "online" (no "backend:", no "mock providers"), all on one line. The stage is on top and is only as tall as it needs to be: **New photo** top right, the photo, then **Hold to see original** and **Export PNG**. There are no big black bands above and below the photo. The LIGHT panel starts straight under the stage, so its title, the x and y readout and the first sliders are on the first screen. Below: ENHANCE, then the folded GEOMETRY row. Under the Height slider are the grey labels "close to the surface" (left) and "close to you" (right), and under them the line "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows." (two lines of text on a phone 360 or 390 wide, three at 320, one on a tablet). The helper lines under Ambient and Cast shadows are shown. The five buttons Left, Right, Top, Low and warm, Reset light are on **one line** (on a phone 360 pixels wide or more; see W-17). The ENHANCE box shows the grey words "Optional: a mood, such as golden hour" in full.
 
 ![W-04 first page](screenshots/47-phone-landing.jpg)
 ![W-04 workspace](screenshots/45-phone-scene.jpg)
@@ -1380,7 +1380,7 @@ Only if your computer has a touch screen, or with the phone imitation on (it tur
 
 1. Open http://localhost:3000/relight. Load a photo. 2. Scroll the page if it scrolls. 3. Click the "Relight" logo in the top bar. 4. Press the browser's Back button.
 
-**Expected:** `/relight` shows the same app as `/`. The top bar stays at the top when scrolling. Clicking the logo goes to `/`, which shows the empty first page (each address keeps its own photo). For step 4, write down whether the photo on `/relight` was still there. Also: clicking the logo while already on `/` does nothing, and does not clear your photo.
+**Expected:** `/relight` shows the same app as `/`. The top bar stays at the top when scrolling. Since the drafts update of Oct 11, clicking the logo shows the first page **in place**: the photo is put away and the dashed box and the thumbnails show, the address bar still says `/relight`, and the page is not loaded again (M-01). A photo of your own is kept as a draft first, and the **DRAFTS** tab lists it (M-05). The same happens on `/`. (Before that update the logo led from `/relight` to `/`, and did nothing on `/`.) Step 4: Back does not bring the photo back. It leaves the app for whatever page was open before it, because neither a photo nor the logo adds a step to the browser's history (J-09); in a tab that has shown nothing else, Back does nothing. Write down what yours did.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1388,7 +1388,7 @@ Only if your computer has a touch screen, or with the phone imitation on (it tur
 
 1. Open http://localhost:3000/autocomplete and http://localhost:3000/turnaround.
 
-**Expected:** both show a black page with "404 | This page could not be found." The Relight top bar is still there.
+**Expected:** both show a black page with "404 | This page could not be found." The Relight top bar is still there. A click on the "Relight" logo there leads to the first page. (This is the one place where the logo is an ordinary link and a page is loaded. Everywhere else it shows the first page in place: M-01.)
 
 ![W-08](screenshots/53-not-found-page.jpg)
 
@@ -1434,7 +1434,7 @@ To get an exact size: in Chrome press F12, click the phone/tablet icon, choose *
 
 1. Set 1280 x 720. Reload and look at the first page. 2. Click the **Portrait** sample. 3. Set 1366 x 768 and look again.
 
-**Expected:** step 1: the whole first page fits with no scrolling: title, dashed box and all four thumbnails with their labels. Step 2: stage left, sidebar right. LIGHT, ENHANCE and the folded GEOMETRY row all fit; nothing scrolls. To make room, three things are left out: there is nothing under the Height slider (no "close to the surface" and "close to you") and there are no helper lines under Ambient and Cast shadows; there is no line under the ENHANCE title; and the ENHANCE text box is one line tall. The five preset buttons are in one row. The grey words in the one-line text box read "Optional: a mood, such as golden hour" **in full**; nothing is cut off at the right edge. Step 3: the same, and it still fits. (The 1366 x 768 screenshot shows the coffee photo with **Right**, not the Portrait sample. Compare the sidebar only.)
+**Expected:** step 1: the whole first page fits with no scrolling: title, dashed box and all four thumbnails with their labels. (The two tabs **SAMPLES** and **DRAFTS**, new in the drafts update of Oct 11, sit at the right end of the line "Or try a sample photo:" and take no height of their own, so the page still fits.) Step 2: stage left, sidebar right. LIGHT, ENHANCE and the folded GEOMETRY row all fit; nothing scrolls. To make room, three things are left out: there is nothing under the Height slider (no "close to the surface" and "close to you") and there are no helper lines under Ambient and Cast shadows; there is no line under the ENHANCE title; and the ENHANCE text box is one line tall. The five preset buttons are in one row. The grey words in the one-line text box read "Optional: a mood, such as golden hour" **in full**; nothing is cut off at the right edge. Step 3: the same, and it still fits. (The 1366 x 768 screenshot shows the coffee photo with **Right**, not the Portrait sample. Compare the sidebar only.)
 
 ![W-13 first page, 1280 x 720](screenshots/76-laptop-1280x720-landing.jpg)
 ![W-13 workspace, 1280 x 720](screenshots/75-laptop-1280x720-scene.jpg)
@@ -2211,7 +2211,7 @@ A judge has two minutes, has not read anything, and clicks fast.
 
 1. Load a photo, change the light, run Enhance. 2. Reload the page (Cmd+R or Ctrl+R).
 
-**Expected:** the app returns to the empty first page. Nothing is remembered. (By design: write down if you think that is a problem.)
+**Expected:** the app returns to the empty first page, with **SAMPLES** selected. The page itself remembers nothing: a sample, its light and an Enhance result are gone. (By design: write down if you think that is a problem.) Since the drafts update of Oct 11 a photo of **your own** is not lost: it is kept as a draft with its light, and the **DRAFTS** tab on the first page lists it (M-08). Its Enhance result is not kept.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -2219,7 +2219,7 @@ A judge has two minutes, has not read anything, and clicks fast.
 
 1. Open the app in two browser tabs. Load a different photo in each. Move the light and run Enhance in both.
 
-**Expected:** each tab works by itself and shows its own photo.
+**Expected:** each tab works by itself and shows its own photo. (Since the drafts update of Oct 11 the two browser tabs share one list of drafts: a photo of your own that was lit in one shows on the other's **DRAFTS** tab when that tab is clicked, or within a minute if it is already open.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -2261,7 +2261,7 @@ Developer note: possible bug (step 2: a visitor who presses Back to choose anoth
 
 1. Screen reader. macOS: press Cmd+F5 to start VoiceOver (the same keys stop it). Windows: press Ctrl+Windows+Enter to start Narrator (the same keys stop it). On the first page press Tab through the page and listen. Then do a standard start and Tab through again. 2. Stop the screen reader. Read all the grey text: the helper lines under the sliders, the grey words in the ENHANCE box, the line at the bottom of the opened GEOMETRY panel. 3. Turn on reduced motion (macOS: System Settings, Accessibility, Display, "Reduce motion"; Windows: Settings, Accessibility, Visual effects, "Animation effects" off). Reload, load a photo file, and watch the dot in the pill, the loading label and the yellow band on the photo. Turn the setting back afterwards.
 
-**Expected:** step 1: "How it works" is read as a button. The four thumbnails are read as buttons: "Sample photo: Portrait", "Sample photo: Coffee cup", "Sample photo: Cat", "Sample photo: Rocket". The sun is read as a button: "Light position, x 0.12, y 0.35, height 0.12. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back." (Changed on Oct 11; the three numbers follow the light. The small label under the sun is not read out.) **Sweep** is read as a button that is not pressed. The switches are read as "Cast shadows" and "Detailed normals", with on or off. The sliders are read with their names (Height, Intensity, Ambient, Colour) and values. The GEOMETRY row is read as a button ("Geometry, Show"), collapsed or expanded. After Enhance, the round handle is read as "Comparison divider" and the small square button as "Download the enhanced image". The X on a red bar is read as "Dismiss". Step 2: say whether each grey text is comfortable to read on your screen, and which is hardest. There is no exact right answer. Step 3: the pill's dot still pulses, the spinner still turns and the yellow band still moves down the photo. The app does not react to the reduced-motion setting. (Two exceptions: the "How it works" card then appears without its small upward slide, and, since Oct 11, the sun changes size at once when Height changes.)
+**Expected:** step 1: "How it works" is read as a button. The four thumbnails are read as buttons: "Sample photo: Portrait", "Sample photo: Coffee cup", "Sample photo: Cat", "Sample photo: Rocket". The two tabs under the dashed box (new in the drafts update of Oct 11) are read as tabs in a list named "Sample photos and drafts": "Samples", selected, and "Drafts". A draft's card is read as a button, for example "Draft: 01-portrait-astronaut, changed just now", and its delete button as "Delete draft: 01-portrait-astronaut". (Written from the code; no screen reader was run. With drafts the second tab holds the word and the number with no space between them: write down how yours reads it.) The sun is read as a button: "Light position, x 0.12, y 0.35, height 0.12. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back." (Changed on Oct 11; the three numbers follow the light. The small label under the sun is not read out.) **Sweep** is read as a button that is not pressed. The switches are read as "Cast shadows" and "Detailed normals", with on or off. The sliders are read with their names (Height, Intensity, Ambient, Colour) and values. The GEOMETRY row is read as a button ("Geometry, Show"), collapsed or expanded. After Enhance, the round handle is read as "Comparison divider" and the small square button as "Download the enhanced image". The X on a red bar is read as "Dismiss". Step 2: say whether each grey text is comfortable to read on your screen, and which is hardest. There is no exact right answer. Step 3: the pill's dot still pulses, the spinner still turns and the yellow band still moves down the photo. The app does not react to the reduced-motion setting. (Two exceptions: the "How it works" card then appears without its small upward slide, and, since Oct 11, the sun changes size at once when Height changes.)
 
 Developer note: possible bug (step 3: the app ignores the reduced-motion setting).
 
@@ -2319,7 +2319,7 @@ All seven pictures load; none is missing, broken or stretched. Every word is rea
 
 1. Click the **Portrait** sample. Click **Left**. Click "How it works". 2. Click on the dimmed **Right** button in the sidebar behind the card. 3. Open the card again. Press the Escape key. 4. Open it again. Click **Close**. 5. Open it, scroll down to "HONEST LIMITS", click **Close**, and open it again. 6. With the card open, put the mouse over the dimmed page beside the card and scroll the wheel. 7. Click **Sweep**, at once click "How it works", wait three seconds and close the card. 8. Open the card and press the browser's Back button (the arrow left of the address bar).
 
-**Expected:** step 1: the card opens over the photo. The photo, its sun, the sidebar and the top bar are still there behind it, dimmed. Step 2: the click **closes the card and does nothing else**: the light does not jump to the right, and the readout still says x -0.10, y 0.40. A click anywhere on the dimmed page closes the card; nothing behind the card can be pressed while it is open. Steps 3 and 4: Escape closes it; **Close** closes it. After every closing the page is exactly as you left it: the same photo, the same light, the same settings. Step 5: the card opens at the **top** again, at "Two pretrained vision models measure the photo once.", not at "HONEST LIMITS". Step 6: the card stays. The page behind does not move on a normal laptop window, because it has nothing to scroll. On a narrow window, where the page is longer than the screen, the page behind may scroll (known, K46). Step 7: the sweep keeps running behind the card (seen by a tester in Chrome on a Mac). Write down whether the page was in a normal state afterwards: the sun back where it started, and the button reading **Sweep** again. Step 8: the card closes and you are still in the app, with the same photo and the same light; the browser does not go to another page. (New in version `53e2c26`: before that, Back left the app. Checked by the developer in Chrome on a Mac.)
+**Expected:** step 1: the card opens over the photo. The photo, its sun, the sidebar and the top bar are still there behind it, dimmed. Step 2: the click **closes the card and does nothing else**: the light does not jump to the right, and the readout still says x -0.10, y 0.40. A click anywhere on the dimmed page closes the card; nothing behind the card can be pressed while it is open. (One exception since the drafts update of Oct 11: a click on the dimmed "Relight" logo closes the card and also shows the first page. That is M-03.) Steps 3 and 4: Escape closes it; **Close** closes it. After every closing the page is exactly as you left it: the same photo, the same light, the same settings. Step 5: the card opens at the **top** again, at "Two pretrained vision models measure the photo once.", not at "HONEST LIMITS". Step 6: the card stays. The page behind does not move on a normal laptop window, because it has nothing to scroll. On a narrow window, where the page is longer than the screen, the page behind may scroll (known, K46). Step 7: the sweep keeps running behind the card (seen by a tester in Chrome on a Mac). Write down whether the page was in a normal state afterwards: the sun back where it started, and the button reading **Sweep** again. Step 8: the card closes and you are still in the app, with the same photo and the same light; the browser does not go to another page. (New in version `53e2c26`: before that, Back left the app. Checked by the developer in Chrome on a Mac.)
 
 ![G-03 the card over a lit photo](screenshots/111-how-it-works-over-photo.jpg)
 
@@ -2408,7 +2408,7 @@ The screenshots were taken from a copy served on the developer's Mac, not from a
 
 1. Open the demo address. 2. Hold the mouse still over the pill for two seconds. 3. Reload the page and watch the pill in the first instant. 4. Move the mouse over the dashed box.
 
-**Expected:** browser tab title "Relight: drag the light around any photo". Top bar: the yellow square logo, "Relight", grey "Banana Hacks 2026", and at the right the words "How it works" and then the pill: a **green** pulsing dot and "demo: runs in your browser". Page: yellow "MOVE THE LIGHT"; the title "Relight a photo by dragging the light."; the paragraph "Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly." Then a **dashed box** with an upload icon, "Drop a photo here" and "or click to browse, or paste an image or its address". Under the box a grey line, two lines long: "Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once." Then the line "Or try a sample photo:" and four small pictures in one row: Portrait, Coffee cup, Cat, Rocket. None is missing or broken. Step 2: the hover text reads "Static demo: everything runs in your browser. Your own photo is analysed on this device and is not uploaded; the depth model for that is downloaded once from Hugging Face. Enhance needs the Relight server." Step 3: the pill is green from the first instant. It never reads "checking", "offline" or "backend:". Step 4: the box border and background get slightly lighter, as in U-02. (Before the late night update of Oct 10 the demo had a card in place of the dashed box: "This is the in-browser demo.", with a link to the repository. If you still see that card, you have an old copy of the demo: say so.)
+**Expected:** browser tab title "Relight: drag the light around any photo". Top bar: the yellow square logo, "Relight", grey "Banana Hacks 2026", and at the right the words "How it works" and then the pill: a **green** pulsing dot and "demo: runs in your browser". Page: yellow "MOVE THE LIGHT"; the title "Relight a photo by dragging the light."; the paragraph "Upload a photo or pick a sample. Its depth is estimated once, right here in your browser, which then shades it live: drag the light anywhere around the subject and the highlights and shadows follow instantly." Then a **dashed box** with an upload icon, "Drop a photo here" and "or click to browse, or paste an image or its address". Under the box a grey line, two lines long: "Your photo stays on this device: its shape is worked out in your browser and nothing is uploaded. The first photo downloads a depth model of about 25 MB, once." Then the line "Or try a sample photo:" and four small pictures in one row: Portrait, Coffee cup, Cat, Rocket. None is missing or broken. At the right end of that line are two small tabs, new in the drafts update of Oct 11: **SAMPLES**, yellow with a yellow line under it, and **DRAFTS**, grey (group M). If they are missing after a reload, the demo online is older than that update: say so. Step 2: the hover text reads "Static demo: everything runs in your browser. Your own photo is analysed on this device and is not uploaded; the depth model for that is downloaded once from Hugging Face. Enhance needs the Relight server." Step 3: the pill is green from the first instant. It never reads "checking", "offline" or "backend:". Step 4: the box border and background get slightly lighter, as in U-02. (Before the late night update of Oct 10 the demo had a card in place of the dashed box: "This is the in-browser demo.", with a link to the repository. If you still see that card, you have an old copy of the demo: say so.)
 
 ![H-01](screenshots/96-demo-landing.jpg)
 ![H-01 the dashed box and the grey line under it, enlarged](screenshots/97-demo-drop-box.jpg)
@@ -2422,7 +2422,7 @@ The first photo you give the demo downloads a depth model (about 25 MB), so the 
 
 1. Click the dashed box and choose `testing/photos/02-object-coffee.jpg` (or any photo of your own). Wait for the lit photo. 2. Click **New photo**. Drag `03-animal-cat.jpg` from a folder over the dashed box, hold it there, then let go. 3. Click **New photo**. Copy a picture (as in U-04), click an empty part of the page and press Cmd+V or Ctrl+V. 4. Click **New photo**. Reload the page. Do not use the mouse: press Tab again and again, and press Enter when the dashed box has the yellow outline.
 
-**Expected:** step 1: the click opens your computer's file chooser, which offers pictures only (iPhone photos ending in `.heic` are offered too: H-13). After choosing, the workspace appears with the photo dimmed and a label on it (its words are listed in P-10). Then the photo brightens, lit from the left, with the sun near its left edge and the readout x 0.12, y 0.35. Step 2: while the file is over the box, the border turns yellow and the background gets a yellow tint. After dropping, the cat loads and is lit. Step 3: the pasted picture loads and is lit. In all three there is no red bar, no card, and the pill stays green. Step 4: Tab goes to the "Relight" logo, "How it works", the dashed box (yellow outline), then Portrait, Coffee cup, Cat, Rocket. Enter on the dashed box opens the file chooser. (Before the late night update of Oct 10 the demo took no photo at all. This case was written from the code and from screenshots; nobody has dropped or pasted on the demo by hand.) The other drop and paste cases, U-06, U-13 to U-15 and U-23 to U-25, behave the same on the demo.
+**Expected:** step 1: the click opens your computer's file chooser, which offers pictures only (iPhone photos ending in `.heic` are offered too: H-13). After choosing, the workspace appears with the photo dimmed and a label on it (its words are listed in P-10). Then the photo brightens, lit from the left, with the sun near its left edge and the readout x 0.12, y 0.35. Step 2: while the file is over the box, the border turns yellow and the background gets a yellow tint. After dropping, the cat loads and is lit. Step 3: the pasted picture loads and is lit. In all three there is no red bar, no card, and the pill stays green. Step 4: Tab goes to the "Relight" logo, "How it works", the dashed box (yellow outline), then the **SAMPLES** tab (since the drafts update of Oct 11), then Portrait, Coffee cup, Cat, Rocket. Enter on the dashed box opens the file chooser. (Before the late night update of Oct 10 the demo took no photo at all. This case was written from the code and from screenshots; nobody has dropped or pasted on the demo by hand.) The other drop and paste cases, U-06, U-13 to U-15 and U-23 to U-25, behave the same on the demo.
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -2456,7 +2456,7 @@ Use a real phone if you have a hosted address: type the address into the phone's
 
 1. Open the demo address. 2. Tap the **Cat** sample. 3. Drag the sun with a finger. Tap **Left**, **Right**, **Sweep**. 4. Scroll down the whole page. Tap the **GEOMETRY** row. Read the last grey line, which starts "shading:", and copy it into your report.
 
-**Expected:** step 1: one column. The top bar holds the logo, "Relight", "How it works" and a short pill that reads only "demo", with a green dot. Title, the "Upload a photo or pick a sample. Its depth…" paragraph, the dashed box (its second line wraps onto two lines), the grey line "Your photo stays on this device…" on three lines, "Or try a sample photo:" and the four thumbnails in one row with readable labels. Step 2: a short stage with **New photo** at its top right, the cat, and the two buttons under it; the LIGHT panel starts right below. Step 3: the sun follows the finger and the lighting follows the sun; the page does not scroll while you drag on the stage. Step 4: LIGHT with the five preset buttons on one line; a short ENHANCE panel (the reason line and a greyed button, no text box); GEOMETRY open with the two pictures, the dull **Detailed normals** switch with its "Always on…" line, the size line "451 x 300 px, relief 0.3" and under it the shading line. On most phones it should read "shading: graphics chip, full quality"; any other wording is a result we badly want (see the table at the top of group F). A grey note above the photo that starts "Shading on this device's processor" is not a failure: the photo should still follow the sun (H-07). Nothing is cut off at the sides and the page does not scroll sideways. If the picture is black, blocky or does not react on your phone, that is the most important thing to report: see W-16 for what to write down. Your **own** photo on the phone is H-12: do that one first.
+**Expected:** step 1: one column. The top bar holds the logo, "Relight", "How it works" and a short pill that reads only "demo", with a green dot. Title, the "Upload a photo or pick a sample. Its depth…" paragraph, the dashed box (its second line wraps onto two lines), the grey line "Your photo stays on this device…" on three lines, a row of two tabs with a thin line under it (**SAMPLES**, yellow, and **DRAFTS**; new in the drafts update of Oct 11, M-14), "Or try a sample photo:" and the four thumbnails in one row with readable labels. Step 2: a short stage with **New photo** at its top right, the cat, and the two buttons under it; the LIGHT panel starts right below. Step 3: the sun follows the finger and the lighting follows the sun; the page does not scroll while you drag on the stage. Step 4: LIGHT with the five preset buttons on one line; a short ENHANCE panel (the reason line and a greyed button, no text box); GEOMETRY open with the two pictures, the dull **Detailed normals** switch with its "Always on…" line, the size line "451 x 300 px, relief 0.3" and under it the shading line. On most phones it should read "shading: graphics chip, full quality"; any other wording is a result we badly want (see the table at the top of group F). A grey note above the photo that starts "Shading on this device's processor" is not a failure: the photo should still follow the sun (H-07). Nothing is cut off at the sides and the page does not scroll sideways. If the picture is black, blocky or does not react on your phone, that is the most important thing to report: see W-16 for what to write down. Your **own** photo on the phone is H-12: do that one first.
 
 ![H-05 first page](screenshots/101-demo-phone-landing.jpg)
 ![H-05 the top bar, enlarged: the pill reads only "demo"](screenshots/144-demo-phone-top-bar.jpg)
@@ -2470,7 +2470,7 @@ Use a real phone if you have a hosted address: type the address into the phone's
 
 1. Add `relight/` to the end of the demo address and open it. 2. Click a sample, change the light, then reload the page. 3. Click a sample, then click the "Relight" logo in the top bar. Look at the address bar. 4. Click a sample, then press the browser's Back button. 5. Replace `relight/` in the address with `nothing-here/` and open it.
 
-**Expected:** step 1: the same first page. Step 2: after the reload the first page shows; nothing is remembered. Step 3: the logo leads to the demo's own first page. The address still contains the demo's folder (for example `/BanannaHacksSubmission/`); it does not jump to the top of the web host. Step 4: Back leaves the demo for whatever page was open before it, because choosing a sample adds no step to the browser's history (the same as J-09). Step 5: on GitHub Pages, a black page with "404 | This page could not be found." under the Relight top bar, as in screenshot 53. On another host you may get that host's own "not found" page. Write down which you got. (This case was written from the code and not run on a real host.)
+**Expected:** step 1: the same first page. Step 2: after the reload the first page shows; a sample and its light are not remembered. (A photo of your own is kept as a draft since the drafts update of Oct 11: M-08.) Step 3: the logo leads to the demo's own first page. The address still contains the demo's folder (for example `/BanannaHacksSubmission/`); it does not jump to the top of the web host. Since the drafts update of Oct 11 the logo shows the first page in place, without loading the page again, so the address does not change at all (M-01). Step 4: Back leaves the demo for whatever page was open before it, because choosing a sample adds no step to the browser's history (the same as J-09). Step 5: on GitHub Pages, a black page with "404 | This page could not be found." under the Relight top bar, as in screenshot 53. On another host you may get that host's own "not found" page. Write down which you got. (This case was written from the code and not run on a real host.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -2580,3 +2580,221 @@ New in the early morning update of Oct 11. The demo has no server, so the browse
 ![H-13 step 2: the HEIC portrait in the demo, Left](screenshots/191-demo-heic-photo.jpg)
 
 `Result: PASS / FAIL / NOT RUN` Device, browser and note:
+
+---
+
+## M. Drafts and the logo
+
+New in the drafts update of Oct 11, in the afternoon. The owner asked for it. Two things changed.
+
+- **The "Relight" logo takes you back to the first page.** From anywhere in the app, a click on the logo in the top bar shows the first page, without loading the page again. Until now the logo did nothing on the page itself.
+- **A photo of your own is kept as a draft.** A draft is the photo, the shape the app worked out for it, and the light where you left it. Drafts are kept in your browser, on your device only. The first page has a new tab, **Drafts**, that lists them. Click one and it opens as you left it, with no wait.
+
+**Words used in this group.** *A photo of your own*: a photo you chose, dropped or pasted, or one fetched from a picture's address. The four samples never become drafts: they open at once anyway. *The two tabs*: the small words **SAMPLES** and **DRAFTS** under the dashed box. On a computer they sit at the right end of the line "Or try a sample photo:". On a window narrower than 640 pixels (a phone) they are a row of their own above that line. *A card*: one draft in the **DRAFTS** tab, with a small picture, a name and a time.
+
+**What you need.** No backend: every case but M-16 works the same in the normal app, in Plan B and on the hosted demo. On the hosted demo, look at the first page first. If it has no **SAMPLES** and **DRAFTS** under the dashed box, reload it. If they are still missing, the demo online is older than this update (the log in [PENDING.md](PENDING.md#log) says which version is online): use your own copy. Use a normal browser window, not a private one, except in M-13.
+
+**Starting clean.** Drafts stay from one case to the next, and from one day to the next. Where a case says "start clean": click **DRAFTS**, then **Delete all drafts** and **Delete** (with one draft only, click the **Delete** on its card).
+
+**What has been checked.** Everything in this group was run by the developer in Chrome on one Mac, without a window, with a program doing the clicking. No person has tried any of it, and no other browser and no phone has. What is known and meant is K77 to K90 in [PENDING.md](PENDING.md#already-known-no-need-to-report).
+
+### M-01 The logo takes you back to the first page
+
+1. Click the **Portrait** sample. Click **Right**. 2. Click the "Relight" logo in the top bar: the yellow square or the word. Watch the pill and the address bar while you do. 3. Choose `testing/photos/01-portrait-astronaut.jpg` through the dashed box and wait until it is lit. Click **Left**. Click the logo. 4. Click the **Coffee cup** sample. Click **Sweep** and, while the sun is travelling, click the logo. Wait ten seconds. 5. Only where Enhance works (not on the demo): click the **Cat** sample, click **Enhance**, wait for the split picture, then click the logo. 6. Click the **Cat** sample. Hold Cmd (macOS) or Ctrl (Windows) and click the logo.
+
+**Expected:** steps 2 to 5: each click on the logo shows the first page at once: the dashed box, the two tabs with **SAMPLES** selected (yellow, with a yellow line under it), and the four thumbnails. The page is **not loaded again**: the address in the address bar does not change, the browser's tab shows no loading mark, and in the normal app the pill does not read "checking" for a moment. Step 3: the tab now reads **DRAFTS** with a small number beside it (**1** if you had no drafts before), because your photo was kept on the way out (M-05). Step 4: the sweep is given up. In the ten seconds nothing moves, no red bar appears and the photo does not come back. Step 5: the Enhance result goes with the photo. After every step the next photo or sample opens normally and starts with the light at x 0.12, y 0.35. Step 6: a **new browser tab** opens with the first page, as for any link, and the tab you were in keeps the cat and its light.
+
+FAIL: the logo does nothing; the page is loaded again; a red bar; a photo that comes back by itself.
+
+Known: the logo does not ask first. A sample's light is gone afterwards, as after **New photo**; only a photo of your own is kept (K77, K83).
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-02 The logo while a photo is still being analysed
+
+This needs a quick hand. In Plan B and on the demo the first photo after a reload gives the most time. If the photo is lit before you can click, mark NOT RUN and say so.
+
+1. Choose `testing/photos/08-huge-astronaut-3000px.jpg`. As soon as the photo shows dimmed with a label on it ("Estimating depth and surface normals…", or in Plan B and on the demo one of the lines listed in P-10), click the logo. 2. Wait ten seconds. Click **DRAFTS**. 3. Click **SAMPLES**. Choose the same file again and this time let it finish.
+
+**Expected:** step 1: the first page shows at once. The analysis is given up, exactly as **New photo** gives it up. Step 2: nothing happens by itself: the photo does not open after all, and no red bar appears. The **DRAFTS** tab has no card for that photo, because a photo becomes a draft only once it has been lit. Step 3: the photo is analysed normally and is lit.
+
+Known: while the **dashed box itself** still reads "Reading image…" or "Converting your photo…", the logo cannot stop it. The first page is already showing then, and the photo opens when it has been read (K85).
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-03 The logo with the "How it works" card open
+
+1. Click the **Portrait** sample. Click **Left**. Click "How it works". 2. Click on the dimmed logo, in the top-left corner of the window, outside the card. 3. Click the **Portrait** sample again and click **Left**. Open "How it works" and click on the dimmed page somewhere else, for example on the dimmed sidebar. 4. Open "How it works" once more. Press Escape. Click the logo. 5. On a phone, or a window narrower than 640 pixels, where the card fills the screen: click a sample, open "How it works", and tap the top-left corner, where the logo lies under the card.
+
+**Expected:** step 2: the card closes **and** the first page shows, with **SAMPLES** selected. Step 3: the card closes and nothing else happens: the astronaut is still there with x -0.10, y 0.40 (the same as G-03 step 2). Step 4: Escape closes the card and the photo stays; the logo then shows the first page. Step 5: nothing happens and the card stays open, because on a phone it covers the top bar. Tap **Close**, then the logo.
+
+FAIL: a click on the dimmed logo that only closes the card and leaves the photo on screen; a click elsewhere on the dimmed page that leaves the photo.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-04 The logo and the two tabs with the keyboard
+
+Do not use the mouse.
+
+1. Reload the first page. Press Tab four times, slowly. 2. Press the Right arrow. Press it again. Press the Left arrow. Press End, then Home. 3. Press Tab, then Enter: the Portrait sample opens. 4. Hold Shift and press Tab until the "Relight" logo is selected (it is the first stop of the page). Press Enter. 5. If you have a draft (M-05 makes one): press Tab until **SAMPLES** has the yellow outline, press the Right arrow, then press Tab twice, slowly. Press Shift+Tab once, then Enter.
+
+**Expected:** step 1: the Tab key stops on the logo, on "How it works", on the dashed box, and then on the word **SAMPLES**, which gets a yellow outline. The two tabs are **one** stop: the Tab key reaches the selected one only. Step 2: the Right arrow selects **DRAFTS**: it turns yellow with a yellow line under it, the outline moves to it, and its content shows in place of the thumbnails. The Right arrow again goes round to **SAMPLES**. The Left arrow goes round the other way, to **DRAFTS**. End selects **DRAFTS** and Home selects **SAMPLES**. The page does not scroll. Step 3: the next Tab after **SAMPLES** is the **Portrait** thumbnail, and Enter opens it. Step 4: Enter on the logo shows the first page, exactly as a click does (M-01), without loading the page again. Step 5: from the **DRAFTS** tab, the first Tab puts the outline on the first card and the second on that card's **Delete**. Shift+Tab goes back to the card, and Enter opens the draft. With no drafts, the Tab after **DRAFTS** puts an outline round the grey sentence "No drafts yet. …". In Safari the Tab key may skip buttons unless "Press Tab to highlight each item" is on in Safari's settings; say so if it does.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-05 A draft is made for a photo of your own, and not for a sample
+
+1. Start clean. Click the **Cat** sample. Click **Left**. Click the logo and look at the two tabs. 2. Choose `testing/photos/01-portrait-astronaut.jpg`. When it is lit, click **Low and warm**. Click the logo. 3. Click **DRAFTS**. 4. Click **SAMPLES**. Drag `testing/photos/02-object-coffee.jpg` onto the dashed box. When it is lit, click **New photo** this time, not the logo. 5. Copy a picture (as in U-04) and paste it on the first page. When it is lit, click the logo. Click **DRAFTS**.
+
+**Expected:** step 1: the tab reads **DRAFTS** with no number. A sample is never kept. Step 2: back on the first page the tab reads **DRAFTS** with a small **1**. Step 3: one card: a small picture of the astronaut **in the warm orange light**, the name "01-portrait-astronaut" and, in grey, "just now". Step 4: **New photo** keeps the draft too: the first page comes back and the tab reads **DRAFTS 2**. Step 5: **DRAFTS 3**, and three cards. The newest is first, at the left. The pasted one has no file name of its own. Its card is named "Pasted photo", or whatever name your browser gives a pasted picture (in Chrome most likely "image"). Write down what yours says, and the browser.
+
+FAIL: a card for a sample; no card for a photo of your own that was lit; a card whose small picture shows another photo.
+
+A photo becomes a draft the moment it is first lit, so the logo is not needed for that: M-08 closes the page with the photo still open.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-06 The Drafts tab: its words, the number and the cards
+
+1. Start clean. Click **DRAFTS**. Read the grey sentence. 2. Make two drafts as in M-05 steps 2 and 4. Click **DRAFTS**. 3. Move the mouse over a card, then over its **Delete**. Do not click. 4. Leave the page on the **DRAFTS** tab for two minutes and read the times again.
+
+**Expected:** step 1: **DRAFTS** turns yellow with a yellow line under it and **SAMPLES** turns grey. The line "Or try a sample photo:" and the four thumbnails give way to one grey sentence, and the rest of the page does not move. In Plan B and on the demo the sentence reads: "No drafts yet. A photo you upload is kept here, on this device, with the light where you left it. Nothing is uploaded." In the normal app, with a backend, its last part is different: "… The draft is not sent anywhere." (There the photo itself goes to the Relight server on your own computer to be analysed, so "Nothing is uploaded" would not be true.) Step 2: the tab reads **DRAFTS** with a small **2** in a rounded patch. Two cards side by side, the one changed last at the left. A computer shows four cards to a row, a phone two. Each card has:
+- a small picture of the photo **as you lit it**, not the plain photo, cropped to the card's shape;
+- the name: the file's name without its ending, for example "02-object-coffee" (a long name is cut short with "…");
+- in grey, when it was last changed: "just now", then "1 minute ago", "5 minutes ago", "1 hour ago", "3 hours ago", "yesterday", and after that a date in your computer's own style, such as "October 9" (with the year, if it was another year);
+- a small button **Delete** in its top right corner.
+
+Under the cards, small and grey: "Kept in this browser, on this device only. The 12 most recent are kept." At the right of that line, with two or more drafts: **Delete all drafts**. Step 3: the card's border turns yellow under the mouse; the **Delete** button gets darker. Step 4: "just now" has become "1 minute ago" or "2 minutes ago" without a reload.
+
+Known: with drafts on the tab, the part of the page above the tabs moves up a little when you switch to **DRAFTS** (about 30 pixels on a 1440 x 900 window), and back when you switch to **SAMPLES** (K86).
+
+![M-06 step 1: no drafts (taken with a backend, so the sentence ends "The draft is not sent anywhere.")](screenshots/192-drafts-empty.jpg)
+![M-06 step 2: here with three drafts](screenshots/193-drafts-cards.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-07 Opening a draft: the same light and the same picture, with no wait
+
+1. Choose `testing/photos/01-portrait-astronaut.jpg`. When it is lit: click **Low and warm**, switch **Cast shadows** off, and drag the sun to the middle of the photo. Take a screenshot of the whole window. 2. Click the logo. Click **DRAFTS**. Click the card (anywhere but its **Delete**). 3. Compare with your screenshot. Open GEOMETRY. 4. Click **Sweep** and let it finish. Hold **Hold to see original**. Click **Export PNG** and open the file. 5. Click **New photo**.
+
+**Expected:** step 2: the workspace opens **at once**, with the photo lit. There is no dimmed photo, no "Estimating depth and surface normals…" and no "Downloading the depth model…". (For an instant the words "Preparing the shader…" can show, as for a sample.) Step 3: everything is as you left it: the same photo, the sun in the same place, the same x and y, Height, Intensity, Ambient and Colour (warm 100, an orange dot), and **Cast shadows** still off. The picture looks the same as in your screenshot. GEOMETRY shows this photo's Depth and Normals pictures and the same size line. For a photo whose shape your browser worked out, the "depth:" line is there too, with the words it had before. Step 4: everything works as on any photo. The sweep goes round once and gives the light back, the plain photo shows while the button is held, and `relit.png` matches the screen, without the sun. Step 5: the first page comes back with the **DRAFTS** tab still selected. (**New photo** returns to the tab the photo was opened from. The logo always returns to **SAMPLES**.)
+
+Opening a draft and changing nothing does not count as a change: its time and its place in the row stay as they were.
+
+FAIL: any wait with a label on a dimmed photo; a light, a slider or a switch that is not as you left it; another photo.
+
+![M-07 step 2: a draft opened again after a reload, with its Low and warm light](screenshots/194-draft-opened.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-08 A reload, and closing the browser, keep the drafts
+
+1. Start clean. Choose a photo of your own. When it is lit, click **Left**. Do **not** click the logo. Reload the page (Cmd+R or Ctrl+R). 2. Click **DRAFTS**. Click the card. 3. Drag the sun somewhere else and, within a second, close the browser tab. Open the app again in a new tab. Click **DRAFTS** and open the card. 4. Close the whole browser, open it again, open the app and look at **DRAFTS**. If you can, look once more tomorrow.
+
+**Expected:** step 1: after the reload the first page shows with **SAMPLES** selected, as it always did (J-04), and the tab reads **DRAFTS 1**. Step 2: the photo opens at once, lit from the left as you left it. Step 3: the draft opens with the sun where you dragged it, or where it was about a second before. Both are a PASS: the page saves a moment after the last change (0.8 seconds) and once more as the tab closes, as far as the browser allows. Write down which you got, and the browser. Step 4: the draft is still there, with the same light.
+
+Not kept, and meant so (K81): an **Enhance** result, the words typed in the ENHANCE box, and whether GEOMETRY was open. After opening a draft the stage has no tabs and the button reads **Enhance**.
+
+FAIL: no card after the reload; a card that opens with the starting light (x 0.12, y 0.35) when you had moved it and waited more than a second.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-09 The same photo twice is one draft
+
+1. Start clean. Choose `testing/photos/01-portrait-astronaut.jpg`. When it is lit, click **Right**. Click the logo. 2. Choose the **same file** again. 3. Click the logo. Click **DRAFTS**. 4. Click **SAMPLES**. Choose `testing/photos/05-tall-astronaut-crop.jpg`, which is another picture of the same person. When it is lit, click the logo.
+
+**Expected:** step 2: the photo is analysed again and starts with the starting light, x 0.12, y 0.35, **not** with **Right**. Choosing a file always starts fresh (U-08). Step 3: there is still **one** card for it and the tab reads **DRAFTS 1**. The card now shows the starting light: the new one took the old one's place. Step 4: another picture is another draft: **DRAFTS 2**.
+
+Known, and worth an opinion (K82): to get a photo back **with its light**, open it from the **DRAFTS** tab. Choosing the file again throws that light away. Write down whether you expected that.
+
+FAIL: two cards for the same file.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-10 The thirteenth draft pushes out the oldest
+
+About ten minutes. You need thirteen different pictures: the kit's eleven (`01` to `11` in `testing/photos`; the three `.heic` ones need the internet the first time, except in Safari) and two of your own. Screenshots will do.
+
+1. Start clean. Choose the first picture; when it is lit, click the logo. Do the same for twelve pictures in all. Write down the first two you chose. 2. Click **DRAFTS**. 3. Click the **last** card, which is the first picture you chose. Click **Left**. Click the logo. 4. Choose the thirteenth picture. When it is lit, click the logo. Click **DRAFTS**.
+
+**Expected:** step 2: the tab reads **DRAFTS 12**, with twelve cards in three rows of four, newest first. Step 3: back on the first page (click **DRAFTS** again to look), that card is now the first, because it was changed last. Step 4: still twelve cards and **DRAFTS 12**. The thirteenth picture is first. The **second** picture you chose is gone: it was the one changed longest ago. The first picture you chose is still there, because step 3 changed it. No message says that a draft was dropped (K78).
+
+FAIL: thirteen cards; the picture you changed in step 3 gone; a red bar.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-11 Delete on one card
+
+1. Make three drafts (M-05). Click **DRAFTS**. 2. Click **Delete** on the middle card. 3. Click the small picture of another card. Then click the logo and **DRAFTS**. 4. Reload the page. Click **DRAFTS**.
+
+**Expected:** step 2: that card goes at once, with no question. The other two stay and the number drops to **2**. The page stays on the first page, on the **DRAFTS** tab: the deleted photo does **not** open. Step 3: a click on a card opens its draft and deletes nothing: both cards are still there afterwards. Step 4: the deleted draft is still gone. There is no way to get it back (K84).
+
+FAIL: **Delete** opens the photo; a click on a card deletes it; the deleted draft is back after the reload; another card goes too.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-12 Delete all drafts, and its question
+
+1. Make three drafts (M-05). Click **DRAFTS**. Click **Delete all drafts**. 2. Click **Keep**. 3. Click **Delete all drafts** again. Click **Delete** beside the question. 4. Reload the page. Click **DRAFTS**. 5. Make one draft and look for **Delete all drafts**.
+
+**Expected:** step 1: nothing is deleted yet. In place of the button is the question "Delete all 3 drafts?" (with your number) and two buttons, **Delete** and **Keep**. On a narrow window the question drops to a line of its own. Step 2: the question goes, **Delete all drafts** is back, and all three cards are still there. Step 3: all cards go. The tab reads **DRAFTS** with no number and the sentence "No drafts yet. …" shows. Step 4: still none. Step 5: with a single draft there is no **Delete all drafts**: the **Delete** on its card does the same.
+
+FAIL: anything deleted before you clicked **Delete** beside the question; a draft left after it; drafts back after the reload.
+
+![M-12 step 1: the question, enlarged](screenshots/195-drafts-delete-all.jpg)
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### M-13 A private window: no drafts, and the page works as before
+
+A private window is "New Incognito Window" in Chrome, "New InPrivate window" in Edge and "New Private Window" in Firefox and Safari. The developer did not run this in any real private window: the ways a browser can refuse to keep things were imitated by a program in Chrome. So write down what **your** browser did, with its name and version.
+
+1. Open a private window and open the app in it. Click **DRAFTS** and read what it says. 2. Click **SAMPLES**. Click the **Portrait** sample, drag the sun, click **Sweep**. Click the logo. 3. Choose a photo of your own. When it is lit, click **Left**, then the logo, then **DRAFTS**. 4. Close the private window. Open a new private window, open the app and click **DRAFTS**. 5. Open the app in a normal window and click **DRAFTS**.
+
+**Expected:** whatever the browser does about keeping things, **the app works**: step 2 and the lighting in step 3 behave as always, and there is **no red bar** at any time. For the drafts, one of two things happens, depending on the browser. Say which.
+- (a) The browser lets a private window keep things until it is closed. Step 1 reads "No drafts yet. …", step 3 shows the card, and in step 4 it is gone.
+- (b) The browser refuses. In step 1 or after step 3 the tab shows one grey line and no card: "Drafts cannot be kept in this browser. Everything else works without them." (If the browser does not answer at all, the tab can stay empty for five seconds before that line shows.)
+
+Step 5: a photo from the private window never shows in the normal window, and the normal window's drafts never showed in the private one.
+
+FAIL: a red bar about drafts; a photo that will not load or light; a page that stops reacting; a private window's photo in a normal window.
+
+`Result: PASS / FAIL / NOT RUN` Browser, (a) or (b), and note:
+
+### M-14 Drafts on a phone
+
+Use a real phone if you can: the hosted demo (if its first page has the two tabs), or your computer's address as in W-16 step 8. Otherwise imitate a phone, 390 x 844 and then 320 wide (group W). Say which you used, and the phone model and browser.
+
+1. Open the first page. Look under the dashed box. 2. Choose a photo from the phone's gallery. When it is lit, tap **Left**. Tap the logo. 3. Tap **DRAFTS**. 4. Tap the card. 5. Tap the logo. Make a second draft. Tap **DRAFTS**, **Delete all drafts**, then **Keep**. Then tap **Delete** on one card. 6. Close the browser app completely. Open it again, open the page and tap **DRAFTS**.
+
+**Expected:** step 1: the two tabs are a row of their own, between the dashed box (in Plan B and on the demo: the grey lines under it) and the line "Or try a sample photo:". **SAMPLES** is yellow with a yellow line under it, and a thin grey line runs under the whole row. Nothing is cut off at the sides and the page does not scroll sideways, at 320 wide too. Step 2: the first page comes back at once and the tab reads **DRAFTS 1**. Step 3: cards two to a row, each with its picture, name, time and **Delete**. Under them the grey line "Kept in this browser, on this device only. The 12 most recent are kept." Step 4: the draft opens at once, lit from the left. Step 5: the question "Delete all 2 drafts?" and its two buttons fit on the screen, on a line of their own. **Keep** deletes nothing. **Delete** on a card removes that card only. Step 6: the remaining draft is still there.
+
+**Write down:** whether the **Delete** on a card is easy to hit without opening the card (it is 28 pixels high, which is small for a finger); whether anything felt slow after tapping the logo; and what step 6 gave. A phone keeps less than a computer and may clear a site's stored things by itself (K79).
+
+`Result: PASS / FAIL / NOT RUN` Phone, browser and note:
+
+### M-15 Nothing about a draft is sent anywhere
+
+In Plan B or on the hosted demo. (In the normal app the photo itself is sent to the Relight server on your own computer to be analysed. The draft is not, and way 2 shows that as well.) Do either way.
+
+**Way 1: with the Wi-Fi off.** 1. Choose a photo of your own and wait until it is lit. (This first step needs the internet: it downloads the depth model.) 2. Switch the Wi-Fi off, or put the phone in flight mode. Do **not** reload the page: the page itself comes from the internet. 3. Move the light. Click the logo. Click **DRAFTS** and click the card. Move the light again, click the logo, and open the draft once more. 4. Switch the Wi-Fi on again.
+
+**Way 2: the browser's network list, on a computer.** 1. Choose a photo of your own and wait until it is lit. 2. Press F12 (macOS: Cmd+Option+I) and click **Network**. Click the small round "clear" button at the top left of that panel, so the list is empty. 3. Move the light. Click the logo. Click **DRAFTS**. Click the card. 4. Read the list.
+
+**Expected:** way 1: everything in step 3 works with no connection. The draft is kept, listed and opened again, lit as you left it. So nothing about it goes to the internet or comes from it. Way 2: no line in the list carries your photo. In Plan B and on the demo the list stays empty, or holds only the four sample thumbnails coming back (`thumb.jpg`). In Plan B the development server can add small lines of its own. In the normal app there is also a line `health` every ten seconds: that is the pill asking the backend how it is. There must be **no** line named `scene`, `render` or `enhance`, and no line to another web site.
+
+FAIL: a draft that does not open with the Wi-Fi off; a line named `scene`, `render` or `enhance`, or a line to another site, in way 2.
+
+`Result: PASS / FAIL / NOT RUN` Way 1 or 2, and note:
+
+### M-16 An opened draft with the backend: Enhance and Detailed normals
+
+Only in the normal app, with the pill reading "backend: online, mock providers". Not in Plan B and not on the demo.
+
+1. Choose `testing/photos/01-portrait-astronaut.jpg`. When it is lit, click **Left**. Click the logo, **DRAFTS**, and the card. 2. Click **Enhance**. 3. Click the **Live preview** tab. Open GEOMETRY and click the **Detailed normals** switch off. Wait until the Normals picture has changed. 4. Click the logo and look at the number beside **DRAFTS**. Click **DRAFTS** and the card. Open GEOMETRY. 5. Stop the backend (click terminal 1, press Ctrl+C). Click the **Detailed normals** switch. Click the X on the red bar. Click **Enhance**. 6. Start the backend again (SETUP step 5).
+
+**Expected:** step 2: Enhance works as on any photo: "Enhancing…", then the split picture. It can take a few seconds longer than usual, because the page first sends the photo to the backend again: the backend may have forgotten a photo from an earlier visit. Step 3: the photo stays lit on screen while the backend analyses it again. Then the Normals picture is the smooth lilac kind and the switch is off. Step 4: the number has not changed: it is the same draft, brought up to date. It opens with **Detailed normals** off and the smooth Normals picture. Step 5: the photo stays lit and a red bar above it reads "Cannot reach the backend at http://localhost:8000. Is it running? The draft keeps the geometry it was saved with." The switch goes back to off. After **Enhance** the red bar reads "Enhance needs the backend, which cannot be reached at http://localhost:8000. The live preview and Export PNG still work without it.", the same words a sample gets (K31).
+
+Known (K87): Enhance on a draft always starts from detailed normals, also when the draft was saved with **Detailed normals** off, so the enhanced half can show a little more surface detail than the live preview. A sample and a photo analysed in the browser do the same (K54).
+
+`Result: PASS / FAIL / NOT RUN` Note:

@@ -248,6 +248,22 @@ Delete the rows for groups you did not run. Result is PASS, FAIL or NOT RUN.
 | H-11 | | |
 | H-12 | | |
 | H-13 | | |
+| M-01 | | |
+| M-02 | | |
+| M-03 | | |
+| M-04 | | |
+| M-05 | | |
+| M-06 | | |
+| M-07 | | |
+| M-08 | | |
+| M-09 | | |
+| M-10 | | |
+| M-11 | | |
+| M-12 | | |
+| M-13 | | |
+| M-14 | | |
+| M-15 | | |
+| M-16 | | |
 
 ## Picture quality (group Q)
 

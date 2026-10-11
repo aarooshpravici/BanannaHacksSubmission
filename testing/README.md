@@ -25,7 +25,7 @@ Short on time? Read [TEST_FIRST.md](TEST_FIRST.md): one page saying what to test
 | Your share of the full plan ([TEST_PLAN.md](TEST_PLAN.md)) | 1.5 to 3 hours |
 | The whole plan alone | 5 to 6 hours |
 
-The plan has **211 test cases** in 17 groups. Some need a key, a touch screen or a second browser, and some can only be done if your device happens to take a rare path; skip those you cannot do and mark them NOT RUN.
+The plan has **227 test cases** in 18 groups. Some need a key, a touch screen or a second browser, and some can only be done if your device happens to take a rare path; skip those you cannot do and mark them NOT RUN.
 
 If setup fails, that is a result too. Report it (see [Reporting](#reporting-what-you-found)) and switch to "Plan B" in [SETUP.md](SETUP.md#plan-b-no-backend-mock-mode).
 
@@ -41,7 +41,7 @@ If setup fails, that is a result too. Report it (see [Reporting](#reporting-what
 | [Reporting what you found](#reporting-what-you-found) (bottom of this page) | The two links for reporting a bug or a finished test run, and how to take a screenshot |
 | [results/TEMPLATE.md](results/TEMPLATE.md) | Results form to fill in **only** if you cannot use GitHub |
 | [photos/](photos/README.md) | The test photos. Everyone uses the same ones. The first four are also built into the app as the samples Portrait, Coffee cup, Cat and Rocket |
-| [screenshots/](screenshots/) | What each screen should look like: 191 pictures, all taken early on Sunday Oct 11 on a Mac in Chrome (every one retaken and 16 added in that morning's update; 11 of them retaken at midday for the rim fix), window 1440 x 900 unless the test case says otherwise |
+| [screenshots/](screenshots/) | What each screen should look like: 195 pictures, nearly all taken early on Sunday Oct 11 on a Mac in Chrome (every one retaken and 16 added in that morning's update; 11 of them retaken at midday for the rim fix; the 22 that show the first page retaken and 4 added in the afternoon, for the drafts update), window 1440 x 900 unless the test case says otherwise |
 
 ## Splitting the work between three testers
 
@@ -50,9 +50,11 @@ Everyone does the smoke test first. Then pick one share and say which in your re
 | Share | Groups in [TEST_PLAN.md](TEST_PLAN.md) |
 | --- | --- |
 | A | Upload (U), Scene preparation (P), Moving the light (L), Controls (C), The "How it works" panel (G) |
-| B | Shadows (S), Compare (K), Enhance (E), Export (X), Picture quality (Q) |
+| B | Shadows (S), Compare (K), Enhance (E), Export (X), Picture quality (Q), Drafts and the logo (M) |
 | C | Layout (W), Kinds of photos (T), Errors (R), Shading paths (F), Speed (D), What a judge would try (J) |
 | Everyone, if an address was given | Hosted demo (H). On a real phone if you have one |
+
+**New in the drafts update of Oct 11, in the afternoon, after the owner asked for it:** the "Relight" logo takes you back to the first page, and a photo of your own is kept as a draft, in your browser, on your device only, with the light where you left it. The first page has two new tabs under the dashed box, **SAMPLES** and **DRAFTS**. No person has tried any of this yet. Everyone, whatever their share: do the two-minute run at the top of [TEST_FIRST.md](TEST_FIRST.md) (cases **M-01**, **M-05**, **M-07** and **M-08**), on every browser and device you have. The rest of the new group M belongs to share B. What is known and meant is K77 to K90 in [PENDING.md](PENDING.md#already-known-no-need-to-report).
 
 **New in the rim fix of Oct 11, after a tester's report (issue 6):** a photo of your own no longer gets a bright and a dark rim round every object in it. If you have a photo taken outdoors, with things or people in front of open sky, choose it on the hosted demo, click **Left** and send a screenshot (step 5 of **Q-12**; two minutes, on any device). A rim round an object is now a bug to report. What the fix costs, and the few places where a thin rim can stay, are K72 to K75 in [PENDING.md](PENDING.md#already-known-no-need-to-report).
 
@@ -71,6 +73,8 @@ Everyone starts with **H-12** (your own photo with no backend, on your phone and
 - **Sidebar**: the column on the right with three panels: LIGHT, ENHANCE, GEOMETRY. GEOMETRY starts folded into one row; click the row to open it. On a phone-sized window the sidebar sits under the stage.
 - **Depth line**: a small grey line just above the shading line, only for a photo whose shape your browser worked out: "depth: this browser, graphics chip (WebGPU)" or "depth: this browser, processor (WebAssembly)". Since the depth check update of Oct 11 the words after "processor" can also give a reason, for example "(the graphics chip failed a check)"; case P-14 in the test plan lists every wording. With the backend, and for a sample, there is no such line.
 - **Sample**: one of the four small pictures on the first page (Portrait, Coffee cup, Cat, Rocket). Clicking one opens that photo at once. Samples need no backend.
+- **Draft**: a photo of your own that the page has kept in your browser, with the light where you left it. New in the drafts update of Oct 11. Drafts are on your device only; the samples never become drafts.
+- **SAMPLES and DRAFTS**: the two small tabs under the dashed box on the first page. **SAMPLES** shows the four samples. **DRAFTS** lists your drafts as small cards; a click on a card opens that photo as you left it. On a computer the two words sit at the right end of the line "Or try a sample photo:"; on a phone they are a row of their own.
 - **Backend**: the Python program that studies the photo. **Frontend**: the web page.
 - **Static demo** (or hosted demo): a copy of the web page made of plain files, with no backend anywhere. It has the four samples and takes your own photo; only Enhance is off. Its pill is green and reads "demo: runs in your browser".
 - **Preset**: one of the buttons **Left**, **Right**, **Top**, **Low and warm** in the LIGHT panel. Each puts the light at a fixed place. **Reset light**, beside them, puts the light back where a photo starts.
@@ -88,7 +92,7 @@ Record PASS or FAIL for each step. Report as one issue with the "finished test r
 **Where the test photos are.** In your home folder: `BanannaHacksSubmission`, then `testing`, then `photos`. macOS: in the file chooser press Cmd+Shift+H to jump to your home folder. Windows: type `%USERPROFILE%\BanannaHacksSubmission\testing\photos` in the address bar of the file chooser and press Enter. Wherever this kit says `testing/photos/...`, it means that folder.
 
 **Step 1. Open the page.** Go to http://localhost:3000.
-Expected: at the right end of the top bar, the words "How it works" and then the pill. Yellow words "MOVE THE LIGHT", the title "Relight a photo by dragging the light.", a dashed box "Drop a photo here", and under it "Or try a sample photo:" with four small pictures: Portrait, Coffee cup, Cat, Rocket. Now click "How it works": a dark card titled "How Relight works" opens over the dimmed page. Press the Escape key (or click **Close**): the card goes and the page is as before.
+Expected: at the right end of the top bar, the words "How it works" and then the pill. Yellow words "MOVE THE LIGHT", the title "Relight a photo by dragging the light.", a dashed box "Drop a photo here", and under it "Or try a sample photo:" with four small pictures: Portrait, Coffee cup, Cat, Rocket. At the right end of that line are two small tabs, **SAMPLES** (yellow) and **DRAFTS** (new in the drafts update of Oct 11). Now click "How it works": a dark card titled "How Relight works" opens over the dimmed page. Press the Escape key (or click **Close**): the card goes and the page is as before.
 
 ![Step 1: first page](screenshots/01-landing.jpg)
 ![Step 1: the "How it works" card](screenshots/105-how-it-works-open.jpg)
