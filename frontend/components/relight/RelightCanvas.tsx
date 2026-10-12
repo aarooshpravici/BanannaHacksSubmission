@@ -5,7 +5,7 @@ import { errorMessage } from "@/lib/api";
 import { base64ToBitmap } from "@/lib/image";
 import { CpuRelightRenderer, cpuSceneData } from "@/lib/relightCPU";
 import { RelightRenderer } from "@/lib/relightGL";
-import type { Light, RelightScene } from "@/lib/types";
+import type { FillLight, Light, RelightScene } from "@/lib/types";
 
 /**
  * How the picture on the canvas is being made, best first:
@@ -33,7 +33,7 @@ const CONTEXT_RESTORE_WAIT_MS = 2500;
 
 /** What the two renderers have in common. */
 interface Shader {
-  render(light: Light, shadows: boolean): void;
+  render(light: Light, shadows: boolean, fill: FillLight | null): void;
   dispose(): void;
 }
 
@@ -41,6 +41,8 @@ interface RelightCanvasProps {
   scene: RelightScene;
   light: Light;
   shadows: boolean;
+  /** The fill light, or null while it is switched off. */
+  fill: FillLight | null;
   /** The <canvas>, at the scene's pixel size, for export and snapshots. */
   canvasRef: RefObject<HTMLCanvasElement | null>;
   /** The scene is loaded and the first picture is drawn. Called again if the path changes later. */
@@ -56,11 +58,11 @@ interface RelightCanvasProps {
 
 /**
  * The live preview: the scene shaded on the GPU, or on the CPU where the GPU
- * cannot do it, redrawn whenever the light changes.
+ * cannot do it, redrawn whenever the light or the fill light changes.
  */
-export function RelightCanvas({ scene, light, shadows, canvasRef, onReady, onUnavailable, onFullRender, settleRef, className }: RelightCanvasProps) {
+export function RelightCanvas({ scene, light, shadows, fill, canvasRef, onReady, onUnavailable, onFullRender, settleRef, className }: RelightCanvasProps) {
   const renderer = useRef<Shader | null>(null);
-  const latest = useRef({ light, shadows });
+  const latest = useRef({ light, shadows, fill });
   const callbacks = useRef({ onReady, onUnavailable, onFullRender });
   // Bumped when the browser hands the GPU context back after losing it.
   const [generation, setGeneration] = useState(0);
@@ -107,7 +109,7 @@ export function RelightCanvas({ scene, light, shadows, canvasRef, onReady, onUna
             gpu = new RelightRenderer(canvas);
             mine = gpu;
             gpu.setScene({ width: scene.width, height: scene.height, relief: scene.relief, image, depth, normals });
-            gpu.render(latest.current.light, latest.current.shadows);
+            gpu.render(latest.current.light, latest.current.shadows, latest.current.fill);
           } catch (error) {
             // Never leave a blank canvas: say why in the console and hand over to the CPU.
             // That needs a fresh <canvas>, as this one is tied to WebGL for good.
@@ -153,7 +155,7 @@ export function RelightCanvas({ scene, light, shadows, canvasRef, onReady, onUna
         mine = cpu;
         renderer.current = cpu;
         if (settleRef) settleRef.current = () => cpu.whenSettled();
-        cpu.render(latest.current.light, latest.current.shadows);
+        cpu.render(latest.current.light, latest.current.shadows, latest.current.fill);
       } catch (error) {
         if (!cancelled) callbacks.current.onUnavailable(gpuProblem === null ? errorMessage(error) : `${gpuProblem}, and shading on the processor failed too: ${errorMessage(error)}`);
       } finally {
@@ -173,9 +175,9 @@ export function RelightCanvas({ scene, light, shadows, canvasRef, onReady, onUna
   }, [scene, canvasRef, settleRef, generation, gpuProblem]);
 
   useEffect(() => {
-    latest.current = { light, shadows };
-    renderer.current?.render(light, shadows);
-  }, [light, shadows]);
+    latest.current = { light, shadows, fill };
+    renderer.current?.render(light, shadows, fill);
+  }, [light, shadows, fill]);
 
   // A canvas that has given out a WebGL context can never give a 2D one: the key swaps it for a new element.
   return <canvas key={gpuProblem === null ? "gpu" : "cpu"} ref={canvasRef} width={scene.width} height={scene.height} className={className} />;

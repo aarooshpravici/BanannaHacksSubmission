@@ -41,6 +41,21 @@ class LightIn(BaseModel):
     color: tuple[float, float, float] = (1.0, 1.0, 1.0)
 
 
+class FillLightIn(BaseModel):
+    """A second, weaker light that lifts the shadows the main light leaves.
+
+    It has a place, a height, an intensity and a colour of its own. It casts no
+    shadow, and it has no ambient: that is shared, and is the main light's.
+    The defaults are the main light's defaults mirrored to the other side.
+    """
+
+    x: float = Field(0.8, description="0 = left edge, 1 = right edge; may go outside 0..1")
+    y: float = Field(0.2, description="0 = top edge, 1 = bottom edge")
+    height: float = Field(0.35, gt=0, le=2, description="distance in front of the subject, in image widths")
+    intensity: float = Field(0.6, ge=0, le=4)
+    color: tuple[float, float, float] = (1.0, 1.0, 1.0)
+
+
 class RelightSceneIn(BaseModel):
     image: str
     detail: bool = Field(True, description="use the detailed normals model (slower, much better)")
@@ -62,6 +77,7 @@ class RelightRenderIn(BaseModel):
     scene_id: str
     light: LightIn = LightIn()
     shadows: bool = True
+    fill: FillLightIn | None = Field(None, description="the fill light; absent or null = off")
 
 
 class RelightRender(BaseModel):
@@ -72,6 +88,7 @@ class RelightEnhanceIn(BaseModel):
     scene_id: str
     light: LightIn = LightIn()
     shadows: bool = True  # match the preview on screen, which can have cast shadows switched off
+    fill: FillLightIn | None = None  # and its fill light, when that is on
     prompt: str = ""
 
 

@@ -1,5 +1,5 @@
-// The CPU renderer as the page sees it: the same render(light, shadows) call as
-// the WebGL renderer (lib/relightGL.ts), drawn into a 2D canvas.
+// The CPU renderer as the page sees it: the same render(light, shadows, fill) call
+// as the WebGL renderer (lib/relightGL.ts), drawn into a 2D canvas.
 //
 // A picture takes a noticeable fraction of a second on the CPU, so:
 //   - the work is done in a Worker, and the page's thread only copies pixels;
@@ -12,7 +12,7 @@
 
 import { ctx2d, makeCanvas } from "./image";
 import { type CpuFrame, type CpuPixels, type CpuQuality, type CpuReply, type CpuRequest, CpuScene, type CpuSceneData, PREVIEW_MAX_SIDE } from "./relightCpuCore";
-import type { Light } from "./types";
+import type { FillLight, Light } from "./types";
 
 /**
  * How long the light must be still before the full-quality picture is shaded,
@@ -61,6 +61,7 @@ interface Job {
   id: number;
   light: Light;
   shadows: boolean;
+  fill: FillLight | null;
   quality: CpuQuality;
 }
 
@@ -76,7 +77,7 @@ export class CpuRelightRenderer {
   private localTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** What the page last asked for. `version` goes up with every request. */
-  private wanted: { light: Light; shadows: boolean; version: number } | null = null;
+  private wanted: { light: Light; shadows: boolean; fill: FillLight | null; version: number } | null = null;
   private running: (Job & { version: number }) | null = null;
   private nextId = 0;
   /** The newest request a preview, and a full picture, has been drawn for. */
@@ -149,11 +150,11 @@ export class CpuRelightRenderer {
     this.dispose();
   }
 
-  /** Ask for the scene lit by `light`. Returns at once; the picture follows, a preview first. */
-  render(light: Light, shadows: boolean): void {
+  /** Ask for the scene lit by `light`, and by `fill` when there is one. Returns at once; the picture follows, a preview first. */
+  render(light: Light, shadows: boolean, fill: FillLight | null = null): void {
     if (this.dead) return;
     const version = (this.wanted?.version ?? 0) + 1;
-    this.wanted = { light, shadows, version };
+    this.wanted = { light, shadows, fill, version };
     if (this.settleTimer !== null) clearTimeout(this.settleTimer);
     this.settleTimer = setTimeout(() => {
       this.settleTimer = null;
@@ -177,10 +178,10 @@ export class CpuRelightRenderer {
     if (this.settled === wanted.version && this.fullShown !== wanted.version) quality = "full";
     else if (this.previewShown !== wanted.version && this.fullShown !== wanted.version) quality = "preview";
     else return;
-    const job = { id: ++this.nextId, light: wanted.light, shadows: wanted.shadows, quality, version: wanted.version };
+    const job = { id: ++this.nextId, light: wanted.light, shadows: wanted.shadows, fill: wanted.fill, quality, version: wanted.version };
     this.running = job;
     if (this.worker) {
-      const request: CpuRequest = { type: "render", id: job.id, light: job.light, shadows: job.shadows, quality };
+      const request: CpuRequest = { type: "render", id: job.id, light: job.light, shadows: job.shadows, fill: job.fill, quality };
       this.worker.postMessage(request);
       if (this.data && this.startTimer === null) this.startTimer = setTimeout(() => this.takeOver("the Worker did not answer"), WORKER_START_TIMEOUT_MS);
     } else if (this.local) {
@@ -190,7 +191,7 @@ export class CpuRelightRenderer {
         this.localTimer = null;
         try {
           const started = performance.now();
-          const frame = scene.render(job.light, job.shadows, quality);
+          const frame = scene.render(job.light, job.shadows, quality, job.fill);
           this.onReply({ type: "frame", id: job.id, frame, ms: performance.now() - started });
         } catch (error) {
           this.onReply({ type: "error", id: job.id, message: error instanceof Error ? error.message : String(error) });

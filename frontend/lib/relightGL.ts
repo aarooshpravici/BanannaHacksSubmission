@@ -10,6 +10,8 @@
 //   4. shade          soft Lambert * falloff * shadow, multiplied into the photo in
 //                     linear light with a highlight knee        (diffuse, apply_shading)
 //      sampling pass 3 bilinearly, which is the cv2.resize back to full size.
+// A fill light needs no pass of its own: it casts no shadow, so it is one more
+// soft Lambert * falloff in pass 4 (fill_map), added only when it is switched on.
 //
 // Every texture is stored top row first, so texture row j is image row j and
 // v = 0 is the top of the image. Only the final pass, which draws to the
@@ -53,7 +55,7 @@ import {
   sceneArrays,
   shadowHeightField,
 } from "./relightMath";
-import type { Light } from "./types";
+import type { FillLight, Light } from "./types";
 
 const f = (n: number) => (Number.isInteger(n) ? `${n}.0` : `${n}`);
 
@@ -189,6 +191,10 @@ uniform float u_ambient;
 uniform vec3 u_color;
 uniform float u_shadows;     // 1.0 = cast shadows
 uniform float u_packed;      // 1.0 = u_shadow holds 16-bit values over R and G (see the blur pass)
+uniform float u_fill;        // 1.0 = there is a fill light; the three below are its own
+uniform vec3 u_fillLight;    // its position in image widths
+uniform float u_fillIntensity;
+uniform vec3 u_fillColor;
 in vec2 v_uv;
 out vec4 o_color;
 
@@ -225,6 +231,20 @@ float packedShadow(vec2 uv) {
   return mix(top, bottom, a.y);
 }
 
+// fill_map(): diffuse() once more, for the fill light, times its intensity. No
+// shadow and no ambient. The lines are main()'s own, repeated here and not
+// shared with it, so that the main light's arithmetic is the text it always was.
+float fillShading(vec3 position, vec3 normal) {
+  vec3 toLight = u_fillLight - position;
+  float dist = max(length(toLight), 1e-6);
+  float cosTheta = dot(normal, toLight) / dist;
+  vec3 centre = vec3(0.5, 0.5 * u_aspect, u_relief / 2.0);
+  float reference = length(u_fillLight - centre);
+  float ratio = reference / dist;
+  float falloff = min(ratio * ratio, ${f(MAX_FALLOFF)});
+  return u_fillIntensity * (min(softTerminator(cosTheta), 1.0) * falloff);
+}
+
 void main() {
   vec4 photo = texture(u_image, v_uv);
   vec3 rgb = mix(vec3(1.0), photo.rgb, photo.a); // to_rgb(): transparency flattens onto white
@@ -251,6 +271,10 @@ void main() {
 
   // apply_shading(): multiply in linear light; above the knee, roll off instead of clipping.
   vec3 lit = srgbToLinear(rgb) * shading * u_color;
+  // The fill light: the photo times its share, in its colour. Added to the line
+  // above and only when it is on, so that with it off that line is the result,
+  // as before.
+  if (u_fill > 0.5) lit = lit + srgbToLinear(rgb) * fillShading(position, normal) * u_fillColor;
   const float knee = ${f(HIGHLIGHT_KNEE)};
   vec3 over = max(lit - knee, 0.0);
   lit = mix(lit, knee + (1.0 - knee) * (1.0 - exp(-over / (1.0 - knee))), greaterThan(lit, vec3(knee)));
@@ -305,8 +329,22 @@ const SELF_TEST_MAX_MEAN = 3;
 const SELF_TEST_WIDTH = 64;
 const SELF_TEST_HEIGHT = 48;
 const SELF_TEST_RELIEF = 0.3;
-/** Low and to the left, so the block in the test scene throws a long shadow across it. */
-const SELF_TEST_LIGHT: Light = { x: 0.05, y: 0.45, height: 0.12, intensity: 1.8, ambient: 0.06, color: [1, 0.9, 0.8] };
+/**
+ * Low and to the left, so the block in the test scene throws a long shadow
+ * across it. Stronger than before the test picture had a fill light (2.4, from
+ * 1.8): the fill lifts that shadow a little, and with the old strength a chip
+ * that drew no shadows at all would have slipped under SELF_TEST_MAX_MEAN.
+ */
+const SELF_TEST_LIGHT: Light = { x: 0.05, y: 0.45, height: 0.12, intensity: 2.4, ambient: 0.06, color: [1, 0.9, 0.8] };
+/**
+ * The test picture's fill light, so that a chip that gets the fill wrong is
+ * caught by the same one picture. Off the left edge, low, and in a colour of
+ * its own, where it adds most to the lit side and least to the block's shadow.
+ * Measured with lib/relightMath.ts: a picture drawn without the fill is off by
+ * 10.0 levels on average, and one without the shadows by 3.4 (3.1 before there
+ * was a fill), both over the limit.
+ */
+const SELF_TEST_FILL: FillLight = { x: -0.4, y: 0.6, height: 0.05, intensity: 0.6, color: [0.7, 0.86, 1] };
 
 /** A floor sloping gently away, with a raised block in the middle: every part of the shader has something to do. */
 function selfTestScene(): { image: ImageData; depth: ImageData; normals: ImageData } {
@@ -397,6 +435,7 @@ export class RelightRenderer {
     this.shadeProgram = this.link(SHADE_FRAGMENT, [
       "u_flip", "u_image", "u_depth", "u_normals", "u_shadow", "u_aspect", "u_relief",
       "u_light", "u_intensity", "u_ambient", "u_color", "u_shadows", "u_packed",
+      "u_fill", "u_fillLight", "u_fillIntensity", "u_fillColor",
     ]);
 
     // One oversized triangle covers the viewport.
@@ -426,14 +465,14 @@ export class RelightRenderer {
    */
   private chooseGrade(floatTargets: boolean): void {
     const test = selfTestScene();
-    const reference = relightPixels(sceneArrays(test.image, test.depth, test.normals, SELF_TEST_RELIEF), SELF_TEST_LIGHT, true);
+    const reference = relightPixels(sceneArrays(test.image, test.depth, test.normals, SELF_TEST_RELIEF), SELF_TEST_LIGHT, true, SELF_TEST_FILL);
     let why: string | null = floatTargets ? null : "this graphics chip cannot draw into floating-point buffers";
     for (const grade of floatTargets ? (["full", "packed"] as const) : (["packed"] as const)) {
       this.grade = grade;
       try {
         this.setScene({ width: SELF_TEST_WIDTH, height: SELF_TEST_HEIGHT, relief: SELF_TEST_RELIEF, ...test });
         if (this.grade !== grade) throw new Error("the shadow buffers were refused"); // setScene stepped down by itself
-        this.render(SELF_TEST_LIGHT, true);
+        this.render(SELF_TEST_LIGHT, true, SELF_TEST_FILL);
         const drawn = this.readPixels();
         let sum = 0;
         for (let p = 0; p < drawn.length; p += 4) {
@@ -645,8 +684,8 @@ export class RelightRenderer {
     gl.uniform1i(location, unit);
   }
 
-  /** Draw the scene lit by `light`. Cheap enough to call on every pointer move. */
-  render(light: Light, castShadows: boolean): void {
+  /** Draw the scene lit by `light`, and by `fill` when there is one (it casts no shadow). Cheap enough to call on every pointer move. */
+  render(light: Light, castShadows: boolean, fill: FillLight | null = null): void {
     const gl = this.gl;
     const scene = this.scene;
     if (!scene || gl.isContextLost()) return;
@@ -705,6 +744,13 @@ export class RelightRenderer {
     gl.uniform3f(u.u_color, light.color[0], light.color[1], light.color[2]);
     gl.uniform1f(u.u_shadows, castShadows ? 1 : 0);
     gl.uniform1f(u.u_packed, packed);
+    gl.uniform1f(u.u_fill, fill ? 1 : 0);
+    if (fill) {
+      const fillPos = lightPosition(scene.width, scene.height, scene.relief, fill);
+      gl.uniform3f(u.u_fillLight, fillPos[0], fillPos[1], fillPos[2]);
+      gl.uniform1f(u.u_fillIntensity, fill.intensity);
+      gl.uniform3f(u.u_fillColor, fill.color[0], fill.color[1], fill.color[2]);
+    }
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 

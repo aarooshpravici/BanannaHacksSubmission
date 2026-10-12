@@ -6,9 +6,9 @@
 // They are kept in the browser's IndexedDB. A cookie could not hold one: it has
 // room for about 4 KB, and a photo with its depth and normal maps is a thousand
 // times that. A draft is two records under one id (a fingerprint of the
-// picture): a small one for the list (name, times, light, switches, a small
-// picture of the lit result) and a large one with the scene. Moving the light
-// writes only the small one.
+// picture): a small one for the list (name, times, light, fill light, switches,
+// a small picture of the lit result) and a large one with the scene. Moving the
+// light writes only the small one.
 //
 // Storage is the browser's to refuse: it can be switched off, full, or held by
 // another tab. Every call in here is wrapped. When one fails nothing is thrown
@@ -35,6 +35,17 @@ const CARDS = "drafts";
 /** The large ones: `{ id, scene }`. */
 const SCENES = "scenes";
 
+/** A draft's fill light: its switch and its own numbers, which are kept while it is off. */
+export interface DraftFill {
+  on: boolean;
+  x: number;
+  y: number;
+  height: number;
+  intensity: number;
+  /** Its own Colour slider: -1 = cool, 0 = white, 1 = warm. */
+  warmth: number;
+}
+
 /** One draft as the list shows it, and everything needed to put its light back. The scene is read only when the draft is opened. */
 export interface Draft {
   /** A fingerprint of the picture (`fingerprint`), so the same photo chosen twice is one draft. */
@@ -47,6 +58,10 @@ export interface Draft {
   light: Omit<Light, "color">;
   /** The Colour slider: -1 = cool, 0 = white, 1 = warm. */
   warmth: number;
+  /** The fill light. Null if it was never switched on, and in every draft saved before there was one: such a draft opens with the fill off. */
+  fill: DraftFill | null;
+  /** Which light the LIGHT panel's sliders were on. The fill only if it was on. */
+  picked: "key" | "fill";
   /** Cast shadows. */
   shadows: boolean;
   /** Detailed normals. */
@@ -79,6 +94,14 @@ export const isDraftScene = (scene: RelightScene) => scene.scene_id.startsWith(D
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
+/** A record's fill light, or null if it has none or it is not whole. A draft is never skipped for its fill: it opens with the fill off. */
+function asFill(value: unknown): DraftFill | null {
+  const f = value as Partial<DraftFill> | null | undefined;
+  if (!f || typeof f !== "object" || typeof f.on !== "boolean") return null;
+  if (!finite(f.x) || !finite(f.y) || !finite(f.height) || !finite(f.intensity) || !finite(f.warmth)) return null;
+  return { on: f.on, x: f.x, y: f.y, height: f.height, intensity: f.intensity, warmth: f.warmth };
+}
+
 /** A record from the list -> a Draft, or null if it is not one (damaged, or written by something else). Such a record is skipped. */
 function asDraft(value: unknown): Draft | null {
   const d = value as Partial<Draft> | null;
@@ -86,6 +109,7 @@ function asDraft(value: unknown): Draft | null {
   const light = d.light as Partial<Draft["light"]> | null | undefined;
   if (!light || !finite(light.x) || !finite(light.y) || !finite(light.height) || !finite(light.intensity) || !finite(light.ambient)) return null;
   if (!finite(d.warmth) || typeof d.shadows !== "boolean" || typeof d.detail !== "boolean") return null;
+  const fill = asFill(d.fill);
   return {
     id: d.id,
     name: d.name,
@@ -93,6 +117,8 @@ function asDraft(value: unknown): Draft | null {
     updatedAt: d.updatedAt,
     light: { x: light.x, y: light.y, height: light.height, intensity: light.intensity, ambient: light.ambient },
     warmth: d.warmth,
+    fill,
+    picked: d.picked === "fill" && fill !== null && fill.on ? "fill" : "key",
     shadows: d.shadows,
     detail: d.detail,
     depthDevice: d.depthDevice === "webgpu" || d.depthDevice === "wasm" ? d.depthDevice : null,

@@ -45,6 +45,25 @@ def _ball_with_a_ridge() -> R.Geometry:
     return R.build_geometry(ball, normals=detailed.normals, relief=0.3, smooth=0)
 
 
+def _two_walls() -> R.Geometry:
+    """A flat scene whose left half faces left and whose right half faces right, like the two sides of a roof seen from above."""
+    g = R.build_geometry(np.full((N, N), 0.5, np.float32), relief=0.3, smooth=0)
+    g.normals[:, : N // 2] = (-0.9, 0.0, np.sqrt(1 - 0.81))
+    g.normals[:, N // 2 :] = (0.9, 0.0, np.sqrt(1 - 0.81))
+    return g
+
+
+def _as_before_the_fill_light(img: Image.Image, g: R.Geometry, light: R.Light, cast_shadows: bool = True) -> np.ndarray:
+    """relight() as it was when there was one light only, written out."""
+    rgb = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
+    lit = R._srgb_to_linear(rgb) * R.shading_map(g, light, cast_shadows=cast_shadows)[..., None] * np.asarray(light.color, dtype=np.float32)
+    knee = 0.8
+    over = np.maximum(lit - knee, 0.0)
+    lit = np.where(lit > knee, knee + (1 - knee) * (1 - np.exp(-over / (1 - knee))), lit)
+    out = np.clip(R._linear_to_srgb(lit), 0.0, 1.0)
+    return (out * 255.0 + 0.5).astype(np.uint8)
+
+
 def _edge_width(profile: np.ndarray) -> int:
     """Pixels a shadow's edge takes to go from 10% to 90% of its full darkness."""
     depth = 1.0 - profile.min()
@@ -231,6 +250,78 @@ def test_shading_is_ambient_in_shadow_and_above_one_under_a_strong_light():
     assert above[64, 64] > 0.3 + 1.5  # top of the block, right under the light, nearer than the scene centre
 
 
+@pytest.mark.parametrize("cast_shadows", [True, False])
+def test_without_a_fill_light_the_render_is_exactly_what_it_was(cast_shadows):
+    rng = np.random.default_rng(1)
+    img = Image.fromarray(rng.integers(0, 255, (N, N, 3), dtype=np.uint8))
+    g = R.build_geometry(_block(), relief=0.3, smooth=0)
+    light = R.Light(-0.2, 0.4, height=0.15, intensity=1.8, ambient=0.06, color=(1.0, 0.86, 0.68))
+    before = _as_before_the_fill_light(img, g, light, cast_shadows)
+    assert np.array_equal(np.asarray(R.relight(img, g, light, cast_shadows=cast_shadows)), before)
+    assert np.array_equal(np.asarray(R.relight(img, g, light, cast_shadows=cast_shadows, fill=None)), before)
+    # A fill that gives no light is the same as none: not one level moves.
+    dark = R.Light(1.2, 0.5, height=0.35, intensity=0.0)
+    assert np.array_equal(np.asarray(R.relight(img, g, light, cast_shadows=cast_shadows, fill=dark)), before)
+
+
+def test_a_fill_light_on_the_right_brightens_what_faces_right_and_not_what_faces_left():
+    g = _two_walls()
+    img = Image.new("RGB", (N, N), (120, 120, 120))
+    key = R.Light(-0.3, 0.5, height=0.2, intensity=1.3, ambient=0.06)
+    fill = R.Light(1.4, 0.5, height=0.05, intensity=0.6)
+    without = np.asarray(R.relight(img, g, key)).astype(int)
+    with_fill = np.asarray(R.relight(img, g, key, fill=fill)).astype(int)
+    half = N // 2
+    # The left wall is turned well away from the fill: it gets nothing from it, to the last level.
+    assert np.array_equal(with_fill[:, :half], without[:, :half])
+    assert (with_fill[:, half:] > without[:, half:] + 20).all(), "the right wall is clearly lifted"
+    # Mirrored to the left, it is the other way round.
+    mirrored = np.asarray(R.relight(img, g, key, fill=R.Light(-0.4, 0.5, height=0.05, intensity=0.6))).astype(int)
+    assert np.array_equal(mirrored[:, half:], without[:, half:]) and (mirrored[:, :half] > without[:, :half]).all()
+
+
+def test_a_fill_light_is_shaded_like_the_main_light_with_its_own_height_and_colour():
+    g = R.build_geometry(_dome(), smooth=0)
+    fill = R.Light(0.9, 0.3, height=0.35, intensity=0.6, color=(0.7, 0.86, 1.0))
+    assert np.array_equal(R.fill_map(g, fill), 0.6 * R.diffuse(g, fill))
+    assert not np.allclose(R.fill_map(g, fill), R.fill_map(g, R.Light(0.9, 0.3, height=1.2, intensity=0.6))), "its Height counts"
+    # Alone in the dark (no ambient, a main light of no intensity) the photo takes the fill's colour.
+    dark = R.Light(0.1, 0.5, intensity=0.0, ambient=0.0)
+    out = np.asarray(R.relight(Image.new("RGB", (N, N), (200, 200, 200)), g, dark, fill=fill)).astype(int)
+    c = N // 2
+    assert out[c, c, 0] < out[c, c, 1] < out[c, c, 2], "a cool fill gives a bluish picture"
+    # Its own ambient setting is not used: ambient is shared, and is the main light's.
+    same = R.Light(0.9, 0.3, height=0.35, intensity=0.6, ambient=0.9, color=(0.7, 0.86, 1.0))
+    assert np.array_equal(np.asarray(R.relight(Image.new("RGB", (N, N), (200, 200, 200)), g, dark, fill=same)), out)
+
+
+def test_a_fill_light_casts_no_shadow_and_reaches_into_the_main_lights_shadow():
+    # A block on a floor close behind it, lit from the left: the floor to its right is in full shadow.
+    g = R.build_geometry(_block(0.1, floor=0.9), relief=1.0, smooth=0)
+    key = R.Light(-0.2, 0.5, height=0.15, ambient=0.3, intensity=1.5)
+    assert R.shading_map(g, key)[64, 80] == pytest.approx(0.3, abs=0.01), "only ambient reaches this pixel"
+    img = Image.new("RGB", (N, N), (150, 150, 150))
+    fill = R.Light(1.2, 0.5, height=0.35, intensity=0.6)
+    without = np.asarray(R.relight(img, g, key)).astype(int)
+    with_fill = np.asarray(R.relight(img, g, key, fill=fill)).astype(int)
+    assert with_fill[64, 80, 0] > without[64, 80, 0] + 20, "the fill lifts the shadow"
+    assert with_fill.min() >= without.min() and (with_fill >= without).all(), "a fill only ever adds light"
+    # What it adds does not depend on Cast shadows: the fill is not darkened by the main light's shadow.
+    shadowless = np.asarray(R.relight(img, g, key, cast_shadows=False, fill=fill)).astype(int)
+    assert shadowless[64, 80, 0] > with_fill[64, 80, 0], "the main light's shadow is still there under the fill"
+    # And it casts none of its own: from where the main light is, the same pixel gets the fill's light in full.
+    from_the_left = R.Light(-0.2, 0.5, height=0.15, intensity=0.6)
+    assert R.shadows(g, from_the_left, max_side=N)[64, 80] < 0.2, "a light there that did cast shadows would leave this pixel dark"
+    assert R.fill_map(g, from_the_left)[64, 80] == pytest.approx(0.6 * R.diffuse(g, from_the_left)[64, 80]) and R.fill_map(g, from_the_left)[64, 80] > 0.1
+
+
+def test_two_lights_together_roll_off_instead_of_clipping():
+    g = R.build_geometry(np.ones((N, N), np.float32))
+    img = Image.new("RGB", (N, N), (250, 250, 250))
+    out = np.asarray(R.relight(img, g, R.Light(0.5, 0.5, intensity=4.0), fill=R.Light(0.5, 0.5, intensity=4.0)))
+    assert out.max() <= 255 and out[N // 2, N // 2, 0] >= 250
+
+
 def test_enhance_renders_its_input_with_the_shadow_setting_on_screen():
     from app.images import decode_image
     from app.routers import relight as router
@@ -246,6 +337,10 @@ def test_enhance_renders_its_input_with_the_shadow_setting_on_screen():
     # 1.05, not more: the plane is far behind this block, so the shadow on it is faint.
     assert off[64, 85].mean() > on[64, 85].mean() * 1.05, "no cast shadow beside the block when shadows are off"
     assert np.array_equal(sent(), on), "shadows stay on unless the request says otherwise"
+    # And with the fill light on screen, when there is one.
+    filled = sent(fill=R.Light(1.2, 0.5, height=0.35, intensity=0.6))
+    assert filled[64, 85].mean() > on[64, 85].mean() + 10, "the fill reaches the model's picture"
+    assert np.array_equal(sent(fill=None), on), "no fill unless the request has one"
 
 
 @pytest.mark.models
@@ -294,6 +389,11 @@ def test_relight_endpoints_end_to_end():
             break
         time.sleep(0.05)
     assert status["status"] == "done" and decode_image(status["result"]["image"]).size == (512, 512)
+
+    # A fill light on the right lifts the right-hand strip that the left light leaves dark.
+    body = {"scene_id": scene["scene_id"], "light": {"x": -0.4, "y": 0.3}, "fill": {"x": 1.4, "y": 0.3}}
+    filled = np.asarray(decode_image(client.post("/relight/render", json=body).json()["image"])).astype(float)
+    assert filled[:, -128:].mean() > left[:, -128:].mean() * 1.2
 
     assert client.post("/relight/render", json={"scene_id": "nope"}).status_code == 404
     assert client.post("/relight/render", json={"scene_id": scene["scene_id"], "light": {"height": 0}}).status_code == 422

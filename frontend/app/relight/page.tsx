@@ -1,9 +1,10 @@
 "use client";
 
-import { type CSSProperties, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "react";
 import { BeforeAfter } from "@/components/BeforeAfter";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { CollapsiblePanel } from "@/components/CollapsiblePanel";
+import { Help } from "@/components/Help";
 import { FitBox, PageIntro, Panel, Stage, Workspace } from "@/components/Panel";
 import { BusyLabel, BusyOverlay } from "@/components/Spinner";
 import { UploadDropzone } from "@/components/UploadDropzone";
@@ -11,7 +12,7 @@ import { AlertIcon, DownloadIcon, EyeIcon, OrbitIcon, SparklesIcon, SunIcon, Upl
 import { RelightCanvas, type ShadingPath } from "@/components/relight/RelightCanvas";
 import { ShadingNote } from "@/components/relight/ShadingNote";
 import { type StartTab, StartTabs } from "@/components/relight/StartTabs";
-import { Button, Segmented, Slider, Toggle } from "@/components/ui";
+import { Button, Segmented, Slider, Switch, Toggle } from "@/components/ui";
 import { ApiError, errorMessage, isAbort, relightAdoptScene, relightEnhance, relightRender, relightScene } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { API_URL, DEMO, MOCK } from "@/lib/config";
@@ -20,7 +21,7 @@ import { HOME_EVENT } from "@/lib/home";
 import { type LoadedImage, downloadBase64AsPng, downloadCanvas, sniffMime, toDataUrl } from "@/lib/image";
 import { type DepthDevice, type LocalProgress, depthDeviceText, isLocalScene, localScene, progressText } from "@/lib/localScene";
 import { SAMPLES, type SamplePhoto, isSampleScene, loadSampleScene, sampleThumbUrl } from "@/lib/samples";
-import type { Light, RelightRender, RelightScene } from "@/lib/types";
+import type { FillLight, Light, RelightRender, RelightScene } from "@/lib/types";
 import { useJob } from "@/lib/useJob";
 
 /** How far outside the photo the light may be dragged, in image widths/heights. */
@@ -156,17 +157,67 @@ const SHADOWS_HELP = (
     <span className="block">Behind something that stands in front of open sky, a thrown shadow shows as a soft dark band on the sky. Switch this off and the band goes.</span>
   </>
 );
+/** Added to SHADOWS_HELP while the fill light is on: the one switch is for the picture, and the picture's shadows are the key's. */
+const SHADOWS_HELP_WITH_FILL = <span className="block">Only the key light throws shadows. The fill light never does.</span>;
+/** The fill light, behind the "?" beside its switch. */
+const FILL_HELP = (
+  <>
+    <span className="block">
+      A <strong className="font-semibold text-zinc-100">fill light</strong> is a second, weaker light, usually on the side opposite the main one, which is called the key. It lifts the shadows the key leaves.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Ambient</strong> lifts everything evenly, which flattens the picture. A fill has a direction, so shapes keep their roundness.
+    </span>
+    <span className="block">It casts no shadows of its own.</span>
+    <span className="block text-zinc-500">Each light has its own sun on the photo, marked K and F. Key and Fill, on the left, choose which one Height, Intensity and Colour change.</span>
+  </>
+);
+/** Beside Ambient and Cast shadows while the fill light is on: the two settings that Key and Fill do not switch between. */
+const BOTH_LIGHTS = "both lights";
+/**
+ * The space between the LIGHT panel's rows where the sidebar is beside the stage. The Key | Fill row is one row more than the sidebar was fitted to.
+ * The demo has the height for it (its ENHANCE panel is shorter), so it keeps the spacing it had. With a backend the rows sit closer in a window under 874px
+ * (2px each under 771px, 4px each from there up), which gives back most of what the new row takes: LIGHT, ENHANCE and the folded GEOMETRY row fit again
+ * at 1280 x 720 and from 719px up, except in the few pixels above each step of the layout (771 to 784 and 832 to 842, and 709 to 718), where the sidebar
+ * scrolls by up to 14px and did not before the row.
+ */
+const LIGHT_ROW_GAPS = DEMO ? "lg:short:gap-2" : "lg:short:gap-1.5 lg:[@media(min-height:771px)_and_(max-height:873px)]:gap-2";
 
 const WARM: [number, number, number] = [1.0, 0.86, 0.68];
 const COOL: [number, number, number] = [0.7, 0.86, 1.0];
 
 type LightBase = Omit<Light, "color">;
 
+/** The page's two lights: the key, which is the light it always had, and the fill. */
+type Which = "key" | "fill";
+
+/**
+ * The fill light as the page holds it, from the first time it is switched on:
+ * its switch, its own place, Height and Intensity, and its own Colour slider.
+ * Switched off it keeps its numbers, for the next time. It has no Ambient:
+ * that is shared, and is the key's.
+ */
+interface FillState {
+  on: boolean;
+  base: Omit<LightBase, "ambient">;
+  warmth: number;
+}
+
+/**
+ * What the fill light starts with the first time it is switched on, besides
+ * its place (the key's, mirrored across the photo's middle). Further back and
+ * a third as strong as the key starts: enough to open the shadows, not enough
+ * to make a second lit side.
+ */
+const FILL_START = { height: 0.35, intensity: 0.6 };
+
 /** What a draft holds besides its name and its small picture. Compared with what is on screen to tell whether anything needs saving. */
 interface DraftContent {
   scene: RelightScene;
   base: LightBase;
   warmth: number;
+  fill: FillState | null;
+  picked: Which;
   shadows: boolean;
   detail: boolean;
 }
@@ -327,7 +378,7 @@ const cssColor = (c: [number, number, number]) => `rgb(${c.map((v) => Math.round
  * to render each light position (debounced), instead of shading in the browser.
  * `onFail` is called each time a render fails.
  */
-function useServerPreview(enabled: boolean, scene: RelightScene | null, light: Light, shadows: boolean, withBackendScene: WithBackendScene, onFail: () => void) {
+function useServerPreview(enabled: boolean, scene: RelightScene | null, light: Light, shadows: boolean, fill: FillLight | null, withBackendScene: WithBackendScene, onFail: () => void) {
   const [state, setState] = useState<{ sceneId: string | null; image: string | null; error: string | null }>({ sceneId: null, image: null, error: null });
   // Bumped by retry(). While renders fail the light is locked, so moving it cannot be what asks again.
   const [attempt, setAttempt] = useState(0);
@@ -338,7 +389,8 @@ function useServerPreview(enabled: boolean, scene: RelightScene | null, light: L
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
-        const render = await withBackendScene(scene, SERVER_RENDER_OFFLINE, (scene_id) => relightRender({ scene_id, light, shadows }, controller.signal));
+        // With the fill off the request is, to the letter, what it was before there was one.
+        const render = await withBackendScene(scene, SERVER_RENDER_OFFLINE, (scene_id) => relightRender({ scene_id, light, shadows, fill: fill ?? undefined }, controller.signal));
         if (!cancelled) setState({ sceneId: scene.scene_id, image: render.image, error: null });
       } catch (error) {
         if (cancelled || isAbort(error)) return;
@@ -351,10 +403,148 @@ function useServerPreview(enabled: boolean, scene: RelightScene | null, light: L
       clearTimeout(timer);
       controller.abort();
     };
-  }, [enabled, scene, light, shadows, withBackendScene, onFail, attempt]);
+  }, [enabled, scene, light, shadows, fill, withBackendScene, onFail, attempt]);
   // The last render outlives a change of photo: never show or export it over another scene.
   const image = enabled && scene && state.sceneId === scene.scene_id ? state.image : null;
   return { image, error: enabled ? state.error : null, retry };
+}
+
+/** One light's sun on the photo: the key's, and beside it the fill's while the fill light is on. */
+function LightSun({
+  which,
+  light,
+  letter,
+  onTop,
+  dragging,
+  name,
+  photoRatio,
+  marginX,
+  onScroll,
+  onKeyDown,
+}: {
+  /** The light it stands for. The stage reads this off the sun that was pressed. */
+  which: Which;
+  /** Where that light is, how high, how strong and what colour. */
+  light: FillLight;
+  /** A small letter on the disc, K or F, while there are two suns to tell apart. Null while the key's is the only one, which then looks exactly as it did before there was a fill light. */
+  letter: string | null;
+  /** Drawn above the other sun: the light the LIGHT panel is on, so it is the one a press reaches where the two overlap. */
+  onTop: boolean;
+  dragging: boolean;
+  /** For a screen reader, ahead of the numbers. */
+  name: string;
+  /** The photo's width over its height. */
+  photoRatio: number;
+  /** How close the drawn sun may come to the stage's sides (handleMarginX). */
+  marginX: number;
+  /** The wheel was turned over this sun, by this many pixels of scroll. */
+  onScroll: (step: number) => void;
+  onKeyDown: (event: ReactKeyboardEvent<HTMLButtonElement>) => void;
+}) {
+  // The sun, once it is on the page: scrolling over it needs a listener of its own (below).
+  const [handle, setHandle] = useState<HTMLButtonElement | null>(null);
+  const scrolled = useEffectEvent(onScroll);
+
+  /**
+   * Scrolling while the pointer is over the sun moves the light toward the
+   * viewer or away. Only over the sun: anywhere else the wheel scrolls the page
+   * as it always did. Scrolling up (or spreading two fingers on a trackpad)
+   * brings the light nearer and the sun grows, the way the same gesture zooms
+   * in on a map. A Sweep in progress carries on at the new Height.
+   * Listened for directly: React's own wheel listener may not stop the page from scrolling.
+   */
+  useEffect(() => {
+    if (!handle) return;
+    const onWheel = (event: WheelEvent) => {
+      // Over the sun the wheel is the light's, at the ends of the range too: the page must not start to scroll when the light stops.
+      event.preventDefault();
+      const unit = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? 1 : WHEEL_LINE_PX;
+      const step = clamp(event.deltaY * unit * (event.ctrlKey ? WHEEL_PINCH_GAIN : 1), -WHEEL_MAX_STEP_PX, WHEEL_MAX_STEP_PX);
+      if (step !== 0) scrolled(step);
+    };
+    handle.addEventListener("wheel", onWheel, { passive: false });
+    return () => handle.removeEventListener("wheel", onWheel);
+  }, [handle]);
+
+  // How the sun is drawn at this Height (see SUN_SCALE).
+  const lift = heightShare(light.height);
+  const sunPx = HANDLE_PX * between(SUN_SCALE, lift);
+  const glowReachPx = between(SUN_GLOW_REACH_PX, lift);
+  // The shadow stays under the disc until the light is well off the surface, then falls away quickly.
+  const sunShadow = `0 ${between(SUN_SHADOW_DROP_PX, lift * lift).toFixed(1)}px ${between(SUN_SHADOW_BLUR_PX, lift).toFixed(1)}px rgb(0 0 0 / ${between(SUN_SHADOW_ALPHA, lift).toFixed(2)})`;
+  // The fill's sun is a ring in the fill's colour with the photo showing through it, where the key's is a full disc: the two are told apart before either letter is read.
+  const hollow = which === "fill";
+  return (
+    <button
+      ref={setHandle}
+      type="button"
+      aria-label={`${name}, x ${light.x.toFixed(2)}, y ${light.y.toFixed(2)}, height ${light.height.toFixed(2)}. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back.`}
+      data-light={which}
+      data-height={light.height.toFixed(2)}
+      onKeyDown={onKeyDown}
+      className={cn(
+        `light-handle group absolute ${onTop ? "z-10" : "z-9"} -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/80`,
+        dragging ? "cursor-grabbing" : "cursor-grab",
+      )}
+      style={
+        {
+          // As large as the disc, and never smaller than the 40 px that is easy to grab.
+          width: Math.max(HANDLE_PX, sunPx),
+          height: Math.max(HANDLE_PX, sunPx),
+          "--light-x": light.x,
+          "--light-y": light.y,
+          "--photo-ratio": photoRatio,
+          "--handle-margin": `${HANDLE_MARGIN_PX}px`,
+          "--handle-margin-x": `${marginX}px`,
+        } as CSSProperties
+      }
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          width: sunPx + 2 * glowReachPx,
+          height: sunPx + 2 * glowReachPx,
+          filter: `blur(${between(SUN_GLOW_BLUR_PX, lift).toFixed(1)}px)`,
+          background: `radial-gradient(circle, ${cssColor(light.color)} 0%, transparent 65%)`,
+          opacity: 0.25 + 0.15 * Math.min(light.intensity, 3),
+        }}
+      />
+      <span
+        data-sun
+        className={cn(
+          "pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2",
+          hollow ? "bg-black/25" : "border-white text-black/75",
+          "transition-[scale,width,height,box-shadow] motion-reduce:transition-none",
+          dragging && "scale-110",
+        )}
+        style={
+          hollow
+            ? // A dark hairline on each side of the ring keeps a pale ring in sight on a pale part of the photo.
+              { width: sunPx, height: sunPx, boxShadow: `${sunShadow}, 0 0 0 1px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(0 0 0 / 0.6)`, borderColor: cssColor(light.color) }
+            : { width: sunPx, height: sunPx, boxShadow: sunShadow, background: cssColor(light.color) }
+        }
+      >
+        {/* Marked important: the icon's own default size is set the same way, and which class wins otherwise is down to the stylesheet's order. */}
+        {!hollow && <SunIcon className="h-1/2! w-1/2!" />}
+        {/* On the disc's rim, lower right, whatever its size: 85.4% is the middle plus cos 45 degrees of the radius. */}
+        {letter && (
+          <span data-letter className="absolute left-[85.4%] top-[85.4%] flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/85 text-[10px] font-bold leading-none text-white ring-1 ring-white/70">
+            {letter}
+          </span>
+        )}
+      </span>
+      {/* Appears when the mouse has rested on the sun for a moment, and never while it is being dragged. */}
+      {!dragging && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/70 px-2 py-0.5 text-[11px] font-medium text-zinc-200 opacity-0 backdrop-blur transition-opacity delay-0 group-hover:opacity-100 group-hover:delay-500 group-focus-visible:opacity-100"
+        >
+          {SUN_HINT}
+        </span>
+      )}
+    </button>
+  );
 }
 
 export default function RelightPage() {
@@ -383,6 +573,14 @@ export default function RelightPage() {
   const [warmth, setWarmth] = useState(0);
   const [shadows, setShadows] = useState(true);
   const light = useMemo<Light>(() => ({ ...base, color: warmthToColor(warmth) }), [base, warmth]);
+  // The fill light: null until it is first switched on, then kept, on or off, with its numbers.
+  const [fill, setFill] = useState<FillState | null>(null);
+  // What is shaded: the fill while it is on, and nothing of it while it is off.
+  const fillLight = useMemo<FillLight | null>(() => (fill?.on ? { ...fill.base, color: warmthToColor(fill.warmth) } : null), [fill]);
+  // The light the LIGHT panel's Height, Intensity and Colour are on, and that a click on the photo moves. It can only be the fill while the fill is on.
+  const [picked, setPicked] = useState<Which>("key");
+  const which: Which = picked === "fill" && fillLight !== null ? "fill" : "key";
+  const fillSwitch = useId();
 
   const [ready, setReady] = useState(false); // the first shaded picture is on the canvas
   // How the canvas is being shaded (graphics chip or processor), once it is.
@@ -413,14 +611,17 @@ export default function RelightPage() {
   const imageBox = useRef<HTMLDivElement>(null);
   const request = useRef(0);
   const sweepFrame = useRef<number | null>(null);
-  // The sun, once it is on the page: scrolling over it needs a listener of its own (below).
-  const [handle, setHandle] = useState<HTMLButtonElement | null>(null);
-  // The Height on screen, for the handlers that change it between two renders. `exact` is where scrolling has got to before rounding to the slider's steps.
-  const heightNow = useRef({ shown: START.height, exact: START.height });
-  // The fingers on the stage, where the light was before the first of them landed, and how a pinch started.
+  // Each light's Height on screen, for the handlers that change it between two renders. `exact` is where scrolling has got to before rounding to the slider's steps.
+  const heightNow = useRef<Record<Which, { shown: number; exact: number }>>({
+    key: { shown: START.height, exact: START.height },
+    fill: { shown: FILL_START.height, exact: FILL_START.height },
+  });
+  // The light the pointer on the stage has hold of: the sun that was pressed, or the picked light when the press was beside them.
+  const grabbed = useRef<Which>("key");
+  // The fingers on the stage, where that light was before the first of them landed, and how a pinch started.
   const fingers = useRef(new Map<number, { x: number; y: number }>());
-  const beforeTouch = useRef<{ x: number; y: number; at: number } | null>(null);
-  const pinch = useRef<{ spread: number; height: number } | null>(null);
+  const beforeTouch = useRef<{ which: Which; x: number; y: number; at: number } | null>(null);
+  const pinch = useRef<{ which: Which; spread: number; height: number } | null>(null);
   // The backend's scene id for the sample on screen, once it has been asked for.
   const adopted = useRef<{ scene: RelightScene; id: Promise<string> } | null>(null);
   // The user's own photo on screen, as a draft.
@@ -460,7 +661,7 @@ export default function RelightPage() {
   // Server renders stand in when the browser cannot shade at all, or only slowly. The static demo has no server to render on.
   const askServer = !DEMO && (localProblem !== null || (cpuSlowMs !== null && !serverDown));
   const onServerFail = useCallback(() => setServerDown(true), []);
-  const server = useServerPreview(askServer, scene, light, shadows, withBackendScene, onServerFail);
+  const server = useServerPreview(askServer, scene, light, shadows, fillLight, withBackendScene, onServerFail);
   // The canvas is the picture, unless nothing here can shade or a server render has taken its place.
   const showCanvas = localProblem === null && !(askServer && server.image !== null);
 
@@ -595,6 +796,8 @@ export default function RelightPage() {
       scene,
       base,
       warmth,
+      fill,
+      picked: which,
       shadows,
       detail,
       depthDevice,
@@ -614,10 +817,10 @@ export default function RelightPage() {
     const mine = own.current;
     const now = shown.current;
     if (!mine || !now || mine.photo !== now.photo || now.scene === null || !now.drawn) return;
-    const { scene, base, warmth, shadows, detail, depthDevice, depthText } = now;
+    const { scene, base, warmth, fill, picked, shadows, detail, depthDevice, depthText } = now;
     const before = mine.kept;
-    if (before && before.scene === scene && before.base === base && before.warmth === warmth && before.shadows === shadows && before.detail === detail) return;
-    const kept: DraftContent = { scene, base, warmth, shadows, detail };
+    if (before && before.scene === scene && before.base === base && before.warmth === warmth && before.fill === fill && before.picked === picked && before.shadows === shadows && before.detail === detail) return;
+    const kept: DraftContent = { scene, base, warmth, fill, picked, shadows, detail };
     mine.kept = kept;
     // The lit picture. If there is none to be had (nothing on this device can shade), the photo itself.
     const lit = now.lit && canvas.current ? smallPicture(canvas.current, scene.width, scene.height) : null;
@@ -626,7 +829,13 @@ export default function RelightPage() {
     const updatedAt = Date.now();
     void mine.id
       // The maps are only written when they are new: moving the light writes the small record alone.
-      .then((id) => saveDraft({ id, name, createdAt, updatedAt, light: base, warmth, shadows, detail, depthDevice, depthText, thumb }, before?.scene === scene ? null : scene, urgent))
+      .then((id) =>
+        saveDraft(
+          { id, name, createdAt, updatedAt, light: base, warmth, fill: fill && { on: fill.on, ...fill.base, warmth: fill.warmth }, picked, shadows, detail, depthDevice, depthText, thumb },
+          before?.scene === scene ? null : scene,
+          urgent,
+        ),
+      )
       .then((saved) => {
         // Not kept: the next change sends the whole draft again.
         if (!saved && mine.kept === kept) mine.kept = null;
@@ -650,7 +859,7 @@ export default function RelightPage() {
       stale = true;
       clearTimeout(timer);
     };
-  }, [photo, scene, drawn, base, warmth, shadows, detail, keepDraft]);
+  }, [photo, scene, drawn, base, warmth, fill, which, shadows, detail, keepDraft]);
 
   // The page is being closed, reloaded or put in the background: keep the draft now, as far as a browser lets a page that is going away do anything. Nothing waits for it.
   useEffect(() => {
@@ -695,8 +904,27 @@ export default function RelightPage() {
       ambient: clamp(draft.light.ambient, 0, 1),
     };
     const colour = clamp(draft.warmth, -1, 1);
+    // The fill light as it was left, switched on or off. A draft from before there was one has none, and opens with it off.
+    const filling: FillState | null = draft.fill && {
+      on: draft.fill.on,
+      base: {
+        x: clamp(draft.fill.x, -OUTSIDE, 1 + OUTSIDE),
+        y: clamp(draft.fill.y, -OUTSIDE, 1 + OUTSIDE),
+        height: clamp(draft.fill.height, HEIGHT_MIN, HEIGHT_MAX),
+        intensity: clamp(draft.fill.intensity, 0, 4),
+      },
+      warmth: clamp(draft.fill.warmth, -1, 1),
+    };
+    const on: Which = draft.picked === "fill" && filling?.on ? "fill" : "key";
     // As kept already: opening a draft does not count as changing it.
-    own.current = { photo: image, id: Promise.resolve(draft.id), name: draft.name, createdAt: draft.createdAt, kept: { scene: result, base: light, warmth: colour, shadows: draft.shadows, detail: draft.detail }, begun: result };
+    own.current = {
+      photo: image,
+      id: Promise.resolve(draft.id),
+      name: draft.name,
+      createdAt: draft.createdAt,
+      kept: { scene: result, base: light, warmth: colour, fill: filling, picked: on, shadows: draft.shadows, detail: draft.detail },
+      begun: result,
+    };
     clearResults();
     setPhoto(image);
     resetShading();
@@ -705,6 +933,8 @@ export default function RelightPage() {
     setDraftDepth(draft.depthText === null ? null : { scene: result, text: draft.depthText });
     setBase(light);
     setWarmth(colour);
+    setFill(filling);
+    setPicked(on);
     setShadows(draft.shadows);
     setScene(result);
   };
@@ -728,6 +958,8 @@ export default function RelightPage() {
     // A new photo starts clean: nothing set for the last one carries over.
     setBase(START);
     setWarmth(0);
+    setFill(null);
+    setPicked("key");
     setShadows(true);
     setDetail(true);
     setPrompt("");
@@ -752,6 +984,31 @@ export default function RelightPage() {
     return () => window.removeEventListener(HOME_EVENT, onHome);
   }, []);
 
+  // --- the two lights -------------------------------------------------------------
+
+  /** Change a light's own numbers: the key's, or the fill's. */
+  const change = useCallback((of: Which, part: Partial<FillState["base"]>) => {
+    if (of === "fill") setFill((f) => f && { ...f, base: { ...f.base, ...part } });
+    else setBase((b) => ({ ...b, ...part }));
+  }, []);
+
+  /**
+   * The fill light's switch. The first time on, it starts across the photo from
+   * where the key is at that moment, weaker and further back (FILL_START), in
+   * plain white. After that it comes back as it was left. Off, the panel goes
+   * back to the key, the only light there is then.
+   */
+  const switchFill = (on: boolean) => {
+    setFill((f) => (f ? { ...f, on } : { on, base: { x: round(1 - base.x), y: base.y, ...FILL_START }, warmth: 0 }));
+    if (!on) setPicked("key");
+  };
+
+  /** Key or Fill in the LIGHT panel. Asking for the fill while it is off switches it on. */
+  const pickLight = (next: Which) => {
+    if (next === "fill" && !fill?.on) switchFill(true);
+    setPicked(next);
+  };
+
   // --- dragging the light ---------------------------------------------------------
 
   const dragTo = (event: ReactPointerEvent) => {
@@ -764,52 +1021,43 @@ export default function RelightPage() {
     const cy = clamp(event.clientY, bounds.top + HANDLE_MARGIN_PX, bounds.bottom - HANDLE_MARGIN_PX);
     const x = round(clamp((cx - box.left) / box.width, -OUTSIDE, 1 + OUTSIDE));
     const y = round(clamp((cy - box.top) / box.height, -OUTSIDE, 1 + OUTSIDE));
-    setBase((b) => ({ ...b, x, y }));
+    change(grabbed.current, { x, y });
   };
 
   // --- the light's distance: scrolling and pinching on the sun ------------------------
 
+  const fillHeight = fill?.base.height;
   useEffect(() => {
     // The slider, a preset or Reset moved it: scrolling carries on from there.
-    if (heightNow.current.shown !== base.height) heightNow.current = { shown: base.height, exact: base.height };
-  }, [base.height]);
+    const now = heightNow.current;
+    if (now.key.shown !== base.height) now.key = { shown: base.height, exact: base.height };
+    if (fillHeight !== undefined && now.fill.shown !== fillHeight) now.fill = { shown: fillHeight, exact: fillHeight };
+  }, [base.height, fillHeight]);
 
-  /** Set the Height from a scroll, a pinch or a key: kept inside the slider's range and on its steps, so the two always agree. */
-  const setHeight = useCallback((exact: number) => {
-    const next = clamp(exact, HEIGHT_MIN, HEIGHT_MAX);
-    const height = round(next, 2);
-    const changed = height !== heightNow.current.shown;
-    heightNow.current = { shown: height, exact: next };
-    if (changed) setBase((b) => ({ ...b, height }));
-    if (changed) setHeightUsed(true);
-  }, []);
+  /** Set a light's Height from a scroll, a pinch or a key: kept inside the slider's range and on its steps, so the two always agree. */
+  const setHeight = useCallback(
+    (of: Which, exact: number) => {
+      const next = clamp(exact, HEIGHT_MIN, HEIGHT_MAX);
+      const height = round(next, 2);
+      const changed = height !== heightNow.current[of].shown;
+      heightNow.current[of] = { shown: height, exact: next };
+      if (changed) change(of, { height });
+      if (changed) setHeightUsed(true);
+    },
+    [change],
+  );
 
-  /**
-   * Scrolling while the pointer is over the sun moves the light toward the
-   * viewer or away. Only over the sun: anywhere else the wheel scrolls the page
-   * as it always did. Scrolling up (or spreading two fingers on a trackpad)
-   * brings the light nearer and the sun grows, the way the same gesture zooms
-   * in on a map. A Sweep in progress carries on at the new Height.
-   * Listened for directly: React's own wheel listener may not stop the page from scrolling.
-   */
-  useEffect(() => {
-    if (!handle) return;
-    const onWheel = (event: WheelEvent) => {
-      // Over the sun the wheel is the light's, at the ends of the range too: the page must not start to scroll when the light stops.
-      event.preventDefault();
-      const unit = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? 1 : WHEEL_LINE_PX;
-      const step = clamp(event.deltaY * unit * (event.ctrlKey ? WHEEL_PINCH_GAIN : 1), -WHEEL_MAX_STEP_PX, WHEEL_MAX_STEP_PX);
-      if (step !== 0) setHeight(heightNow.current.exact * Math.exp(-step * WHEEL_HEIGHT_PER_PX));
-    };
-    handle.addEventListener("wheel", onWheel, { passive: false });
-    return () => handle.removeEventListener("wheel", onWheel);
-  }, [handle, setHeight]);
+  /** The wheel over a sun (LightSun): that light comes nearer or goes back, and is the one the panel is on from then. */
+  const scrollHeight = (of: Which, step: number) => {
+    setHeight(of, heightNow.current[of].exact * Math.exp(-step * WHEEL_HEIGHT_PER_PX));
+    setPicked(of);
+  };
 
   /** The + and - keys: one step nearer (1) or further (-1). Always at least one step of the slider, so no press is lost at the low end. */
-  const stepHeight = (direction: 1 | -1) => {
-    const now = heightNow.current.shown;
+  const stepHeight = (of: Which, direction: 1 | -1) => {
+    const now = heightNow.current[of].shown;
     const next = round(now * KEY_HEIGHT_RATIO ** direction, 2);
-    setHeight(next === now ? now + 0.01 * direction : next);
+    setHeight(of, next === now ? now + 0.01 * direction : next);
   };
 
   /** How far apart the first two fingers on the stage are, in pixels. */
@@ -835,18 +1083,35 @@ export default function RelightPage() {
     };
   };
 
-  const nudge = (dx: number, dy: number) => {
+  const nudge = (of: Which, dx: number, dy: number) => {
     stopSweep();
-    const p = insideStage(clamp(base.x + dx, -OUTSIDE, 1 + OUTSIDE), clamp(base.y + dy, -OUTSIDE, 1 + OUTSIDE));
+    const at = of === "fill" && fill ? fill.base : base;
+    const p = insideStage(clamp(at.x + dx, -OUTSIDE, 1 + OUTSIDE), clamp(at.y + dy, -OUTSIDE, 1 + OUTSIDE));
     // A preset may have left the light past the stage's edge: a step further out leaves it there, it is not pulled back to the edge.
-    const x = dx > 0 ? Math.max(p.x, base.x) : dx < 0 ? Math.min(p.x, base.x) : base.x;
-    const y = dy > 0 ? Math.max(p.y, base.y) : dy < 0 ? Math.min(p.y, base.y) : base.y;
-    setBase((b) => ({ ...b, x, y }));
+    const x = dx > 0 ? Math.max(p.x, at.x) : dx < 0 ? Math.min(p.x, at.x) : at.x;
+    const y = dy > 0 ? Math.max(p.y, at.y) : dy < 0 ? Math.min(p.y, at.y) : at.y;
+    change(of, { x, y });
+  };
+
+  /** The keys on a sun: the arrows move that light, plus and minus bring it nearer or push it back. It is the one the panel is on from then. */
+  const onSunKey = (of: Which, e: ReactKeyboardEvent<HTMLButtonElement>) => {
+    const step = e.shiftKey ? 0.1 : 0.02;
+    // With Ctrl or Cmd these two zoom the page: left to the browser.
+    if (!e.ctrlKey && !e.metaKey && (e.key === "+" || e.key === "=")) stepHeight(of, 1);
+    else if (!e.ctrlKey && !e.metaKey && (e.key === "-" || e.key === "_")) stepHeight(of, -1);
+    else if (e.key === "ArrowLeft") nudge(of, -step, 0);
+    else if (e.key === "ArrowRight") nudge(of, step, 0);
+    else if (e.key === "ArrowUp") nudge(of, 0, -step);
+    else if (e.key === "ArrowDown") nudge(of, 0, step);
+    else return;
+    e.preventDefault();
+    setPicked(of);
   };
 
   /**
    * Carry the light once around the subject and hand it back where it was.
    * For recording a demo; any deliberate move of the light ends it early.
+   * It is the key that travels: the fill light stays where it is.
    */
   const startSweep = () => {
     stopSweep();
@@ -897,7 +1162,7 @@ export default function RelightPage() {
     setSnapshot(showCanvas ? (canvas.current?.toDataURL("image/jpeg", 0.92) ?? null) : server.image ? toDataUrl(server.image) : null);
     // A new run clears the last result, which would leave the Enhanced tab empty, and stuck there if the run fails.
     setTab("live");
-    const result = await enhance.run(() => withBackendScene(scene, ENHANCE_OFFLINE, (scene_id) => relightEnhance({ scene_id, light, shadows, prompt: prompt.trim() })));
+    const result = await enhance.run(() => withBackendScene(scene, ENHANCE_OFFLINE, (scene_id) => relightEnhance({ scene_id, light, shadows, fill: fillLight ?? undefined, prompt: prompt.trim() })));
     if (result) setTab("enhanced");
   };
 
@@ -1020,12 +1285,9 @@ export default function RelightPage() {
     pinch.current = null;
     setDragging(false);
   };
-  // How the sun is drawn at this Height (see SUN_SCALE).
-  const lift = heightShare(light.height);
-  const sunPx = HANDLE_PX * between(SUN_SCALE, lift);
-  const glowReachPx = between(SUN_GLOW_REACH_PX, lift);
-  // The shadow stays under the disc until the light is well off the surface, then falls away quickly.
-  const sunShadow = `0 ${between(SUN_SHADOW_DROP_PX, lift * lift).toFixed(1)}px ${between(SUN_SHADOW_BLUR_PX, lift).toFixed(1)}px rgb(0 0 0 / ${between(SUN_SHADOW_ALPHA, lift).toFixed(2)})`;
+  // The light the LIGHT panel's own sliders show and change, and that light's Colour slider.
+  const edited: FillLight = which === "fill" && fillLight ? fillLight : light;
+  const editedWarmth = which === "fill" && fill ? fill.warmth : warmth;
   const failedCard = (
     <div role="alert" className="flex max-w-sm animate-rise flex-col items-center gap-2.5 rounded-2xl border border-rose-500/40 bg-ink/90 px-5 py-4 text-center shadow-2xl backdrop-blur max-lg:mx-auto">
       <span className="flex items-center gap-2 text-sm font-semibold text-rose-100">
@@ -1078,26 +1340,47 @@ export default function RelightPage() {
               </Button>
             }
           >
-            <div className={cn("flex flex-col gap-3 lg:short:gap-2", !canLight && "pointer-events-none opacity-50")} inert={!canLight}>
+            <div className={cn("flex flex-col gap-3", LIGHT_ROW_GAPS, !canLight && "pointer-events-none opacity-50")} inert={!canLight}>
+              {/* The fill light's switch, and which of the two lights the readout and the sliders below are on. The row is what the "?" box is laid out against, so the box is as wide as the panel. */}
+              {/* In a short window beside the stage it is drawn closer to the heading above and the readout below: the sidebar was fitted to a 1280 x 720 window before this row was added, and has that much room and no more. */}
+              <div className="relative flex items-center justify-between gap-2 lg:short:-mb-1 lg:short:-mt-1.5">
+                <Segmented
+                  label="Light to change"
+                  low
+                  value={which}
+                  onChange={pickLight}
+                  options={[
+                    { value: "key", label: "Key" },
+                    { value: "fill", label: "Fill" },
+                  ]}
+                />
+                <span className="flex items-center gap-1.5">
+                  <label htmlFor={fillSwitch} className="cursor-pointer text-[13px] font-medium text-zinc-200">
+                    Fill light
+                  </label>
+                  <Help about="Fill light">{FILL_HELP}</Help>
+                  <Switch id={fillSwitch} label="Fill light" checked={fillLight !== null} onChange={switchFill} />
+                </span>
+              </div>
               <div className="flex items-center justify-between rounded-xl bg-black/30 px-3 py-1.5 font-mono text-xs tabular-nums text-zinc-400">
                 <span>
-                  x <span className="text-zinc-100">{light.x.toFixed(2)}</span>
+                  x <span className="text-zinc-100">{edited.x.toFixed(2)}</span>
                 </span>
                 <span>
-                  y <span className="text-zinc-100">{light.y.toFixed(2)}</span>
+                  y <span className="text-zinc-100">{edited.y.toFixed(2)}</span>
                 </span>
                 <span className="flex items-center gap-1.5">
-                  colour <span className="h-3 w-3 rounded-full ring-1 ring-white/30" style={{ background: cssColor(light.color) }} />
+                  colour <span className="h-3 w-3 rounded-full ring-1 ring-white/30" style={{ background: cssColor(edited.color) }} />
                 </span>
               </div>
               <Slider
                 label="Height"
-                value={base.height}
+                value={edited.height}
                 min={HEIGHT_MIN}
                 max={HEIGHT_MAX}
                 step={0.01}
                 onChange={(v) => {
-                  setBase((b) => ({ ...b, height: v }));
+                  change(which, { height: v });
                   setHeightUsed(true);
                 }}
                 hint={HEIGHT_HINT}
@@ -1105,7 +1388,7 @@ export default function RelightPage() {
                 help={HEIGHT_HELP}
                 helpNow={heightUsed}
               />
-              <Slider label="Intensity" value={base.intensity} min={0} max={4} step={0.05} onChange={(v) => setBase((b) => ({ ...b, intensity: v }))} help={INTENSITY_HELP} />
+              <Slider label="Intensity" value={edited.intensity} min={0} max={4} step={0.05} onChange={(v) => change(which, { intensity: v })} help={INTENSITY_HELP} />
               <Slider
                 label="Ambient"
                 value={base.ambient}
@@ -1115,14 +1398,15 @@ export default function RelightPage() {
                 onChange={(v) => setBase((b) => ({ ...b, ambient: v }))}
                 hint="Light that reaches everything, shadows included."
                 help={AMBIENT_HELP}
+                note={fillLight ? BOTH_LIGHTS : undefined}
               />
               <Slider
                 label="Colour"
-                value={warmth}
+                value={editedWarmth}
                 min={-1}
                 max={1}
                 step={0.02}
-                onChange={setWarmth}
+                onChange={(v) => (which === "fill" ? setFill((f) => f && { ...f, warmth: v }) : setWarmth(v))}
                 format={(v) => (Math.abs(v) < 0.02 ? "neutral" : v > 0 ? `warm ${Math.round(v * 100)}` : `cool ${Math.round(-v * 100)}`)}
                 track={`linear-gradient(to right, ${cssColor(COOL)}, #ffffff, ${cssColor(WARM)})`}
                 help={COLOUR_HELP}
@@ -1134,7 +1418,23 @@ export default function RelightPage() {
                   },
                 }}
               />
-              <Toggle label="Cast shadows" hint="Objects block the light." checked={shadows} onChange={setShadows} help={SHADOWS_HELP} />
+              <Toggle
+                label="Cast shadows"
+                hint="Objects block the light."
+                checked={shadows}
+                onChange={setShadows}
+                help={
+                  fillLight ? (
+                    <>
+                      {SHADOWS_HELP}
+                      {SHADOWS_HELP_WITH_FILL}
+                    </>
+                  ) : (
+                    SHADOWS_HELP
+                  )
+                }
+                note={fillLight ? BOTH_LIGHTS : undefined}
+              />
               {/* The five share one row: each starts with next to no padding of its own and takes an equal share of what is left, so the row fits a 360 px phone and fills the sidebar alike. */}
               <div className="flex flex-wrap gap-1.5">
                 {PRESETS.map((preset) => (
@@ -1145,6 +1445,7 @@ export default function RelightPage() {
                     onClick={() => {
                       stopSweep();
                       // Exactly the preset's numbers, on every window and photo, so the same preset always gives the same lighting.
+                      // A preset is the key's: the fill light stays as it is.
                       setBase((b) => ({ ...b, ...preset.light }));
                       setWarmth(preset.warmth ?? 0);
                     }}
@@ -1156,12 +1457,19 @@ export default function RelightPage() {
                   size="sm"
                   variant="ghost"
                   className="flex-auto px-0.5!"
-                  title="Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone."
+                  title={
+                    fillLight
+                      ? "Puts the light, its colour and Cast shadows back to how they started, and switches the fill light off. The photo and the Enhance text are left alone."
+                      : "Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone."
+                  }
                   onClick={() => {
                     stopSweep();
                     setBase(START);
                     setWarmth(0);
                     setShadows(true);
+                    // As the page starts: no fill light, and none remembered. Switched on again it is placed afresh, across from the key.
+                    setFill(null);
+                    setPicked("key");
                   }}
                 >
                   Reset light
@@ -1290,15 +1598,21 @@ export default function RelightPage() {
             e.currentTarget.setPointerCapture(e.pointerId);
             fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
             if (fingers.current.size === 2) {
-              // A second finger: from here the two set the light's distance, and neither drags it.
+              // A second finger: from here the two set the light's distance, and neither drags it. The light is the one the first finger took.
               const before = beforeTouch.current;
-              if (before && e.timeStamp - before.at < PINCH_GRACE_MS) setBase((b) => ({ ...b, x: before.x, y: before.y }));
-              pinch.current = { spread: fingerSpread(), height: heightNow.current.shown };
+              if (before && e.timeStamp - before.at < PINCH_GRACE_MS) change(before.which, { x: before.x, y: before.y });
+              pinch.current = { which: grabbed.current, spread: fingerSpread(), height: heightNow.current[grabbed.current].shown };
               return;
             }
             if (fingers.current.size > 2) return;
             stopSweep(); // the user has taken the light
-            beforeTouch.current = { x: base.x, y: base.y, at: e.timeStamp };
+            // A press on a sun takes that light, and the panel goes to it. A press anywhere else moves the light the panel is on.
+            const pressed = e.target instanceof Element ? e.target.closest<HTMLElement>("[data-light]")?.dataset.light : undefined;
+            const taken: Which = pressed === "key" ? "key" : pressed === "fill" && fill?.on ? "fill" : which;
+            const at = taken === "fill" && fill ? fill.base : base;
+            grabbed.current = taken;
+            setPicked(taken);
+            beforeTouch.current = { which: taken, x: at.x, y: at.y, at: e.timeStamp };
             setDragging(true);
             dragTo(e);
           }}
@@ -1307,7 +1621,7 @@ export default function RelightPage() {
             if (fingers.current.has(e.pointerId)) fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
             // Spreading the fingers brings the light nearer, pinching pushes it back. Once a pinch has begun, a finger left on the screen does not drag.
             if (pinch.current) {
-              if (fingers.current.size >= 2) setHeight(pinch.current.height * (fingerSpread() / pinch.current.spread) ** PINCH_POWER);
+              if (fingers.current.size >= 2) setHeight(pinch.current.which, pinch.current.height * (fingerSpread() / pinch.current.spread) ** PINCH_POWER);
             } else dragTo(e);
           }}
           onPointerUp={endPointer}
@@ -1325,6 +1639,7 @@ export default function RelightPage() {
                       scene={scene}
                       light={light}
                       shadows={shadows}
+                      fill={fillLight}
                       canvasRef={canvas}
                       settleRef={settle}
                       onReady={onReady}
@@ -1340,73 +1655,34 @@ export default function RelightPage() {
                   {(loading || (scene !== null && !canShade)) && <BusyOverlay>{loading ? (progress ? progressText(progress) : "Estimating depth and surface normals…") : "Preparing the shader…"}</BusyOverlay>}
                 </div>
 
+                {/* While the fill light is off there is one sun, as there always was. While it is on there are two, each with its letter, and the one the panel is on lies on top. */}
                 {canLight && (
-                  <button
-                    ref={setHandle}
-                    type="button"
-                    aria-label={`Light position, x ${light.x.toFixed(2)}, y ${light.y.toFixed(2)}, height ${light.height.toFixed(2)}. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back.`}
-                    data-height={light.height.toFixed(2)}
-                    onKeyDown={(e) => {
-                      const step = e.shiftKey ? 0.1 : 0.02;
-                      // With Ctrl or Cmd these two zoom the page: left to the browser.
-                      if (!e.ctrlKey && !e.metaKey && (e.key === "+" || e.key === "=")) stepHeight(1);
-                      else if (!e.ctrlKey && !e.metaKey && (e.key === "-" || e.key === "_")) stepHeight(-1);
-                      else if (e.key === "ArrowLeft") nudge(-step, 0);
-                      else if (e.key === "ArrowRight") nudge(step, 0);
-                      else if (e.key === "ArrowUp") nudge(0, -step);
-                      else if (e.key === "ArrowDown") nudge(0, step);
-                      else return;
-                      e.preventDefault();
-                    }}
-                    className={cn(
-                      "light-handle group absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/80",
-                      dragging ? "cursor-grabbing" : "cursor-grab",
-                    )}
-                    style={
-                      {
-                        // As large as the disc, and never smaller than the 40 px that is easy to grab.
-                        width: Math.max(HANDLE_PX, sunPx),
-                        height: Math.max(HANDLE_PX, sunPx),
-                        "--light-x": light.x,
-                        "--light-y": light.y,
-                        "--photo-ratio": width / height,
-                        "--handle-margin": `${HANDLE_MARGIN_PX}px`,
-                        "--handle-margin-x": `${sunMarginX}px`,
-                      } as CSSProperties
-                    }
-                  >
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                      style={{
-                        width: sunPx + 2 * glowReachPx,
-                        height: sunPx + 2 * glowReachPx,
-                        filter: `blur(${between(SUN_GLOW_BLUR_PX, lift).toFixed(1)}px)`,
-                        background: `radial-gradient(circle, ${cssColor(light.color)} 0%, transparent 65%)`,
-                        opacity: 0.25 + 0.15 * Math.min(light.intensity, 3),
-                      }}
-                    />
-                    <span
-                      data-sun
-                      className={cn(
-                        "pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white text-black/75 transition-[scale,width,height,box-shadow] motion-reduce:transition-none",
-                        dragging && "scale-110",
-                      )}
-                      style={{ width: sunPx, height: sunPx, boxShadow: sunShadow, background: cssColor(light.color) }}
-                    >
-                      {/* Marked important: the icon's own default size is set the same way, and which class wins otherwise is down to the stylesheet's order. */}
-                      <SunIcon className="h-1/2! w-1/2!" />
-                    </span>
-                    {/* Appears when the mouse has rested on the sun for a moment, and never while it is being dragged. */}
-                    {!dragging && (
-                      <span
-                        aria-hidden
-                        className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/70 px-2 py-0.5 text-[11px] font-medium text-zinc-200 opacity-0 backdrop-blur transition-opacity delay-0 group-hover:opacity-100 group-hover:delay-500 group-focus-visible:opacity-100"
-                      >
-                        {SUN_HINT}
-                      </span>
-                    )}
-                  </button>
+                  <LightSun
+                    which="key"
+                    light={light}
+                    letter={fillLight ? "K" : null}
+                    onTop={which === "key"}
+                    dragging={dragging && which === "key"}
+                    name={fillLight ? "Key light position" : "Light position"}
+                    photoRatio={width / height}
+                    marginX={sunMarginX}
+                    onScroll={(step) => scrollHeight("key", step)}
+                    onKeyDown={(e) => onSunKey("key", e)}
+                  />
+                )}
+                {canLight && fillLight && (
+                  <LightSun
+                    which="fill"
+                    light={fillLight}
+                    letter="F"
+                    onTop={which === "fill"}
+                    dragging={dragging && which === "fill"}
+                    name="Fill light position"
+                    photoRatio={width / height}
+                    marginX={sunMarginX}
+                    onScroll={(step) => scrollHeight("fill", step)}
+                    onKeyDown={(e) => onSunKey("fill", e)}
+                  />
                 )}
               </FitBox>
             </div>

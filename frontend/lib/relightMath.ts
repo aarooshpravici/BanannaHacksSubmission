@@ -7,7 +7,7 @@
 // Conventions (same as the backend): x right, y down, z toward the viewer.
 // Lengths are in image widths: x in [0, 1], y in [0, H/W], z = depth * relief.
 
-import type { Light } from "./types";
+import type { FillLight, Light } from "./types";
 
 export const MAX_FALLOFF = 3.0; // relight.MAX_FALLOFF
 /** relight.TERMINATOR_SOFTNESS: how gradually a surface goes dark as it turns away from the light. */
@@ -43,8 +43,8 @@ export function pyRound(x: number): number {
   return floor % 2 === 0 ? floor : floor + 1;
 }
 
-/** _light_position: where the light is, in image widths. */
-export function lightPosition(width: number, height: number, relief: number, light: Light): Vec3 {
+/** _light_position: where the light is, in image widths. The main light or the fill. */
+export function lightPosition(width: number, height: number, relief: number, light: Pick<Light, "x" | "y" | "height">): Vec3 {
   return [light.x, (light.y * height) / width, relief + Math.max(light.height, 1e-3)];
 }
 
@@ -360,16 +360,17 @@ export interface ShadowLayer {
 
 /**
  * relight(): diffuse() * shadows() -> shading_map() -> apply_shading().
+ * `fill` is relight()'s fill light: null = none. Only `light` casts shadows.
  * Returns RGBA bytes ready for putImageData.
  */
-export function relightPixels(scene: SceneArrays, light: Light, castShadows = true): Uint8ClampedArray<ArrayBuffer> {
+export function relightPixels(scene: SceneArrays, light: Light, castShadows = true, fill: FillLight | null = null): Uint8ClampedArray<ArrayBuffer> {
   const { width: w, height: h, relief, depth } = scene;
   let shadow: ShadowLayer | null = null;
   if (castShadows) {
     const field = shadowHeightField(depth, w, h, w, h, relief);
     shadow = { map: shadowMap(field, relief, lightPosition(w, h, relief, light)), width: field.width, height: field.height };
   }
-  return shadePixels(scene, light, shadow);
+  return shadePixels(scene, light, shadow, fill);
 }
 
 /**
@@ -377,13 +378,20 @@ export function relightPixels(scene: SceneArrays, light: Light, castShadows = tr
  * with the shadow map handed in (null = no cast shadows). Split from
  * relightPixels so the CPU renderer (lib/relightCpuCore.ts) can keep the
  * height field between frames instead of rebuilding it for every one.
+ *
+ * With a fill light, fill_map() is added the way apply_shading() adds it: the
+ * photo times the fill's share, in the fill's colour, before the roll-off.
+ * Without one, not a line of the arithmetic below is different from before.
  */
-export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLayer | null): Uint8ClampedArray<ArrayBuffer> {
+export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLayer | null, fill: FillLight | null = null): Uint8ClampedArray<ArrayBuffer> {
   const { width: w, height: h, relief, rgba, depth, normals } = scene;
   const [lx, ly, lz] = lightPosition(w, h, relief, light);
 
   // diffuse(): exposure is measured relative to the centre of the scene.
   const reference = Math.hypot(lx - 0.5, ly - (0.5 * h) / w, lz - relief / 2);
+  // The same for the fill, from its own place and height.
+  const [fx, fy, fz] = fill ? lightPosition(w, h, relief, fill) : [0, 0, 0];
+  const fillReference = Math.hypot(fx - 0.5, fy - (0.5 * h) / w, fz - relief / 2);
   const out = new Uint8ClampedArray(w * h * 4);
   const knee = HIGHLIGHT_KNEE;
 
@@ -401,12 +409,25 @@ export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLaye
       if (shadow) direct *= sampleBilinear(shadow.map, shadow.width, shadow.height, i, j, w, h);
       const shading = light.ambient + light.intensity * direct;
 
+      // fill_map(): intensity * diffuse(), with no shadow and no ambient.
+      let fillShading = 0;
+      if (fill) {
+        const ux = fx - (i + 0.5) / w;
+        const uy = fy - (j + 0.5) / w;
+        const uz = fz - depth[p] * relief;
+        const fillSafe = Math.max(Math.hypot(ux, uy, uz), 1e-6);
+        const fillCos = (normals[p * 3] * ux + normals[p * 3 + 1] * uy + normals[p * 3 + 2] * uz) / fillSafe;
+        const fillFalloff = Math.min((fillReference / fillSafe) ** 2, MAX_FALLOFF);
+        fillShading = fill.intensity * (Math.min(softTerminator(fillCos), 1.0) * fillFalloff);
+      }
+
       // apply_shading(): multiply in linear light, roll highlights off above the knee.
       const alpha = rgba[p * 4 + 3] / 255;
       for (let c = 0; c < 3; c++) {
         // to_rgb() flattens transparency onto white.
         const srgb = (rgba[p * 4 + c] / 255) * alpha + (1 - alpha);
         let lit = srgbToLinear(srgb) * shading * light.color[c];
+        if (fill) lit = lit + srgbToLinear(srgb) * fillShading * fill.color[c];
         if (lit > knee) lit = knee + (1 - knee) * (1 - Math.exp(-(lit - knee) / (1 - knee)));
         const v = Math.min(1, Math.max(0, linearToSrgb(lit)));
         out[p * 4 + c] = Math.floor(v * 255 + 0.5);

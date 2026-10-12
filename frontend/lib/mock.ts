@@ -11,7 +11,9 @@ import { ApiError } from "./api";
 import { base64ToCanvas, canvasToBase64, ctx2d, makeCanvas, stripDataUrl } from "./image";
 import { type SceneArrays, relightPixels, sceneArrays } from "./relightMath";
 import {
+  DEFAULT_FILL,
   DEFAULT_LIGHT,
+  type FillLightIn,
   type Health,
   type JobRef,
   type JobStatus,
@@ -178,8 +180,8 @@ export async function adoptScene(scene: RelightScene): Promise<string> {
   return scene_id;
 }
 
-/** The backend's relight(), run by lib/relightMath.ts on a reduced copy of the scene. */
-function renderScene(sceneId: string, lightIn: LightIn | undefined, shadows: boolean): HTMLCanvasElement {
+/** The backend's relight(), run by lib/relightMath.ts on a reduced copy of the scene. A fill light that is absent or null is off, as on the backend. */
+function renderScene(sceneId: string, lightIn: LightIn | undefined, shadows: boolean, fillIn: FillLightIn | null | undefined): HTMLCanvasElement {
   const scene = scenes.get(sceneId);
   if (!scene) throw new ApiError("unknown scene id; upload the photo again", 404);
   if (!scene.arrays) {
@@ -195,7 +197,7 @@ function renderScene(sceneId: string, lightIn: LightIn | undefined, shadows: boo
     scene.arrays = sceneArrays(read(scene.image), read(scene.depth), read(scene.normals), scene.relief);
   }
   const { width, height } = scene.arrays;
-  const pixels = relightPixels(scene.arrays, { ...DEFAULT_LIGHT, ...lightIn }, shadows);
+  const pixels = relightPixels(scene.arrays, { ...DEFAULT_LIGHT, ...lightIn }, shadows, fillIn ? { ...DEFAULT_FILL, ...fillIn } : null);
   const out = makeCanvas(width, height);
   ctx2d(out).putImageData(new ImageData(pixels, width, height), 0, 0);
   return out;
@@ -203,14 +205,14 @@ function renderScene(sceneId: string, lightIn: LightIn | undefined, shadows: boo
 
 export async function relightRender(body: RelightRenderIn): Promise<RelightRender> {
   await sleep(between(150, 300));
-  return { image: canvasToBase64(renderScene(body.scene_id, body.light, body.shadows ?? true), "image/jpeg") };
+  return { image: canvasToBase64(renderScene(body.scene_id, body.light, body.shadows ?? true, body.fill), "image/jpeg") };
 }
 
 export async function relightEnhance(body: RelightEnhanceIn): Promise<JobRef> {
   await sleep(between(150, 300));
   if (!scenes.has(body.scene_id)) throw new ApiError("unknown scene id; upload the photo again", 404);
   return submit(between(3000, 4200), async () => {
-    const lit = renderScene(body.scene_id, body.light, body.shadows ?? true);
+    const lit = renderScene(body.scene_id, body.light, body.shadows ?? true, body.fill);
     // Stand-in for the diffusion clean-up: more contrast and a soft bloom.
     const out = makeCanvas(lit.width, lit.height);
     const ctx = ctx2d(out);

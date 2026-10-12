@@ -1,7 +1,8 @@
 """Relight a photo from a movable point light.
 
 photo -> depth -> height field -> surface normals -> diffuse shading + cast
-shadows -> multiply into the photo.
+shadows -> multiply into the photo. A second light, the fill, can be added: it
+is shaded the same way but casts no shadow (fill_map).
 
 Conventions (everything is in image space, so there are no axis flips):
   x grows to the right, y grows downward, z grows toward the viewer.
@@ -178,7 +179,7 @@ class Light:
     y: float  # 0 = top edge, 1 = bottom edge
     height: float = 0.5  # distance in front of the nearest surface, in image widths
     intensity: float = 1.0
-    ambient: float = 0.3  # light that reaches everything, so shadows are not pure black
+    ambient: float = 0.3  # light that reaches everything, so shadows are not pure black (not used for a fill light)
     color: tuple[float, float, float] = (1.0, 1.0, 1.0)
 
 
@@ -328,6 +329,20 @@ def shading_map(geom: Geometry, light: Light, *, cast_shadows: bool = True) -> n
     return light.ambient + light.intensity * direct
 
 
+def fill_map(geom: Geometry, fill: Light) -> np.ndarray:
+    """What a fill light adds at each pixel, (H, W).
+
+    A fill is a second, weaker light, usually on the side opposite the main
+    one, that lifts the shadows the main light leaves. It is shaded exactly as
+    the main light is (diffuse(), from its own position and height), with two
+    things left out. It casts no shadow and is not darkened by the main
+    light's: a fill that threw shadows of its own would put a second set of
+    them on a face. And it has no ambient: that is shared, and is the main
+    light's.
+    """
+    return fill.intensity * diffuse(geom, fill)
+
+
 def _srgb_to_linear(c: np.ndarray) -> np.ndarray:
     return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
 
@@ -336,16 +351,30 @@ def _linear_to_srgb(c: np.ndarray) -> np.ndarray:
     return np.where(c <= 0.0031308, c * 12.92, 1.055 * np.maximum(c, 1e-8) ** (1 / 2.4) - 0.055)
 
 
-def apply_shading(img: Image.Image, shading: np.ndarray, color: tuple[float, float, float] = (1.0, 1.0, 1.0)) -> Image.Image:
+def apply_shading(
+    img: Image.Image,
+    shading: np.ndarray,
+    color: tuple[float, float, float] = (1.0, 1.0, 1.0),
+    *,
+    fill: np.ndarray | None = None,
+    fill_color: tuple[float, float, float] = (1.0, 1.0, 1.0),
+) -> Image.Image:
     """Multiply the photo by a shading map, in linear light.
 
     Photos store brightness on a perceptual (sRGB) curve; multiplying there
     gives muddy shadows. Converting to linear light first makes "half the
     light" actually look like half the light. Values above white roll off
     smoothly instead of clipping.
+
+    fill, if given (from fill_map), is a second light's share, in its own
+    colour: the photo times it is added before the roll-off, so the two lights
+    together cannot clip either. Without it, the result is what it always was.
     """
     rgb = np.asarray(to_rgb(img), dtype=np.float32) / 255.0
-    lit = _srgb_to_linear(rgb) * shading[..., None] * np.asarray(color, dtype=np.float32)
+    linear = _srgb_to_linear(rgb)
+    lit = linear * shading[..., None] * np.asarray(color, dtype=np.float32)
+    if fill is not None:
+        lit = lit + linear * fill[..., None] * np.asarray(fill_color, dtype=np.float32)
     knee = 0.8
     over = np.maximum(lit - knee, 0.0)
     lit = np.where(lit > knee, knee + (1 - knee) * (1 - np.exp(-over / (1 - knee))), lit)
@@ -353,8 +382,12 @@ def apply_shading(img: Image.Image, shading: np.ndarray, color: tuple[float, flo
     return Image.fromarray((out * 255.0 + 0.5).astype(np.uint8))
 
 
-def relight(img: Image.Image, geom: Geometry, light: Light, *, cast_shadows: bool = True) -> Image.Image:
-    return apply_shading(img, shading_map(geom, light, cast_shadows=cast_shadows), light.color)
+def relight(img: Image.Image, geom: Geometry, light: Light, *, cast_shadows: bool = True, fill: Light | None = None) -> Image.Image:
+    """The photo lit by `light` (the main, or key, light) and, if given, by a fill light as well: see fill_map."""
+    shading = shading_map(geom, light, cast_shadows=cast_shadows)
+    if fill is None:
+        return apply_shading(img, shading, light.color)
+    return apply_shading(img, shading, light.color, fill=fill_map(geom, fill), fill_color=fill.color)
 
 
 def normals_preview(geom: Geometry) -> Image.Image:

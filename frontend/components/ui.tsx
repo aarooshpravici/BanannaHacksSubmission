@@ -73,9 +73,11 @@ interface SliderProps {
   helpNow?: boolean;
   /** For a value that is not printed as a plain number (Colour): the number to type from, and what was typed as a value again (null if it is not one). */
   typed?: { text: (value: number) => string; parse: (typed: string) => number | null };
+  /** A word or two in small grey after the name, for what the name alone does not say at that moment. */
+  note?: string;
 }
 
-export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends, help, helpNow, typed }: SliderProps) {
+export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends, help, helpNow, typed, note }: SliderProps) {
   const id = useId();
   const fill = ((value - min) / (max - min)) * 100;
   // A typed value is held to the slider's range and steps, so the track and the number always agree.
@@ -98,6 +100,7 @@ export function Slider({ label, value, min, max, step = 0.01, onChange, format, 
               {help}
             </Help>
           )}
+          {note && <span className="text-[11px] text-zinc-500">{note}</span>}
         </span>
         <NumberEntry
           about={label}
@@ -142,9 +145,11 @@ interface ToggleProps {
   disabled?: boolean;
   /** A longer explanation, opened from a "?" beside the label. */
   help?: ReactNode;
+  /** A word or two in small grey after the name, as on a Slider. */
+  note?: string;
 }
 
-export function Toggle({ label, checked, onChange, hint, disabled = false, help }: ToggleProps) {
+export function Toggle({ label, checked, onChange, hint, disabled = false, help, note }: ToggleProps) {
   const id = useId();
   return (
     // The words are the switch's <label>, so a click on them still flips it; the "?" sits beside them, outside it.
@@ -155,25 +160,33 @@ export function Toggle({ label, checked, onChange, hint, disabled = false, help 
             {label}
           </label>
           {help && <Help about={label}>{help}</Help>}
+          {note && <span className="text-[11px] text-zinc-500">{note}</span>}
         </span>
         {hint && <span className="mt-0.5 hidden text-xs leading-4 text-zinc-500 tall:block">{hint}</span>}
       </span>
-      <button
-        id={id}
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        disabled={disabled}
-        onClick={() => onChange(!checked)}
-        className={cn(
-          "relative h-6 w-10 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/70 disabled:cursor-not-allowed disabled:opacity-45",
-          checked ? "bg-accent" : "bg-white/15",
-        )}
-      >
-        <span className={cn("absolute left-0.5 top-0.5 h-5 w-5 rounded-full shadow transition-transform", checked ? "translate-x-4 bg-black" : "bg-white")} />
-      </button>
+      <Switch id={id} label={label} checked={checked} onChange={onChange} disabled={disabled} />
     </div>
+  );
+}
+
+/** The switch itself, without its words: for a row that lays its words out its own way. `id` is what the row's <label> points at. */
+export function Switch({ id, label, checked, onChange, disabled = false }: { id: string; label: string; checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean }) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative h-6 w-10 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/70 disabled:cursor-not-allowed disabled:opacity-45",
+        checked ? "bg-accent" : "bg-white/15",
+      )}
+    >
+      <span className={cn("absolute left-0.5 top-0.5 h-5 w-5 rounded-full shadow transition-transform", checked ? "translate-x-4 bg-black" : "bg-white")} />
+    </button>
   );
 }
 
@@ -184,11 +197,15 @@ interface SegmentedProps<T extends string> {
   onChange: (value: T) => void;
   options: { value: T; label: ReactNode; disabled?: boolean; title?: string }[];
   className?: string;
+  /** What the choice is between, for a screen reader, where no words beside it say. */
+  label?: string;
+  /** Lower beside the stage (from lg up), where a sidebar has no height to spare, and lower still in a short window. On a stacked page it keeps its full height, for a finger. */
+  low?: boolean;
 }
 
-export function Segmented<T extends string>({ value, onChange, options, className }: SegmentedProps<T>) {
+export function Segmented<T extends string>({ value, onChange, options, className, label, low = false }: SegmentedProps<T>) {
   return (
-    <div role="tablist" className={cn("inline-flex rounded-xl border border-white/10 bg-black/40 p-0.5 backdrop-blur", className)}>
+    <div role="tablist" aria-label={label} className={cn("inline-flex rounded-xl border border-white/10 bg-black/40 p-0.5 backdrop-blur", className)}>
       {options.map((option) => (
         <button
           key={option.value}
@@ -200,6 +217,7 @@ export function Segmented<T extends string>({ value, onChange, options, classNam
           onClick={() => onChange(option.value)}
           className={cn(
             "inline-flex h-8 items-center gap-1.5 rounded-[10px] px-3 text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+            low && "lg:h-6 lg:short:h-5",
             option.value === value ? "bg-white/[0.14] text-white" : "text-zinc-400 hover:text-zinc-100",
           )}
         >

@@ -27,7 +27,7 @@ self.onmessage = (event) => {
   try {
     if (!scene) throw new Error("no scene");
     const started = performance.now();
-    const frame = scene.render(request.light, request.shadows, request.quality);
+    const frame = scene.render(request.light, request.shadows, request.quality, request.fill);
     reply = { type: "frame", id: request.id, frame, ms: performance.now() - started };
     transfer.push(frame.pixels.buffer);
   } catch (error) {

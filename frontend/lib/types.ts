@@ -53,6 +53,35 @@ export const DEFAULT_LIGHT: Light = {
   color: [1, 1, 1],
 };
 
+/**
+ * A second, weaker light that lifts the shadows the main light leaves. It has a
+ * place, a height, an intensity and a colour of its own. It casts no shadow,
+ * and it has no ambient: that is shared, and is the main light's.
+ */
+export interface FillLightIn {
+  /** 0 = left edge, 1 = right edge; may go outside 0..1. Default 0.8 */
+  x?: number;
+  /** 0 = top edge, 1 = bottom edge. Default 0.2 */
+  y?: number;
+  /** Distance in front of the subject, in image widths. 0 < height <= 2. Default 0.35 */
+  height?: number;
+  /** 0..4. Default 0.6 */
+  intensity?: number;
+  /** Linear RGB multiplier. Default [1, 1, 1] */
+  color?: [number, number, number];
+}
+
+/** A FillLightIn with every field filled in. */
+export type FillLight = Required<FillLightIn>;
+
+export const DEFAULT_FILL: FillLight = {
+  x: 0.8,
+  y: 0.2,
+  height: 0.35,
+  intensity: 0.6,
+  color: [1, 1, 1],
+};
+
 export interface RelightSceneIn {
   image: string;
   /** Use the detailed normals model (slower, much better). Default true */
@@ -79,6 +108,8 @@ export interface RelightRenderIn {
   light?: LightIn;
   /** Default true */
   shadows?: boolean;
+  /** The fill light. Absent or null = off. */
+  fill?: FillLightIn | null;
 }
 
 export interface RelightRender {
@@ -94,4 +125,6 @@ export interface RelightEnhanceIn {
   prompt?: string;
   /** Default true. Whether the render sent to the model has cast shadows. */
   shadows?: boolean;
+  /** The fill light in the render sent to the model. Absent or null = off. */
+  fill?: FillLightIn | null;
 }

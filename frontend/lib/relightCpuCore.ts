@@ -16,7 +16,7 @@ import {
   shadowHeightField,
   shadowMap,
 } from "./relightMath";
-import type { Light } from "./types";
+import type { FillLight, Light } from "./types";
 
 /**
  * "full" is relightPixels() exactly: the picture the server would send.
@@ -95,7 +95,8 @@ export class CpuScene {
     };
   }
 
-  render(light: Light, castShadows: boolean, quality: CpuQuality): CpuFrame {
+  /** `fill` is the fill light, null when it is off. It casts no shadow, so the shadow map kept between frames is the main light's alone. */
+  render(light: Light, castShadows: boolean, quality: CpuQuality, fill: FillLight | null = null): CpuFrame {
     const level = this.levels[quality];
     const { scene } = level;
     let shadow: ShadowLayer | null = null;
@@ -108,7 +109,7 @@ export class CpuScene {
       }
       shadow = level.shadow.layer;
     }
-    return { quality, width: scene.width, height: scene.height, pixels: shadePixels(scene, light, shadow) };
+    return { quality, width: scene.width, height: scene.height, pixels: shadePixels(scene, light, shadow, fill) };
   }
 }
 
@@ -116,6 +117,6 @@ export class CpuScene {
 
 export type CpuRequest =
   | { type: "scene"; data: CpuSceneData }
-  | { type: "render"; id: number; light: Light; shadows: boolean; quality: CpuQuality };
+  | { type: "render"; id: number; light: Light; shadows: boolean; fill: FillLight | null; quality: CpuQuality };
 
 export type CpuReply = { type: "frame"; id: number; frame: CpuFrame; ms: number } | { type: "error"; id: number; message: string };

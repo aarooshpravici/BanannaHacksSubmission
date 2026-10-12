@@ -1,16 +1,34 @@
 """HTTP-level tests of the shared endpoints and the provider mock/fixture paths."""
 
+import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
 from app.config import get_settings
-from app.images import encode_image
+from app.ideas import relight as R
+from app.images import decode_image, encode_image
 from app.jobs import jobs
 from app.main import app
 from app.providers import generation
+from app.routers import relight as relight_router
 
 client = TestClient(app)
+
+
+def _stored_scene() -> str:
+    """A scene put straight into the server's store, so that no model has to run: a grey photo of a bump on a plane."""
+    ys, xs = np.mgrid[0:64, 0:64]
+    bump = np.clip(1.0 - ((xs - 32) ** 2 + (ys - 32) ** 2) / 19.0**2, 0.0, 1.0).astype(np.float32)
+    scene = relight_router._Scene(Image.new("RGB", (64, 64), (150, 150, 150)), R.build_geometry(bump, smooth=0))
+    relight_router._scenes["fill-test"] = scene
+    return "fill-test"
+
+
+def _render(body: dict) -> np.ndarray:
+    resp = client.post("/relight/render", json=body)
+    assert resp.status_code == 200, resp.text
+    return np.asarray(decode_image(resp.json()["image"])).astype(int)
 
 
 def test_health_reports_mode_and_never_leaks_keys():
@@ -49,6 +67,73 @@ def test_unexpected_error_is_a_json_500_the_browser_is_allowed_to_read(monkeypat
     assert resp.status_code == 500 and "unexpected error" in resp.json()["detail"]
     # Without this header the browser hides the response and the page says the backend is unreachable.
     assert resp.headers["access-control-allow-origin"] == "*"
+
+
+# --- the fill light ---------------------------------------------------------
+
+
+def test_a_render_without_a_fill_light_is_what_it_always_was():
+    scene_id = _stored_scene()
+    light = {"x": -0.2, "y": 0.4, "height": 0.2, "intensity": 1.5, "ambient": 0.1}
+    # What a client from before the fill light sends, and what such a client's request gave.
+    before = _render({"scene_id": scene_id, "light": light})
+    stored = relight_router._scenes[scene_id]
+    expected = R.relight(stored.image, stored.geom, R.Light(-0.2, 0.4, 0.2, 1.5, 0.1))
+    assert np.array_equal(before, np.asarray(decode_image(encode_image(expected, "JPEG"))))
+    assert np.array_equal(_render({"scene_id": scene_id, "light": light, "fill": None}), before), "null is off"
+    assert np.array_equal(_render({"scene_id": scene_id, "light": light, "shadows": True}), before)
+
+
+def test_a_fill_light_on_the_right_lifts_the_right_of_the_picture():
+    scene_id = _stored_scene()
+    light = {"x": -0.2, "y": 0.4, "height": 0.2, "intensity": 1.5, "ambient": 0.1}
+    before = _render({"scene_id": scene_id, "light": light})
+    fill = {"x": 1.2, "y": 0.4, "height": 0.35, "intensity": 0.6, "color": [1.0, 1.0, 1.0]}
+    after = _render({"scene_id": scene_id, "light": light, "fill": fill})
+    assert after[:, 48:].mean() > before[:, 48:].mean() + 15
+    assert after[:, 48:].mean() - before[:, 48:].mean() > 2 * (after[:, :16].mean() - before[:, :16].mean())
+    # Every field of a fill has a default, as every field of the light has.
+    assert _render({"scene_id": scene_id, "light": light, "fill": {}}).mean() > before.mean()
+    # A fill has no ambient of its own: one that is sent is not an error, and is not used.
+    assert np.array_equal(_render({"scene_id": scene_id, "light": light, "fill": {**fill, "ambient": 0.9}}), after)
+
+
+@pytest.mark.parametrize(
+    "fill",
+    [
+        {"height": 0},  # a light on the surface itself
+        {"height": 2.5},
+        {"intensity": -0.1},
+        {"intensity": 4.5},
+        {"color": [1.0, 1.0]},
+        {"x": "left"},
+        "on",
+        [0.8, 0.2],
+    ],
+)
+def test_a_fill_light_that_makes_no_sense_is_a_422(fill):
+    scene_id = _stored_scene()
+    assert client.post("/relight/render", json={"scene_id": scene_id, "fill": fill}).status_code == 422
+    assert client.post("/relight/enhance", json={"scene_id": scene_id, "fill": fill}).status_code == 422
+
+
+def test_enhance_takes_a_fill_light_too():
+    scene_id = _stored_scene()
+
+    def enhanced(body: dict) -> np.ndarray:
+        job_id = client.post("/relight/enhance", json={"scene_id": scene_id, **body}).json()["job_id"]
+        for _ in range(200):
+            status = client.get(f"/jobs/{job_id}").json()
+            if status["status"] != "pending":
+                break
+        assert status["status"] == "done", status
+        return np.asarray(decode_image(status["result"]["image"])).astype(int)
+
+    # In mock mode the provider hands back the picture it was sent.
+    light = {"x": -0.2, "y": 0.4}
+    plain = enhanced({"light": light})
+    assert np.array_equal(enhanced({"light": light, "fill": None}), plain)
+    assert enhanced({"light": light, "fill": {"x": 1.2, "y": 0.4}})[:, 48:].mean() > plain[:, 48:].mean() + 10
 
 
 # --- providers without keys -------------------------------------------------
