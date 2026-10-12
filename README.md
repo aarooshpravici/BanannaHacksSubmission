@@ -65,6 +65,8 @@ flowchart LR
 
 Steps 3 to 5 exist three times and are kept in agreement: `backend/app/ideas/relight.py` (the Python reference), `frontend/lib/relightMath.ts` (a CPU port) and `frontend/lib/relightGL.ts` (the shader you watch).
 
+A second light, the fill, can be switched on in the LIGHT panel. It is shaded the same way from its own place, Height, Intensity and Colour, is added before the highlight roll-off, and casts no shadow. All three versions carry it and agree to within one level of 255.
+
 If a device cannot run the shader, the page falls back by itself: first to the same shader with 8-bit shadow buffers, then to the CPU port in a background thread (a quick preview while the light moves, the full picture when it stops). With the backend running, a processor that needs more than 1.2 seconds a picture hands the drawing to the backend. The last line of the GEOMETRY panel says which path is in use. Only the full-quality shader has run on real hardware; the fallbacks were tried by switching features off in the same browser.
 
 ## What is ours and what is not
