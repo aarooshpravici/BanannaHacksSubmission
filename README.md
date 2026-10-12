@@ -80,6 +80,7 @@ Without the two pretrained models there is nothing to shade; without our code th
 
 ## Honest limits
 
+- A flat subject (a sheet of paper, a poster, a screen) shades with bands and blotches: with nothing to go on, the depth model invents a gentle bulge, and the app lights it as if it were real.
 - One photo gives a height field, not real 3D, so shadows are approximate. Light from below looks blotchy on faces, and cast shadows still land on open sky: a faint column on the Rocket sample, a plain dark band on an outdoor photo of your own.
 - Shading is diffuse only: no shine. Light already in the photo is not removed.
 - The live shader has run on five real devices so far: an Apple-chip Mac (Chrome and Safari), a Windows laptop with Intel graphics (Chrome), a Windows laptop with a Snapdragon chip (Chromium) and two phones (an iPhone 11, and a Galaxy S21 Ultra in Chrome and Opera GX). On the Galaxy the samples worked but photos of the tester's own were refused. One cause is fixed (the page emptied its file input before reading the file, which Android does not forgive) and the phone then lit its first photo; later choices were still refused, for a reason not yet found.

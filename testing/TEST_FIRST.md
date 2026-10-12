@@ -1,6 +1,6 @@
 # Test this first
 
-Sunday Oct 11, drafts and the logo, for version `efdd976` or later.
+Sunday Oct 11, the fill light, drafts and the logo, for version `ae26824` or later.
 
 The full plan in [TEST_PLAN.md](TEST_PLAN.md) has 227 cases. You do not need to do them all. This page says what helps most right now, in order. The developer rewrites this page after every update, so check its date before you start.
 
@@ -72,6 +72,10 @@ The full plan in [TEST_PLAN.md](TEST_PLAN.md) has 227 cases. You do not need to 
 In the early morning update of Oct 11 every screenshot was retaken and 16 were added (191 then). In the rim fix of Oct 11, the 11 that show a photo analysed in the browser, or **Detailed normals** off, were retaken: 26, 56 to 58, 160, 161, 169, 171, 172, 175 and 191. In the drafts update of Oct 11, in the afternoon, the 22 that show the first page were retaken, because it now has the two tabs, and 4 were added for group M (195 in all). If you tested earlier today, get the update first: "Getting fixes" in [SETUP.md](SETUP.md#what-to-expect).
 
 **The quickest way in.** The static demo is online at **https://aarooshpravici.github.io/BanannaHacksSubmission/** and needs nothing at all: open it in a browser, on a computer or a phone. (It was published again on Oct 11 at 1:50 AM and now takes your own photo. If you still see a card in place of the dashed box, reload the page.) If you cannot get the backend installed, do [Plan B in SETUP.md](SETUP.md#plan-b-no-backend-mock-mode): it needs only Node, takes about five minutes, and both the four samples and your own photos work in it. Only two things need the backend: **Enhance** on the normal setup, and detailed normals for your own photo.
+
+## New at 8:20 PM: the fill light (two minutes, anyone)
+
+Open the demo, https://aarooshpravici.github.io/BanannaHacksSubmission/ , and reload it. Click the **Portrait** sample, click **Right**, then switch **Fill light** on at the top of the LIGHT panel. A second sun marked **F** should appear on the other side of the face and the dark side should lift. Drag each sun. Click **Key** and **Fill** and watch the sliders change to that light's numbers. Click **Reset light**: the fill should go. Tell us what you saw, on what device, and whether the face looks better with the fill than with **Ambient** raised. No person has tried it yet (K95 and open item 63 in [PENDING.md](PENDING.md)). The kit's screenshots show the LIGHT panel without this row: that is not a FAIL.
 
 ## Where things stand after Shane's runs (Oct 11, 4 PM)
 
