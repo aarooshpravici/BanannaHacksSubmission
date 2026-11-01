@@ -26,7 +26,7 @@ import { useJob } from "@/lib/useJob";
 
 /** How far outside the photo the light may be dragged, in image widths/heights. */
 const OUTSIDE = 0.5;
-/** How close the middle of the sun may come to the stage's edge, in pixels: close enough to reach past a photo that fills the stage, far enough that most of the sun stays in view. Also read by .light-handle in globals.css. */
+/** How close the middle of the sun may come to the stage's left and right edges, in pixels: close enough to reach past a photo that fills the stage, far enough that most of the sun stays in view. Also read by .light-handle in globals.css. */
 const HANDLE_MARGIN_PX = 18;
 /**
  * On a touch screen, how far the middle of the sun keeps from the left and right
@@ -36,6 +36,16 @@ const HANDLE_MARGIN_PX = 18;
  * edge sat inside that strip: a tester who reached for it on an iPhone left the page.
  */
 const TOUCH_EDGE_CLEAR_PX = 48;
+/**
+ * How close the middle of the sun may come to the stage's top and bottom, in
+ * pixels: the whole strip above and below the photo that holds the stage's
+ * buttons ([--stage-inset-y:4rem] on the stage). A sun parked in a strip lay
+ * over Export PNG or New photo, and a press on the button picked up the sun:
+ * on a phone, where the stage is only as tall as the photo and the buttons
+ * fill most of the strip, that was the only place below the photo it could go.
+ * Also read by .light-handle in globals.css.
+ */
+const HANDLE_MARGIN_Y_PX = 64;
 /** Height: how far in front of the subject the light floats, in image widths. The slider's two ends. */
 const HEIGHT_MIN = 0.03;
 const HEIGHT_MAX = 2;
@@ -517,6 +527,7 @@ function LightSun({
           "--photo-ratio": photoRatio,
           "--handle-margin": `${HANDLE_MARGIN_PX}px`,
           "--handle-margin-x": `${marginX}px`,
+          "--handle-margin-y": `${HANDLE_MARGIN_Y_PX}px`,
         } as CSSProperties
       }
     >
@@ -1040,7 +1051,7 @@ export default function RelightPage() {
     // The handle may leave the photo but not the stage.
     const marginX = handleMarginX(bounds);
     const cx = clamp(event.clientX, bounds.left + marginX, bounds.right - marginX);
-    const cy = clamp(event.clientY, bounds.top + HANDLE_MARGIN_PX, bounds.bottom - HANDLE_MARGIN_PX);
+    const cy = clamp(event.clientY, bounds.top + HANDLE_MARGIN_Y_PX, bounds.bottom - HANDLE_MARGIN_Y_PX);
     const x = round(clamp((cx - box.left) / box.width, -OUTSIDE, 1 + OUTSIDE));
     const y = round(clamp((cy - box.top) / box.height, -OUTSIDE, 1 + OUTSIDE));
     change(grabbed.current, { x, y });
@@ -1101,7 +1112,7 @@ export default function RelightPage() {
     const marginX = handleMarginX(bounds);
     return {
       x: round(clamp(x, (bounds.left + marginX - box.left) / box.width, (bounds.right - marginX - box.left) / box.width)),
-      y: round(clamp(y, (bounds.top + HANDLE_MARGIN_PX - box.top) / box.height, (bounds.bottom - HANDLE_MARGIN_PX - box.top) / box.height)),
+      y: round(clamp(y, (bounds.top + HANDLE_MARGIN_Y_PX - box.top) / box.height, (bounds.bottom - HANDLE_MARGIN_Y_PX - box.top) / box.height)),
     };
   };
 
