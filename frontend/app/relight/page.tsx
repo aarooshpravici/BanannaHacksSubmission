@@ -566,11 +566,11 @@ function LightSun({
           </span>
         )}
       </span>
-      {/* Appears when the mouse has rested on the sun for a moment, and never while it is being dragged. */}
+      {/* Appears when the mouse has rested on the sun for a moment, and never while it is being dragged. Not on a touch screen: there is no wheel to scroll, and a tap would leave it showing. */}
       {!dragging && (
         <span
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/70 px-2 py-0.5 text-[11px] font-medium text-zinc-200 opacity-0 backdrop-blur transition-opacity delay-0 group-hover:opacity-100 group-hover:delay-500 group-focus-visible:opacity-100"
+          className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/70 px-2 py-0.5 text-[11px] font-medium text-zinc-200 opacity-0 backdrop-blur transition-opacity delay-0 group-hover:opacity-100 group-hover:delay-500 group-focus-visible:opacity-100 pointer-coarse:hidden"
         >
           {SUN_HINT}
         </span>
