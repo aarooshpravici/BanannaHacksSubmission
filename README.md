@@ -54,7 +54,7 @@ flowchart LR
 
 1. **Depth, once per photo (pretrained: Depth Anything V2 Small).** How near each pixel is to the camera. We scale it into a height field.
 2. **Surface normals, once per photo (pretrained: Marigold, a generative diffusion model fine-tuned from Stable Diffusion 2).** Which way each surface faces. Normals worked out from the depth map alone left faces almost unshaded, so a second model does this.
-3. **Diffuse shading, every frame (ours).** Each pixel is lit by how squarely its surface faces the light, easing to dark as it turns away. Distance falloff is measured against the centre of the scene, so moving the light changes where it falls and not the overall exposure.
+3. **Diffuse shading, every frame (ours).** Each pixel is lit by how squarely its surface faces the light, easing to dark as it turns away. Distance falloff is measured against the centre of the scene, so moving the light changes where it falls and not the overall exposure. The Shine slider, at 0 to start, adds a glossy highlight from each light (Blinn-Phong) where a surface faces halfway between the light and the camera, in the light's own colour.
 4. **Cast shadows, every frame (ours).** Each pixel walks toward the light across the height field. Whatever blocks it is sorted into a near, mid or far layer by how far in front of the receiving surface it stands, and each layer is blurred by a different amount: a contact shadow stays crisp, a shadow on a far background spreads and fades. Open sky, which the depth model marks with a raw depth of exactly 0, gets no shadow and keeps the brightness it has in the photo.
 5. **Into the photo, every frame (ours).** The shading is multiplied into the photo in linear light. From 80% of white upward the result eases toward white, so highlights roll off softly instead of clipping.
 6. **Enhance, only on request (hosted: the Gemini image model; a second route, IC-Light v2 on fal.ai, is coded but has never been run).** Sends the shaded preview for a more photographic finish. The app is complete without it.
@@ -87,7 +87,7 @@ Without the two pretrained models there is nothing to shade; without our code th
 
 - A flat subject (a sheet of paper, a poster, a screen) shades with bands and blotches: with nothing to go on, the depth model invents a gentle bulge, and the app lights it as if it were real.
 - One photo gives a height field, not real 3D, so shadows are approximate. Light from below looks blotchy on faces. Open sky is told apart by the depth model's raw output, which is exactly 0 there: it gets no shadow and keeps the brightness it has in the photo. Now and then a dark far corner the model cannot place reads as sky too, and is left as it is.
-- Shading is diffuse only: no shine. Light already in the photo is not removed.
+- Shine, off at the start, is one glossy highlight with the same tightness on every surface, worked out from smooth estimated normals: it cannot tell a helmet from a cheek, and near the light a dark backdrop or a metal lattice catches it too. Light already in the photo is not removed.
 - The live shader has been tested on an Apple-chip Mac (Chrome and Safari), a Windows laptop with Intel graphics (Chrome), a Windows laptop with a Snapdragon chip (Chromium), an iPhone 11 (Chrome) and a Galaxy S21 Ultra (Chrome and Opera GX). Other machines and browsers may run into unforeseen issues.
 
 `testing/PENDING.md` is the full list of what has not been verified.

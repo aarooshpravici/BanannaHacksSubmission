@@ -14,7 +14,7 @@ const DRAFT = {
   name: "coffee",
   createdAt: 1_760_000_000_000,
   updatedAt: 1_760_000_100_000,
-  light: { x: 0.12, y: 0.35, height: 0.12, intensity: 1.8, ambient: 0.06 },
+  light: { x: 0.12, y: 0.35, height: 0.12, intensity: 1.8, ambient: 0.06, shine: 0.3 },
   warmth: 0.5,
   fill: { on: true, x: 0.8, y: 0.2, height: 0.35, intensity: 0.6, warmth: -0.2 },
   picked: "fill",
@@ -36,7 +36,17 @@ describe("asDraft: a record read back from storage", () => {
     const draft = asDraft({ ...DRAFT, light: { ...DRAFT.light, color: [1, 0, 0] }, extra: "x" });
     assert.ok(draft);
     assert.equal("extra" in draft, false);
-    assert.deepEqual(Object.keys(draft.light).sort(), ["ambient", "height", "intensity", "x", "y"]);
+    assert.deepEqual(Object.keys(draft.light).sort(), ["ambient", "height", "intensity", "shine", "x", "y"]);
+  });
+
+  test("a draft from before there was Shine opens matte, and so does one whose Shine is not a number", () => {
+    const { shine, ...before } = DRAFT.light;
+    assert.equal(shine, 0.3);
+    for (const light of [before, { ...before, shine: Number.NaN }, { ...before, shine: "glossy" }, { ...before, shine: null }]) {
+      const draft = asDraft({ ...DRAFT, light });
+      assert.ok(draft, JSON.stringify(light));
+      assert.deepEqual(draft.light, { ...before, shine: 0 });
+    }
   });
 
   test("a damaged record is skipped", () => {

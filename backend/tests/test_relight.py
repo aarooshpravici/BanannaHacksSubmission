@@ -538,3 +538,124 @@ def test_two_requests_arriving_together_load_the_normals_model_once(monkeypatch)
         R._load_normals_model.cache_clear()  # the real model must load for later tests
     assert len(loads) == 1 and len(results) == 3
     assert all(r.shape == (12, 16, 3) for r in results)
+
+
+# --- Shine ----------------------------------------------------------------------
+
+
+def _plane() -> R.Geometry:
+    """A flat plane facing the viewer, halfway back."""
+    return R.build_geometry(np.full((N, N), 0.5, np.float32), relief=0.3, smooth=0)
+
+
+def _mirror_for(g: R.Geometry, light: R.Light) -> R.Geometry:
+    """g with every normal turned to the half vector of `light`: n . h is 1 everywhere, so the highlight is as strong as it gets."""
+    to_light = R._light_position(g, light) - R._pixel_positions(g)
+    halfway = to_light / np.linalg.norm(to_light, axis=2, keepdims=True) + np.array([0.0, 0.0, 1.0], np.float32)
+    normals = (halfway / np.linalg.norm(halfway, axis=2, keepdims=True)).astype(np.float32)
+    return R.Geometry(z=g.z, normals=normals, relief=g.relief, sky=g.sky)
+
+
+@pytest.mark.parametrize("cast_shadows", [True, False])
+def test_with_shine_at_0_the_render_is_exactly_what_it_was(cast_shadows):
+    photo = _random_photo()
+    g = R.build_geometry(_block(), relief=0.3, smooth=0)
+    light = R.Light(-0.2, 0.4, height=0.15, intensity=1.8, ambient=0.06, color=(1.0, 0.86, 0.68))
+    before = _as_before_the_fill_light(photo, g, light, cast_shadows)
+    assert R.Light(0.5, 0.5).shine == 0.0, "matte unless asked"
+    matte = R.Light(-0.2, 0.4, height=0.15, intensity=1.8, ambient=0.06, color=(1.0, 0.86, 0.68), shine=0.0)
+    assert np.array_equal(np.asarray(R.relight(photo, g, matte, cast_shadows=cast_shadows)), before)
+    fill = R.Light(1.2, 0.5, height=0.35, intensity=0.6, color=(0.7, 0.86, 1.0))
+    with_fill = np.asarray(R.relight(photo, g, light, cast_shadows=cast_shadows, fill=fill))
+    assert np.array_equal(np.asarray(R.relight(photo, g, matte, cast_shadows=cast_shadows, fill=fill)), with_fill)
+    # A fill's own Shine is not used: Shine is shared, and is the main light's.
+    glossy_fill = R.Light(1.2, 0.5, height=0.35, intensity=0.6, color=(0.7, 0.86, 1.0), shine=0.9)
+    assert np.array_equal(np.asarray(R.relight(photo, g, matte, cast_shadows=cast_shadows, fill=glossy_fill)), with_fill)
+
+
+def test_the_highlight_is_where_the_surface_faces_between_the_light_and_the_viewer_and_moves_with_the_light():
+    g = _plane()
+    for x in (0.3, 0.7):
+        light = R.Light(x, 0.5, height=0.1, intensity=1.0)
+        shine = R.shine_map(g, light, 1.0)
+        # On a plane facing the viewer, n . h is 1 right under the light, where the half vector is the normal.
+        row, col = np.unravel_index(np.argmax(shine), shine.shape)
+        assert abs((col + 0.5) / N - x) < 2 / N and abs((row + 0.5) / N - 0.5) < 2 / N
+        # There it adds the light that falls there, in full: Shine 1 times intensity times diffuse (to within the
+        # fraction of a pixel by which the pixel's centre misses the point under the light).
+        assert shine[row, col] == pytest.approx(R.diffuse(g, light)[row, col], rel=5e-3)
+        # A narrow spot, not a sheen: a quarter of the picture away it is almost nothing.
+        assert shine[row, (col + N // 4) % N] < 0.02 * shine[row, col]
+    # Half the Shine, half the highlight.
+    light = R.Light(0.3, 0.5, height=0.1)
+    assert np.allclose(R.shine_map(g, light, 0.5), 0.5 * R.shine_map(g, light, 1.0))
+
+
+def test_the_highlight_is_added_in_the_lights_colour_not_multiplied_by_the_photo():
+    g = _plane()
+    black = Image.new("RGB", (N, N), (0, 0, 0))
+    warm = R.Light(0.5, 0.5, height=0.1, intensity=1.0, ambient=0.0, color=(1.0, 0.5, 0.2), shine=0.6)
+    matte = np.asarray(R.relight(black, g, R.Light(0.5, 0.5, height=0.1, intensity=1.0, ambient=0.0, color=(1.0, 0.5, 0.2))))
+    assert matte.max() == 0, "a black photo stays black under any light"
+    glossy = np.asarray(R.relight(black, g, warm)).astype(int)
+    c = N // 2
+    assert glossy[c, c, 0] > 150 and glossy[c, c, 0] > glossy[c, c, 1] > glossy[c, c, 2], "a gloss on black, in the light's warm colour"
+    # And it rolls off at white like the rest, rather than clipping.
+    strong = np.asarray(R.relight(Image.new("RGB", (N, N), (250, 250, 250)), g, R.Light(0.5, 0.5, height=0.1, intensity=4.0, shine=1.0)))
+    assert strong.max() <= 255
+
+
+def test_there_is_no_highlight_in_the_main_lights_shadow():
+    # A block on a floor close behind it, lit from the left: the floor at [64, 80] is in full shadow.
+    block = R.build_geometry(_block(0.1, floor=0.9), relief=1.0, smooth=0)
+    key = R.Light(-0.2, 0.5, height=0.15, ambient=0.3, intensity=1.5, shine=1.0)
+    g = _mirror_for(block, key)
+    lit = R.shadows(g, key)
+    assert lit[64, 80] < 0.05
+    assert R.shine_map(g, key, 1.0)[64, 80] > 0.3, "without its shadow, the pixel would shine"
+    assert R.shine_map(g, key, 1.0, lit)[64, 80] < 0.02, "in the shadow, it does not"
+    photo = Image.new("RGB", (N, N), (90, 90, 90))
+    matte = R.Light(-0.2, 0.5, height=0.15, ambient=0.3, intensity=1.5)
+    shadowed = np.abs(np.asarray(R.relight(photo, g, key)).astype(int) - np.asarray(R.relight(photo, g, matte)).astype(int))
+    assert shadowed[64, 80].max() <= 1
+    assert np.asarray(R.relight(photo, g, key, cast_shadows=False)).astype(int)[64, 80, 0] > np.asarray(R.relight(photo, g, matte, cast_shadows=False)).astype(int)[64, 80, 0] + 30
+
+
+def test_there_is_no_highlight_on_open_sky():
+    nearness, sky = _block_against_sky()
+    g = R.build_geometry(nearness, relief=0.3, smooth=0, sky=sky)
+    photo = _random_photo()
+    key = R.Light(0.5, 0.5, height=0.3, intensity=4.0, ambient=0.2, shine=1.0)
+    g = _mirror_for(g, key)
+    plain = R.Geometry(z=g.z, normals=g.normals, relief=g.relief)
+    assert (np.asarray(R.relight(photo, plain, key)).astype(int)[g.sky == 1.0] > np.asarray(photo).astype(int)[g.sky == 1.0] + 5).mean() > 0.5, "taken for a surface, the sky would shine"
+    for fill in (None, R.Light(1.2, 0.5, intensity=4.0)):
+        out = np.asarray(R.relight(photo, g, key, fill=fill))
+        assert np.array_equal(out[g.sky == 1.0], np.asarray(photo)[g.sky == 1.0]), "where it is wholly sky, the photo exactly"
+        # Right up to the sky's edge, where it is half sky, the shine adds nothing.
+        matte = R.Light(0.5, 0.5, height=0.3, intensity=4.0, ambient=0.2)
+        edge = (g.sky >= 0.5) & (g.sky < 1.0)
+        assert edge.any() and np.array_equal(out[edge], np.asarray(R.relight(photo, g, matte, fill=fill))[edge])
+
+
+def test_the_fill_lights_highlight_goes_with_its_intensity_and_has_no_shadow():
+    g = _plane()
+    fill = R.Light(0.7, 0.5, height=0.1, intensity=0.4, color=(0.7, 0.86, 1.0))
+    stronger = R.Light(0.7, 0.5, height=0.1, intensity=0.8, color=(0.7, 0.86, 1.0))
+    assert np.allclose(R.shine_map(g, stronger, 0.6), 2.0 * R.shine_map(g, fill, 0.6))
+    # Seen in the picture: on black, with a key of no intensity, only the fill's highlight shows, in its colour, twice as
+    # bright (in linear light) at twice the intensity.
+    black = Image.new("RGB", (N, N), (0, 0, 0))
+    dark = R.Light(0.2, 0.5, intensity=0.0, ambient=0.0, shine=0.6)
+    c = (N // 2, int(0.7 * N))
+    weak, strong = (np.asarray(R.relight(black, g, dark, fill=f)).astype(np.float32)[c] / 255.0 for f in (fill, stronger))
+    assert weak[0] < weak[1] < weak[2], "the fill's cool colour"
+    assert R._srgb_to_linear(strong[2]) == pytest.approx(2.0 * R._srgb_to_linear(weak[2]), rel=0.03)
+    # It casts no shadow: behind a block, out of the key's reach, the fill still shines.
+    block = R.build_geometry(_block(0.1, floor=0.9), relief=1.0, smooth=0)
+    from_the_left = R.Light(-0.2, 0.5, height=0.15, intensity=0.6)
+    mirrored = _mirror_for(block, from_the_left)
+    assert R.shadows(mirrored, from_the_left)[64, 80] < 0.05
+    key = R.Light(1.2, 0.5, height=0.3, intensity=0.0, ambient=0.0, shine=1.0)
+    with_fill = np.asarray(R.relight(black, mirrored, key, fill=from_the_left)).astype(int)
+    assert with_fill[64, 80, 0] > 60

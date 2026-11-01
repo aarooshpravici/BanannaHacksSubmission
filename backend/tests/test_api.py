@@ -136,6 +136,31 @@ def test_enhance_takes_a_fill_light_too():
     assert enhanced({"light": light, "fill": {"x": 1.2, "y": 0.4}})[:, 48:].mean() > plain[:, 48:].mean() + 10
 
 
+# --- Shine -------------------------------------------------------------------
+
+
+def test_shine_is_optional_and_absent_is_matte():
+    scene_id = _stored_scene()
+    light = {"x": 0.4, "y": 0.4, "height": 0.2, "intensity": 1.5, "ambient": 0.1}
+    before = _render({"scene_id": scene_id, "light": light})
+    assert np.array_equal(_render({"scene_id": scene_id, "light": {**light, "shine": 0}}), before)
+    glossy = _render({"scene_id": scene_id, "light": {**light, "shine": 0.6}})
+    assert (glossy - before).max() > 40, "a highlight on the bump"
+    assert glossy.mean() > before.mean(), "shine adds light (pixel by pixel the JPEG's ringing round the highlight hides that)"
+    # A fill has no Shine of its own: one that is sent is not an error, and is not used.
+    fill = {"x": 1.2, "y": 0.4}
+    with_fill = _render({"scene_id": scene_id, "light": {**light, "shine": 0.6}, "fill": fill})
+    assert np.array_equal(_render({"scene_id": scene_id, "light": {**light, "shine": 0.6}, "fill": {**fill, "shine": 0.0}}), with_fill)
+
+
+@pytest.mark.parametrize("shine", [-0.1, 1.5, "glossy"])
+def test_a_shine_outside_0_to_1_is_a_422(shine):
+    scene_id = _stored_scene()
+    light = {"x": 0.4, "y": 0.4, "shine": shine}
+    assert client.post("/relight/render", json={"scene_id": scene_id, "light": light}).status_code == 422
+    assert client.post("/relight/enhance", json={"scene_id": scene_id, "light": light}).status_code == 422
+
+
 # --- providers without keys -------------------------------------------------
 
 

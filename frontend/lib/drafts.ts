@@ -116,7 +116,8 @@ export function asDraft(value: unknown): Draft | null {
     name: d.name,
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
-    light: { x: light.x, y: light.y, height: light.height, intensity: light.intensity, ambient: light.ambient },
+    // Shine came later: a draft from before it, or one whose Shine is not a number, opens matte, as it was made.
+    light: { x: light.x, y: light.y, height: light.height, intensity: light.intensity, ambient: light.ambient, shine: finite(light.shine) ? light.shine : 0 },
     warmth: d.warmth,
     fill,
     picked: d.picked === "fill" && fill !== null && fill.on ? "fill" : "key",

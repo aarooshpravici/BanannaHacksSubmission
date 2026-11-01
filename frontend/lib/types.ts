@@ -39,6 +39,11 @@ export interface LightIn {
   ambient?: number;
   /** Linear RGB multiplier. Default [1, 1, 1] */
   color?: [number, number, number];
+  /**
+   * Shine: a glossy highlight from each light, 0..1. Default 0, which is matte,
+   * as before there was shine. Shared by the two lights, like ambient.
+   */
+  shine?: number;
 }
 
 /** A LightIn with every field filled in, which is what the UI always holds. */
@@ -51,12 +56,13 @@ export const DEFAULT_LIGHT: Light = {
   intensity: 1.5,
   ambient: 0.12,
   color: [1, 1, 1],
+  shine: 0,
 };
 
 /**
  * A second, weaker light that lifts the shadows the main light leaves. It has a
  * place, a height, an intensity and a colour of its own. It casts no shadow,
- * and it has no ambient: that is shared, and is the main light's.
+ * and it has no ambient and no shine: those are shared, and are the main light's.
  */
 export interface FillLightIn {
   /** 0 = left edge, 1 = right edge; may go outside 0..1. Default 0.8 */

@@ -47,11 +47,11 @@ def _get_scene(scene_id: str) -> _Scene:
 
 
 def _light(body: LightIn) -> R.Light:
-    return R.Light(body.x, body.y, body.height, body.intensity, body.ambient, body.color)
+    return R.Light(body.x, body.y, body.height, body.intensity, body.ambient, body.color, shine=body.shine)
 
 
 def _fill(body: FillLightIn | None) -> R.Light | None:
-    """The request's fill light, or None when it has none. A fill has no ambient of its own."""
+    """The request's fill light, or None when it has none. A fill has no ambient or shine of its own: relight() uses the main light's."""
     if body is None:
         return None
     return R.Light(body.x, body.y, body.height, body.intensity, 0.0, body.color)

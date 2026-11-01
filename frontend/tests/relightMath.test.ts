@@ -6,8 +6,11 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import {
   HIGHLIGHT_KNEE,
+  SHININESS,
+  type SceneArrays,
   TERMINATOR_SOFTNESS,
   gaussianKernel,
+  gloss,
   lightPosition,
   linearToSrgb,
   pyRound,
@@ -18,7 +21,7 @@ import {
   softTerminator,
   srgbToLinear,
 } from "../lib/relightMath";
-import { block, dome, fill, light, mean, plane } from "./scenes";
+import { block, dome, fill, light, mean, plane, scene } from "./scenes";
 
 const SIZE = 64;
 const DOME_EDGE = 0.25 * SIZE; // the dome's radius, in pixels
@@ -231,5 +234,119 @@ describe("the highlight knee", () => {
     }
     assert.ok(lit(255, 1.5) < 255);
     assert.equal(lit(255, 8), 255);
+  });
+});
+
+describe("Shine", () => {
+  /** shape with every normal turned to the half vector of `l`: n . h is 1 everywhere, so the highlight is as strong as it gets. */
+  const mirrorFor = (shape: SceneArrays, l: { x: number; y: number; height: number }): SceneArrays => {
+    const [lx, ly, lz] = lightPosition(shape.width, shape.height, shape.relief, l);
+    const normals = new Float32Array(shape.normals.length);
+    for (let p = 0; p < shape.width * shape.height; p++) {
+      const tx = lx - ((p % shape.width) + 0.5) / shape.width;
+      const ty = ly - (Math.floor(p / shape.width) + 0.5) / shape.width;
+      const tz = lz - shape.depth[p] * shape.relief;
+      const d = Math.hypot(tx, ty, tz);
+      const h = [tx / d, ty / d, tz / d + 1];
+      const n = Math.hypot(h[0], h[1], h[2]);
+      normals.set([h[0] / n, h[1] / n, h[2] / n], p * 3);
+    }
+    return { ...shape, normals };
+  };
+  const brightest = (pixels: Uint8ClampedArray) => {
+    let at = 0;
+    for (let p = 0; p < pixels.length / 4; p++) if (pixels[p * 4] > pixels[at * 4]) at = p;
+    return { i: at % SIZE, j: Math.floor(at / SIZE), value: pixels[at * 4] };
+  };
+
+  test("gloss is (n . h) ** SHININESS with h halfway between the light and the viewer", () => {
+    assert.equal(gloss(0, 0, 1, 0, 0, 1), 1, "facing both the light and the viewer");
+    const s = Math.SQRT1_2;
+    assert.ok(Math.abs(gloss(0, 0, 1, s, 0, s) - Math.cos(Math.PI / 8) ** SHININESS) < 1e-12, "light 45 degrees off: h is 22.5 degrees off");
+    assert.equal(gloss(0, 0, -1, 0, 0, 1), 0, "facing away");
+  });
+
+  test("at 0, or left out, every picture is exactly what it was", () => {
+    const shape = block(SIZE, 0.375, 0.625, 0.25);
+    const sky = { ...shape, sky: Float32Array.from(shape.depth, (near) => (near === 0 ? 0.6 : 0)) };
+    for (const arrays of [shape, sky]) {
+      for (const f of [null, fill({ x: 1.2, color: [0.7, 0.86, 1] })]) {
+        for (const cast of [true, false]) {
+          const key = light({ x: 0.05, y: 0.5, height: 0.03, intensity: 1.5, ambient: 0.1, color: [1, 0.86, 0.68] });
+          const before = relightPixels(arrays, key, cast, f);
+          const leftOut: Partial<typeof key> = { ...key };
+          delete leftOut.shine;
+          assert.deepEqual(relightPixels(arrays, leftOut as typeof key, cast, f), before);
+          assert.deepEqual(relightPixels(arrays, { ...key, shine: Number.NaN }, cast, f), before, "not a number: none");
+          assert.notDeepEqual(relightPixels(arrays, { ...key, shine: 0.6 }, cast, f), before, "and above 0 it does something");
+        }
+      }
+    }
+  });
+
+  test("the highlight sits right under a light over a plane facing the viewer, and moves with the light", () => {
+    const flat = plane(SIZE, SIZE, 0.5, [60, 60, 60]);
+    for (const x of [0.3, 0.7]) {
+      const at = brightest(relightPixels(flat, light({ x, y: 0.5, height: 0.1, intensity: 1, ambient: 0.2, shine: 0.6 }), false));
+      assert.ok(Math.abs((at.i + 0.5) / SIZE - x) < 2 / SIZE && Math.abs((at.j + 0.5) / SIZE - 0.5) < 2 / SIZE, `highlight at ${at.i}, ${at.j} for a light at x ${x}`);
+    }
+    // Matte, the same plane is brightest under the light too, but by far less.
+    const matte = relightPixels(flat, light({ x: 0.3, y: 0.5, height: 0.1, intensity: 1, ambient: 0.2 }), false);
+    const glossy = relightPixels(flat, light({ x: 0.3, y: 0.5, height: 0.1, intensity: 1, ambient: 0.2, shine: 0.6 }), false);
+    assert.ok(brightest(glossy).value > brightest(matte).value + 40);
+  });
+
+  test("it is added in the light's colour, not multiplied by the photo: a black photo gets a warm glint", () => {
+    const black = plane(SIZE, SIZE, 0.5, [0, 0, 0]);
+    const warm = light({ x: 0.5, y: 0.5, height: 0.1, intensity: 1, ambient: 0, color: [1, 0.5, 0.2] });
+    assert.equal(brightest(relightPixels(black, warm, false)).value, 0);
+    const out = relightPixels(black, { ...warm, shine: 0.6 }, false);
+    const c = (32 * SIZE + 32) * 4;
+    assert.ok(out[c] > 150 && out[c] > out[c + 1] && out[c + 1] > out[c + 2], `${[...out.subarray(c, c + 3)]}`);
+  });
+
+  test("none in the key light's shadow; the fill's casts none", () => {
+    // A low block on a floor close behind it, so that the floor behind it is in a full, contact shadow.
+    const shape = scene(SIZE, SIZE, (x, y) => ({ near: x >= 0.375 && x < 0.625 && y >= 0.375 && y < 0.625 ? 1 : 0.9, normal: [0, 0, 1] }));
+    const key = light({ x: 0.05, y: 0.5, height: 0.03, intensity: 1.5, ambient: 0.1 });
+    const mirror = mirrorFor(shape, key);
+    const shadow = shadowMap(shadowHeightField(mirror.depth, SIZE, SIZE, SIZE, SIZE, mirror.relief), mirror.relief, lightPosition(SIZE, SIZE, mirror.relief, key));
+    const p = 32 * SIZE + 42; // behind the block
+    assert.ok(shadow[p] < 0.1, `in the shadow: ${shadow[p]}`);
+    // What the highlight adds there, in linear light, with the shadow and without it: no more than the light the shadow lets through.
+    const glossy = { ...key, shine: 1 };
+    const added = (cast: boolean) => srgbToLinear(relightPixels(mirror, glossy, cast)[p * 4] / 255) - srgbToLinear(relightPixels(mirror, key, cast)[p * 4] / 255);
+    assert.ok(added(false) > 0.1, `without the shadow, a bright highlight: ${added(false)}`);
+    assert.ok(added(true) < 0.1 * added(false), `in the shadow, next to none: ${added(true)}`);
+    // The same light as a fill: no shadow, so the pixel shines.
+    const dark = light({ intensity: 0, ambient: 0, shine: 1 });
+    const asFill = fill({ x: key.x, y: key.y, height: key.height, intensity: 1.5 });
+    assert.ok(relightPixels(mirror, dark, true, asFill)[p * 4] > relightPixels(mirror, { ...dark, shine: 0 }, true, asFill)[p * 4] + 30);
+  });
+
+  test("the fill's highlight goes with its intensity", () => {
+    const black = plane(SIZE, SIZE, 0.5, [0, 0, 0]);
+    const dark = light({ x: 0.2, y: 0.5, intensity: 0, ambient: 0, shine: 0.6 });
+    const c = (32 * SIZE + Math.floor(0.7 * SIZE)) * 4;
+    const at = (intensity: number) => relightPixels(black, dark, true, fill({ x: 0.7, y: 0.5, height: 0.1, intensity, color: [0.7, 0.86, 1] })).subarray(c, c + 3);
+    const weak = at(0.2);
+    const strong = at(0.4);
+    assert.ok(weak[0] < weak[1] && weak[1] < weak[2], "in the fill's cool colour");
+    const linear = (v: number) => srgbToLinear(v / 255);
+    assert.ok(Math.abs(linear(strong[2]) / linear(weak[2]) - 2) < 0.06, `twice the intensity, twice the light: ${linear(strong[2]) / linear(weak[2])}`);
+  });
+
+  test("none on open sky, right up to its edge", () => {
+    const shape = block(SIZE, 0.375, 0.625, 0.25);
+    const key = light({ x: 0.5, y: 0.5, height: 0.3, intensity: 4, ambient: 0.2 });
+    const sky = { ...mirrorFor(shape, key), sky: Float32Array.from(shape.depth, (near, p) => (near === 0 ? (p % SIZE < 8 ? 0.5 : 1) : 0)) };
+    for (const f of [null, fill({ x: 1.2, intensity: 4 })]) {
+      const glossy = relightPixels(sky, { ...key, shine: 1 }, true, f);
+      const matte = relightPixels(sky, key, true, f);
+      for (let p = 0; p < SIZE * SIZE; p++) {
+        if (sky.sky[p] === 1) assert.deepEqual([...glossy.subarray(p * 4, p * 4 + 4)], [128, 128, 128, 255]);
+        if (sky.sky[p] === 0.5) assert.deepEqual([...glossy.subarray(p * 4, p * 4 + 4)], [...matte.subarray(p * 4, p * 4 + 4)]);
+      }
+    }
   });
 });

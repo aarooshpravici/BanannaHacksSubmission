@@ -39,14 +39,15 @@ class LightIn(BaseModel):
     intensity: float = Field(1.5, ge=0, le=4)
     ambient: float = Field(0.12, ge=0, le=1)
     color: tuple[float, float, float] = (1.0, 1.0, 1.0)
+    shine: float = Field(0.0, ge=0, le=1, description="a glossy highlight from each light; 0 = matte, as before there was shine")
 
 
 class FillLightIn(BaseModel):
     """A second, weaker light that lifts the shadows the main light leaves.
 
     It has a place, a height, an intensity and a colour of its own. It casts no
-    shadow, and it has no ambient: that is shared, and is the main light's.
-    The defaults are the main light's defaults mirrored to the other side.
+    shadow, and it has no ambient and no shine: those are shared, and are the
+    main light's. The defaults are the main light's defaults mirrored to the other side.
     """
 
     x: float = Field(0.8, description="0 = left edge, 1 = right edge; may go outside 0..1")

@@ -75,9 +75,15 @@ interface SliderProps {
   typed?: { text: (value: number) => string; parse: (typed: string) => number | null };
   /** A word or two in small grey after the name, for what the name alone does not say at that moment. */
   note?: string;
+  /**
+   * One of two sliders side by side in a row (Ambient and Shine), beside the stage. Its "?" box is then laid out against
+   * that row, so it is as wide as the panel; it has no line under it there (the hint is the tooltip); and its name, "?" and
+   * note sit closer, the note giving way at its end rather than pushing the number out. A stacked page shows it as any other.
+   */
+  paired?: boolean;
 }
 
-export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends, help, helpNow, typed, note }: SliderProps) {
+export function Slider({ label, value, min, max, step = 0.01, onChange, format, track, hint, ends, help, helpNow, typed, note, paired = false }: SliderProps) {
   const id = useId();
   const fill = ((value - min) / (max - min)) * 100;
   // A typed value is held to the slider's range and steps, so the track and the number always agree.
@@ -89,9 +95,9 @@ export function Slider({ label, value, min, max, step = 0.01, onChange, format, 
   };
   return (
     // Not one <label> round everything: it would name the first button inside it (the "?"), not the slider.
-    <div className="relative" title={hint}>
-      <span className="mb-1.5 flex items-baseline justify-between gap-3 text-[13px]">
-        <span className="flex items-center gap-1.5">
+    <div className={cn(!paired && "relative", paired && "min-w-0")} title={hint}>
+      <span className={cn("mb-1.5 flex items-baseline justify-between text-[13px]", paired ? "gap-2" : "gap-3")}>
+        <span className={cn("flex items-center", paired ? "min-w-0 gap-1" : "gap-1.5")}>
           <label htmlFor={id} className="font-medium text-zinc-200">
             {label}
           </label>
@@ -100,7 +106,7 @@ export function Slider({ label, value, min, max, step = 0.01, onChange, format, 
               {help}
             </Help>
           )}
-          {note && <span className="text-[11px] text-zinc-500">{note}</span>}
+          {note && <span className={cn("text-[11px] text-zinc-500", paired && "min-w-0 truncate")}>{note}</span>}
         </span>
         <NumberEntry
           about={label}
@@ -129,7 +135,7 @@ export function Slider({ label, value, min, max, step = 0.01, onChange, format, 
         </span>
       )}
       {/* Beside the stage the sidebar has one line to spare under a slider, and the end labels take it. A stacked page scrolls, so there both are shown. */}
-      {hint && <span className={cn("hidden text-xs leading-4 text-zinc-500", ends ? "mt-1 max-lg:block" : "mt-1.5 tall:block")}>{hint}</span>}
+      {hint && <span className={cn("hidden text-xs leading-4 text-zinc-500", ends ? "mt-1 max-lg:block" : paired ? "mt-1.5 max-lg:block" : "mt-1.5 tall:block")}>{hint}</span>}
     </div>
   );
 }

@@ -2,7 +2,8 @@
 
 photo -> depth -> height field -> surface normals -> diffuse shading + cast
 shadows -> multiply into the photo. A second light, the fill, can be added: it
-is shaded the same way but casts no shadow (fill_map).
+is shaded the same way but casts no shadow (fill_map). Shine, off by default,
+adds a glossy highlight from each light on top (shine_map).
 
 Conventions (everything is in image space, so there are no axis flips):
   x grows to the right, y grows downward, z grows toward the viewer.
@@ -298,6 +299,9 @@ class Light:
     intensity: float = 1.0
     ambient: float = 0.3  # light that reaches everything, so shadows are not pure black (not used for a fill light)
     color: tuple[float, float, float] = (1.0, 1.0, 1.0)
+    # How glossy surfaces are, 0..1 (shine_map): 0 is matte, as before there was shine. Shared by both lights, like the
+    # ambient, so it is the main light's and a fill light's own is not used.
+    shine: float = 0.0
 
 
 def _light_position(geom: Geometry, light: Light) -> np.ndarray:
@@ -452,9 +456,14 @@ def shadows(geom: Geometry, light: Light, *, steps: int = 48, max_side: int = 25
 
 def shading_map(geom: Geometry, light: Light, *, cast_shadows: bool = True) -> np.ndarray:
     """Total light reaching each pixel, (H, W). ambient where unlit; can exceed 1."""
+    return _shading(geom, light, shadows(geom, light) if cast_shadows else None)
+
+
+def _shading(geom: Geometry, light: Light, lit: np.ndarray | None) -> np.ndarray:
+    """shading_map with the shadow map (lit, from shadows()) handed in, None for no cast shadows, so relight() can use the one map twice."""
     direct = diffuse(geom, light)
-    if cast_shadows:
-        direct = direct * shadows(geom, light)
+    if lit is not None:
+        direct = direct * lit
     return light.ambient + light.intensity * direct
 
 
@@ -470,6 +479,59 @@ def fill_map(geom: Geometry, fill: Light) -> np.ndarray:
     light's.
     """
     return fill.intensity * diffuse(geom, fill)
+
+
+# Shine: a glossy highlight, Blinn-Phong style, where a surface faces halfway
+# between the light and the viewer. Per light, for the main light and the fill
+# alike:
+#
+#   shine = Shine * intensity * max(n . h, 0) ** SHININESS * diffuse * shadow
+#   h     = normalize(l + v),  l = unit direction to the light,  v = (0, 0, 1)
+#
+# Shine is the slider (0..1, shared by the two lights); intensity, diffuse()
+# and the shadow are that light's own (the fill has no shadow); v looks
+# straight at the photo, as the camera did. Multiplying by diffuse() gives the
+# highlight the same position, Height and falloff as the light's shading, and
+# its eased edge: a surface turned away from the light gets no highlight, and
+# one turning away loses it gently, with no line where it stops. So at Shine 1
+# the middle of a highlight adds, as white, the light that falls there.
+# It is added to the lit photo in the light's own colour, not multiplied by
+# the photo's: a gloss reflects the light, whatever the colour of the thing.
+# It goes through the same roll-off as the rest, and none of it is left on
+# open sky (apply_shading).
+#
+# How tight the highlight is: the power of n . h. Higher is a smaller, harder
+# spot, like polished metal or glass; lower spreads a sheen across a whole
+# cheek, which reads as plastic, and greys a dark backdrop facing the camera
+# anywhere near the light. One value has to do for every surface. Chosen from
+# renders of the four samples under the starting light, Left and Right, at
+# Shine 0.3 and 0.6, with 16, 24, 32, 48 and 64: at 16 to 32 a black backdrop
+# beside a light at the side turned grey and a face took a sheen; at 64 the
+# glint in the cat's eye and on its nose and the sheen on the cup's glaze were
+# almost gone. At 48 the helmet and the cup catch the light, the eye and nose
+# glint, and a face at 0.3 is only a little brighter where it faces the light.
+SHININESS = 48.0
+
+
+def _gloss(geom: Geometry, light: Light) -> np.ndarray:
+    """max(n . h, 0) ** SHININESS, (H, W): see SHININESS."""
+    to_light = _light_position(geom, light) - _pixel_positions(geom)
+    halfway = to_light / np.maximum(np.linalg.norm(to_light, axis=2, keepdims=True), 1e-6)
+    halfway[..., 2] += 1.0
+    halfway /= np.maximum(np.linalg.norm(halfway, axis=2, keepdims=True), 1e-6)
+    return np.maximum(np.einsum("hwc,hwc->hw", geom.normals, halfway), 0.0) ** SHININESS
+
+
+def shine_map(geom: Geometry, light: Light, shine: float, lit: np.ndarray | None = None) -> np.ndarray:
+    """What a light's glossy highlight adds at each pixel, (H, W), in the light's colour: see SHININESS.
+
+    shine is the Shine setting, the main light's for both lights. lit, if given,
+    is the light's shadow map (shadows()): only the main light has one.
+    """
+    direct = diffuse(geom, light)
+    if lit is not None:
+        direct = direct * lit
+    return light.intensity * shine * _gloss(geom, light) * direct
 
 
 def _srgb_to_linear(c: np.ndarray) -> np.ndarray:
@@ -488,6 +550,7 @@ def apply_shading(
     fill: np.ndarray | None = None,
     fill_color: tuple[float, float, float] = (1.0, 1.0, 1.0),
     sky: np.ndarray | None = None,
+    gloss: np.ndarray | None = None,
 ) -> Image.Image:
     """Multiply the photo by a shading map, in linear light.
 
@@ -505,12 +568,23 @@ def apply_shading(
     by that share, after the roll-off, so a pixel that is wholly sky is the
     photo exactly, bright or not. Neither light, nor the ambient, nor the
     light's distance darkens or brightens it. Without it, nothing changes.
+
+    gloss, if given, (H, W, 3) in linear light, is the lights' shine (shine_map,
+    already in each light's colour). It is added as it is, not multiplied by
+    the photo, before the roll-off, so a highlight rolls off towards white like
+    any other. Without it, the result is what it always was.
     """
     rgb = np.asarray(to_rgb(img), dtype=np.float32) / 255.0
     linear = _srgb_to_linear(rgb)
     lit = linear * shading[..., None] * np.asarray(color, dtype=np.float32)
     if fill is not None:
         lit = lit + linear * fill[..., None] * np.asarray(fill_color, dtype=np.float32)
+    if gloss is not None:
+        if sky is not None:
+            # None on open sky, right up to its edge: taken out twice as fast as the sky's brightness is given back below,
+            # as its shadows are (shadows()), or the highlight on a thing against the sky would glow out onto the sky.
+            gloss = gloss * (1.0 - np.minimum(2.0 * sky, 1.0))[..., None]
+        lit = lit + gloss
     knee = 0.8
     over = np.maximum(lit - knee, 0.0)
     lit = np.where(lit > knee, knee + (1 - knee) * (1 - np.exp(-over / (1 - knee))), lit)
@@ -522,11 +596,22 @@ def apply_shading(
 
 
 def relight(img: Image.Image, geom: Geometry, light: Light, *, cast_shadows: bool = True, fill: Light | None = None) -> Image.Image:
-    """The photo lit by `light` (the main, or key, light) and, if given, by a fill light as well: see fill_map."""
-    shading = shading_map(geom, light, cast_shadows=cast_shadows)
+    """The photo lit by `light` (the main, or key, light) and, if given, by a fill light as well: see fill_map.
+
+    With light.shine above 0 both lights add a glossy highlight (shine_map): the
+    main light's is kept out of its own cast shadows, the fill's has none. At 0
+    nothing is added and the result is what it was before there was shine.
+    """
+    lit = shadows(geom, light) if cast_shadows else None
+    shading = _shading(geom, light, lit)
+    gloss = None
+    if light.shine > 0:
+        gloss = shine_map(geom, light, light.shine, lit)[..., None] * np.asarray(light.color, dtype=np.float32)
+        if fill is not None:
+            gloss = gloss + shine_map(geom, fill, light.shine)[..., None] * np.asarray(fill.color, dtype=np.float32)
     if fill is None:
-        return apply_shading(img, shading, light.color, sky=geom.sky)
-    return apply_shading(img, shading, light.color, fill=fill_map(geom, fill), fill_color=fill.color, sky=geom.sky)
+        return apply_shading(img, shading, light.color, sky=geom.sky, gloss=gloss)
+    return apply_shading(img, shading, light.color, fill=fill_map(geom, fill), fill_color=fill.color, sky=geom.sky, gloss=gloss)
 
 
 def normals_preview(geom: Geometry) -> Image.Image:

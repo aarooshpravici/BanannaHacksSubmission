@@ -18,9 +18,9 @@ new fixtures with the change. If the test fails without the fixtures having
 been remade, the two versions have drifted apart.
 
 The samples are made smaller so the fixtures stay small (about 2 MB in all):
-  "<sample>"        128 pixels wide, with the real photo, under all ten lights.
+  "<sample>"        128 pixels wide, with the real photo, under all fourteen lights.
                     At this size the shadow map is the picture's own size.
-  "<sample>-large"  320 pixels wide, under three lights, with a smooth colour
+  "<sample>-large"  320 pixels wide, under four lights, with a smooth colour
                     ramp in place of the photo (a ramp compresses to almost
                     nothing and still runs every brightness through the
                     colour curves). At this size the shadow map is 256 wide, so
@@ -60,7 +60,11 @@ HEIGHT_MAX = 2.0
 
 # name -> (key light, cast shadows, fill light or None). The first is the light
 # the page starts with; the rest are the presets, the fill, and the far ends of
-# every slider, where a mistake in one version shows up first.
+# every slider, where a mistake in one version shows up first. The last four
+# have Shine (the key's "shine"): on its own, with a coloured fill (whose
+# highlight takes the fill's colour and has no shadow), at full strength
+# without cast shadows, and grazing, where the highlights roll off at white.
+# The ones before them have none, and are what they were before there was Shine.
 CASES = {
     "start": (dict(**START, color=WHITE), True, None),
     "start-no-shadows": (dict(**START, color=WHITE), False, None),
@@ -72,14 +76,18 @@ CASES = {
     "fill-only": (dict(x=0.5, y=0.5, height=0.25, intensity=0.0, ambient=0.0, color=WHITE), True, dict(x=-0.3, y=1.2, height=HEIGHT_MIN, intensity=4.0, color=COOL)),
     "outside-top-strong-fill": (dict(x=1.6, y=-0.4, height=0.5, intensity=1.5, ambient=0.12, color=WHITE), False, dict(x=0.5, y=0.5, height=HEIGHT_MAX, intensity=4.0, color=WHITE)),
     "below-coloured": (dict(x=0.3, y=1.3, height=0.08, intensity=3.0, ambient=0.3, color=[1.0, 0.5, 0.2]), True, dict(x=0.9, y=0.1, height=0.2, intensity=0.3, color=[0.2, 0.4, 1.0])),
+    "start-shine": (dict(**START, color=WHITE, shine=0.3), True, None),
+    "left-shine-fill": (dict(x=-0.1, y=0.4, height=0.35, intensity=1.3, ambient=0.2, color=WHITE, shine=0.6), True, dict(x=1.0, y=0.3, height=0.35, intensity=0.8, color=COOL)),
+    "right-full-shine-no-shadows": (dict(x=1.1, y=0.4, height=0.35, intensity=1.3, ambient=0.2, color=WARM, shine=1.0), False, None),
+    "grazing-shine": (dict(x=1.05, y=0.5, height=HEIGHT_MIN, intensity=2.0, ambient=0.06, color=WHITE, shine=0.6), True, dict(x=-0.2, y=0.6, height=0.5, intensity=2.0, color=WARM)),
 }
-LARGE_CASES = ("start", "default-and-fill", "grazing-right")
+LARGE_CASES = ("start", "default-and-fill", "grazing-right", "left-shine-fill")
 
 
 def _light(spec: dict | None) -> R.Light | None:
     if spec is None:
         return None
-    return R.Light(spec["x"], spec["y"], height=spec["height"], intensity=spec["intensity"], ambient=spec.get("ambient", 0.0), color=tuple(spec["color"]))
+    return R.Light(spec["x"], spec["y"], height=spec["height"], intensity=spec["intensity"], ambient=spec.get("ambient", 0.0), color=tuple(spec["color"]), shine=spec.get("shine", 0.0))
 
 
 def _inputs(name: str, width: int, ramp: bool) -> tuple[Image.Image, np.ndarray, np.ndarray, np.ndarray | None, float]:

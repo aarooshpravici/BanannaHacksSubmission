@@ -135,6 +135,24 @@ const AMBIENT_HELP = (
     {TYPE_IT}
   </>
 );
+/** Shine, behind its "?". It is a Blinn-Phong highlight (relight.py's shine_map): bright where a surface faces halfway between the light and the camera. */
+const SHINE_HELP = (
+  <>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Shine</strong> is a glossy highlight, where a surface faces halfway between the light and you. It moves with the light, and takes the light&apos;s colour.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">Higher</strong>: the highlight gets brighter. Turn it up for skin, metal and glass: a helmet, a glazed cup, an eye.
+    </span>
+    <span className="block">
+      <strong className="font-semibold text-zinc-100">At 0</strong> nothing shines and every surface is matte, as the page starts.
+    </span>
+    {TYPE_IT}
+  </>
+);
+/** Ambient's line under its slider, and Shine's: where the two share a row beside the stage, Ambient's has the row's width and Shine's is the tooltip. */
+const AMBIENT_HINT = "Light that reaches everything, shadows included.";
+const SHINE_HINT = "A glossy highlight where a surface faces between the light and you.";
 const COLOUR_HELP = (
   <>
     <span className="block">
@@ -194,12 +212,12 @@ type Which = "key" | "fill";
 /**
  * The fill light as the page holds it, from the first time it is switched on:
  * its switch, its own place, Height and Intensity, and its own Colour slider.
- * Switched off it keeps its numbers, for the next time. It has no Ambient:
- * that is shared, and is the key's.
+ * Switched off it keeps its numbers, for the next time. It has no Ambient and
+ * no Shine: those are shared, and are the key's.
  */
 interface FillState {
   on: boolean;
-  base: Omit<LightBase, "ambient">;
+  base: Omit<LightBase, "ambient" | "shine">;
   warmth: number;
 }
 
@@ -247,7 +265,7 @@ interface OwnPhoto {
  * start and about 4.5 with the dark side lifted), and with these the dark side
  * keeps its detail while the light still clearly comes from the left.
  */
-const START: LightBase = { x: 0.12, y: 0.35, height: 0.12, intensity: 1.4, ambient: 0.2 };
+const START: LightBase = { x: 0.12, y: 0.35, height: 0.12, intensity: 1.4, ambient: 0.2, shine: 0 };
 
 /** Sweep: how long the light takes to travel once around the subject. Long enough to read, short enough for a demo clip. */
 const SWEEP_MS = 6000;
@@ -905,6 +923,7 @@ export default function RelightPage() {
       height: clamp(draft.light.height, HEIGHT_MIN, HEIGHT_MAX),
       intensity: clamp(draft.light.intensity, 0, 4),
       ambient: clamp(draft.light.ambient, 0, 1),
+      shine: clamp(draft.light.shine, 0, 1),
     };
     const colour = clamp(draft.warmth, -1, 1);
     // The fill light as it was left, switched on or off. A draft from before there was one has none, and opens with it off.
@@ -1392,17 +1411,37 @@ export default function RelightPage() {
                 helpNow={heightUsed}
               />
               <Slider label="Intensity" value={edited.intensity} min={0} max={4} step={0.05} onChange={(v) => change(which, { intensity: v })} help={INTENSITY_HELP} />
-              <Slider
-                label="Ambient"
-                value={base.ambient}
-                min={0}
-                max={1}
-                step={0.01}
-                onChange={(v) => setBase((b) => ({ ...b, ambient: v }))}
-                hint="Light that reaches everything, shadows included."
-                help={AMBIENT_HELP}
-                note={fillLight ? BOTH_LIGHTS : undefined}
-              />
+              {/* Ambient and Shine, the two sliders Key and Fill do not switch between, share a row beside the stage: the sidebar was fitted to a */}
+              {/* 1280 x 720 window and has no room for one more row (1 px to spare in the demo). The row is what their "?" boxes are laid out against. */}
+              {/* Ambient's side is the wider, for its longer name. A stacked page, which scrolls anyway, has them one under the other. */}
+              <div className="relative grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-y-0">
+                <Slider
+                  label="Ambient"
+                  value={base.ambient}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  onChange={(v) => setBase((b) => ({ ...b, ambient: v }))}
+                  hint={AMBIENT_HINT}
+                  help={AMBIENT_HELP}
+                  note={fillLight ? BOTH_LIGHTS : undefined}
+                  paired
+                />
+                <Slider
+                  label="Shine"
+                  value={base.shine}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  onChange={(v) => setBase((b) => ({ ...b, shine: v }))}
+                  hint={SHINE_HINT}
+                  help={SHINE_HELP}
+                  note={fillLight ? BOTH_LIGHTS : undefined}
+                  paired
+                />
+                {/* Where a laptop window has room for lines under the sliders, Ambient keeps the one it had, across the row. */}
+                <span className="col-span-2 mt-1.5 hidden text-xs leading-4 text-zinc-500 lg:tall:block">{AMBIENT_HINT}</span>
+              </div>
               <Slider
                 label="Colour"
                 value={editedWarmth}

@@ -12,6 +12,12 @@
 //      sampling pass 3 bilinearly, which is the cv2.resize back to full size.
 // A fill light needs no pass of its own: it casts no shadow, so it is one more
 // soft Lambert * falloff in pass 4 (fill_map), added only when it is switched on.
+// Shine (a glossy highlight from each light, shine_map) is pass 4 too, drawn by
+// a second build of that pass's program with the shine lines put in, used only
+// while Shine is above 0. At 0 the first build draws, and its text is the pass as
+// it was before there was shine, so the picture is too, to the bit: one shader
+// with the lines in and skipped at 0 was not, as the compiler arranged the rest
+// of the arithmetic differently around them (1 level, on a few pixels).
 // Open sky (the depth map's alpha below 255) needs none either: pass 1 keeps
 // shadows off it and pass 4 leaves it as the photo has it. Where the alpha is
 // 255 everywhere, as in every depth map from before, neither branch is taken.
@@ -51,6 +57,7 @@ import {
   SHADOW_GAP_NEAR,
   SHADOW_SOFTNESS,
   SHADOW_STEPS,
+  SHININESS,
   TERMINATOR_SOFTNESS,
   gaussianKernel,
   lightPosition,
@@ -185,8 +192,48 @@ void main() {
   }
 }`;
 
-// diffuse() -> shading_map() -> apply_shading().
-const SHADE_FRAGMENT = `#version 300 es
+// The shade pass's shine lines (relight.py's shine_map), for each light:
+//   shine = Shine * intensity * max(n . h, 0) ^ SHININESS * diffuse * shadow
+//   h     = normalize(l + v),  l = unit direction to the light,  v = (0, 0, 1)
+// added in the light's colour, not multiplied by the photo; the fill's with the
+// key's Shine and no shadow; none on open sky. They go into the second build of
+// the pass only (shadeFragment(true)), which is drawn with only while Shine is above 0.
+const SHINE_UNIFORM = `
+uniform float u_shine;       // Shine, above 0; shared by the two lights`;
+const SHINE_FUNCTIONS = `
+// _gloss: max(n . h, 0) ^ SHININESS, h halfway between the light and the viewer.
+float gloss(vec3 normal, vec3 toLightUnit) {
+  vec3 halfway = toLightUnit + vec3(0.0, 0.0, 1.0);
+  halfway = halfway / max(length(halfway), 1e-6);
+  return pow(max(dot(normal, halfway), 0.0), ${f(SHININESS)});
+}
+
+// shine_map() for the fill light. Its diffuse lines are fillShading()'s, repeated, so that function stays the text it was.
+float fillShine(vec3 position, vec3 normal) {
+  vec3 toLight = u_fillLight - position;
+  float dist = max(length(toLight), 1e-6);
+  float cosTheta = dot(normal, toLight) / dist;
+  vec3 centre = vec3(0.5, 0.5 * u_aspect, u_relief / 2.0);
+  float reference = length(u_fillLight - centre);
+  float ratio = reference / dist;
+  float falloff = min(ratio * ratio, ${f(MAX_FALLOFF)});
+  return u_fillIntensity * u_shine * gloss(normal, toLight / dist) * (min(softTerminator(cosTheta), 1.0) * falloff);
+}
+`;
+const SHINE_MAIN = `  // Shine: light the surface reflects, in each light's colour, not multiplied by the photo. The key's
+  // is kept out of its shadows (direct has them). None of it on open sky, right up to its edge: taken
+  // out twice as fast as the sky's brightness is given back below, as its shadows are.
+  vec3 glossy = u_intensity * u_shine * gloss(normal, toLight / dist) * direct * u_color;
+  if (u_fill > 0.5) glossy = glossy + fillShine(position, normal) * u_fillColor;
+  float skyShare = 1.0 - depthTexel.a;
+  if (skyShare > 0.0) glossy = glossy * (1.0 - min(2.0 * skyShare, 1.0));
+  lit = lit + glossy;
+`;
+
+// diffuse() -> shading_map() -> apply_shading(), and with `shine` the shine lines
+// above as well. shadeFragment(false) is, character for character, the pass as it
+// was before there was shine.
+const shadeFragment = (shine: boolean) => `#version 300 es
 precision highp float;
 precision highp sampler2D;
 uniform sampler2D u_image;   // the photo, sRGB
@@ -204,7 +251,7 @@ uniform float u_packed;      // 1.0 = u_shadow holds 16-bit values over R and G 
 uniform float u_fill;        // 1.0 = there is a fill light; the three below are its own
 uniform vec3 u_fillLight;    // its position in image widths
 uniform float u_fillIntensity;
-uniform vec3 u_fillColor;
+uniform vec3 u_fillColor;${shine ? SHINE_UNIFORM : ""}
 in vec2 v_uv;
 out vec4 o_color;
 
@@ -254,7 +301,7 @@ float fillShading(vec3 position, vec3 normal) {
   float falloff = min(ratio * ratio, ${f(MAX_FALLOFF)});
   return u_fillIntensity * (min(softTerminator(cosTheta), 1.0) * falloff);
 }
-
+${shine ? SHINE_FUNCTIONS : ""}
 void main() {
   vec4 photo = texture(u_image, v_uv);
   vec3 rgb = mix(vec3(1.0), photo.rgb, photo.a); // to_rgb(): transparency flattens onto white
@@ -286,7 +333,7 @@ void main() {
   // above and only when it is on, so that with it off that line is the result,
   // as before.
   if (u_fill > 0.5) lit = lit + srgbToLinear(rgb) * fillShading(position, normal) * u_fillColor;
-  const float knee = ${f(HIGHLIGHT_KNEE)};
+${shine ? SHINE_MAIN : ""}  const float knee = ${f(HIGHLIGHT_KNEE)};
   vec3 over = max(lit - knee, 0.0);
   lit = mix(lit, knee + (1.0 - knee) * (1.0 - exp(-over / (1.0 - knee))), greaterThan(lit, vec3(knee)));
   // Open sky keeps the photo's own brightness: all of it where it is wholly sky.
@@ -349,7 +396,16 @@ const SELF_TEST_RELIEF = 0.3;
  * 1.8): the fill lifts that shadow a little, and with the old strength a chip
  * that drew no shadows at all would have slipped under SELF_TEST_MAX_MEAN.
  */
-const SELF_TEST_LIGHT: Light = { x: 0.05, y: 0.45, height: 0.12, intensity: 2.4, ambient: 0.06, color: [1, 0.9, 0.8] };
+const SELF_TEST_LIGHT: Light = { x: 0.05, y: 0.45, height: 0.12, intensity: 2.4, ambient: 0.06, color: [1, 0.9, 0.8], shine: 0 };
+/**
+ * The light the shine build is tried with, on the same test picture and with the
+ * same fill, once the plain build has passed. Full Shine, above the middle of the
+ * picture, where the floor faces between it and the viewer and shines widely:
+ * from the test light's low place there is too little highlight to tell. Measured
+ * with lib/relightMath.ts: a chip that drew no shine at all would be 6.8 levels off
+ * on average, over SELF_TEST_MAX_MEAN.
+ */
+const SELF_TEST_SHINE_LIGHT: Light = { ...SELF_TEST_LIGHT, x: 0.5, y: 0.35, height: 0.35, shine: 1 };
 /**
  * The test picture's fill light, so that a chip that gets the fill wrong is
  * caught by the same one picture. Off the left edge, low, and in a colour of
@@ -381,6 +437,13 @@ function selfTestScene(): { image: ImageData; depth: ImageData; normals: ImageDa
   return { image, depth, normals };
 }
 
+/** The shade pass's uniforms, in both its builds (the shine build has u_shine as well). */
+const SHADE_UNIFORMS = [
+  "u_flip", "u_image", "u_depth", "u_normals", "u_shadow", "u_aspect", "u_relief",
+  "u_light", "u_intensity", "u_ambient", "u_color", "u_shadows", "u_packed",
+  "u_fill", "u_fillLight", "u_fillIntensity", "u_fillColor",
+];
+
 interface Program {
   program: WebGLProgram;
   uniforms: Record<string, WebGLUniformLocation | null>;
@@ -410,6 +473,9 @@ export class RelightRenderer {
   private shadowProgram: Program;
   private blurProgram: Program;
   private shadeProgram: Program;
+  /** The shade pass with the shine lines in: drawn with while Shine is above 0. Null where this chip cannot draw it. */
+  private shineProgram: Program | null = null;
+  private shineWarned = false;
   private vao: WebGLVertexArrayObject;
   private quad: WebGLBuffer;
   private grade: GpuGrade = "packed";
@@ -446,11 +512,14 @@ export class RelightRenderer {
 
     this.shadowProgram = this.link(SHADOW_FRAGMENT, ["u_flip", "u_z", "u_size", "u_light", "u_relief"]);
     this.blurProgram = this.link(BLUR_FRAGMENT, ["u_flip", "u_src", "u_size", "u_dir", "u_final", "u_packed", "u_kernel"]);
-    this.shadeProgram = this.link(SHADE_FRAGMENT, [
-      "u_flip", "u_image", "u_depth", "u_normals", "u_shadow", "u_aspect", "u_relief",
-      "u_light", "u_intensity", "u_ambient", "u_color", "u_shadows", "u_packed",
-      "u_fill", "u_fillLight", "u_fillIntensity", "u_fillColor",
-    ]);
+    this.shadeProgram = this.link(shadeFragment(false), SHADE_UNIFORMS);
+    // The shine build never stands in the way of the rest: if this chip cannot build it, or draws the
+    // self-test's shine wrongly (chooseGrade), the page shades as before and Shine is not drawn.
+    try {
+      this.shineProgram = this.link(shadeFragment(true), [...SHADE_UNIFORMS, "u_shine"]);
+    } catch (error) {
+      console.warn("Relight: this graphics chip cannot draw Shine.", error);
+    }
 
     // One oversized triangle covers the viewport.
     const vao = gl.createVertexArray();
@@ -496,6 +565,7 @@ export class RelightRenderer {
         if (!(mean <= SELF_TEST_MAX_MEAN)) throw new Error(`the test picture is off by ${mean.toFixed(1)} levels on average`);
         this.selfTestMean = mean;
         this.why = why;
+        this.testShine(test);
         this.freeScene();
         return;
       } catch (error) {
@@ -505,6 +575,28 @@ export class RelightRenderer {
       }
     }
     throw new Error("this graphics chip drew a test picture wrongly");
+  }
+
+  /**
+   * The shine build on the test picture (already set), against the CPU reference.
+   * If it draws it wrongly it is dropped, and Shine is not drawn on this chip;
+   * the grade, and everything else, is as the plain test found it.
+   */
+  private testShine(test: { image: ImageData; depth: ImageData; normals: ImageData }): void {
+    if (!this.shineProgram) return;
+    const glossy = SELF_TEST_SHINE_LIGHT;
+    const reference = relightPixels(sceneArrays(test.image, test.depth, test.normals, SELF_TEST_RELIEF), glossy, true, SELF_TEST_FILL);
+    this.render(glossy, true, SELF_TEST_FILL);
+    const drawn = this.readPixels();
+    let sum = 0;
+    for (let p = 0; p < drawn.length; p += 4) {
+      sum += Math.abs(drawn[p] - reference[p]) + Math.abs(drawn[p + 1] - reference[p + 1]) + Math.abs(drawn[p + 2] - reference[p + 2]);
+    }
+    const mean = sum / ((drawn.length / 4) * 3);
+    if (mean <= SELF_TEST_MAX_MEAN) return;
+    console.warn(`Relight: this graphics chip draws Shine wrongly (the test picture is off by ${mean.toFixed(1)} levels on average), so it is not drawn.`);
+    this.gl.deleteProgram(this.shineProgram.program);
+    this.shineProgram = null;
   }
 
   private compile(type: number, source: string): WebGLShader {
@@ -752,8 +844,15 @@ export class RelightRenderer {
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
 
-    const u = this.shadeProgram.uniforms;
-    gl.useProgram(this.shadeProgram.program);
+    // Shine above 0 draws with the shine build, where this chip has one; at 0 (or left out) with the build that has no shine in it.
+    const glossy = light.shine > 0 && this.shineProgram !== null;
+    if (light.shine > 0 && !glossy && !this.shineWarned) {
+      this.shineWarned = true;
+      console.warn("Relight: Shine is not drawn, as this graphics chip cannot draw it (see the warning above).");
+    }
+    const shade = glossy && this.shineProgram ? this.shineProgram : this.shadeProgram;
+    const u = shade.uniforms;
+    gl.useProgram(shade.program);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, scene.width, scene.height);
     gl.uniform1f(u.u_flip, 1);
@@ -769,6 +868,7 @@ export class RelightRenderer {
     gl.uniform3f(u.u_color, light.color[0], light.color[1], light.color[2]);
     gl.uniform1f(u.u_shadows, castShadows ? 1 : 0);
     gl.uniform1f(u.u_packed, packed);
+    if (glossy) gl.uniform1f(u.u_shine, light.shine);
     gl.uniform1f(u.u_fill, fill ? 1 : 0);
     if (fill) {
       const fillPos = lightPosition(scene.width, scene.height, scene.relief, fill);
@@ -800,7 +900,7 @@ export class RelightRenderer {
   dispose(): void {
     const gl = this.gl;
     this.freeScene();
-    for (const p of [this.shadowProgram, this.blurProgram, this.shadeProgram]) gl.deleteProgram(p.program);
+    for (const p of [this.shadowProgram, this.blurProgram, this.shadeProgram, this.shineProgram]) if (p) gl.deleteProgram(p.program);
     gl.deleteBuffer(this.quad);
     gl.deleteVertexArray(this.vao);
   }

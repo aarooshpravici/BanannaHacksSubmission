@@ -484,7 +484,8 @@ async function shownLight(page) {
     const at = handleAt(lightHandle());
     const value = (label) => Number(controlOf(label)?.value);
     if (!at || value("Colour") !== 0) return null;
-    return { light: { ...at, intensity: value("Intensity"), ambient: value("Ambient"), color: [1, 1, 1] }, shadows: switchOf("Cast shadows")?.getAttribute("aria-checked") === "true", fill: switchOf("Fill light")?.getAttribute("aria-checked") === "true" };
+    // Shine: 0 where the page has no Shine slider (a build from before it), as such a page draws.
+    return { light: { ...at, intensity: value("Intensity"), ambient: value("Ambient"), color: [1, 1, 1], shine: controlOf("Shine") ? value("Shine") : 0 }, shadows: switchOf("Cast shadows")?.getAttribute("aria-checked") === "true", fill: switchOf("Fill light")?.getAttribute("aria-checked") === "true" };
   })()`);
 }
 

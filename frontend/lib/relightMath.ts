@@ -29,6 +29,19 @@ export const SHADOW_FAR_STRENGTH = 0.35;
 /** The gap is measured between the highest and lowest surface within this many shadow-map pixels. */
 export const SHADOW_SPREAD = 2;
 export const HIGHLIGHT_KNEE = 0.8; // apply_shading knee
+/**
+ * relight.SHININESS: how tight a highlight is, the power of n . h. Shine (a
+ * light's `shine`, 0 = matte) is a glossy highlight, Blinn-Phong style, from
+ * each light, as relight.py's shine_map:
+ *
+ *   shine = Shine * intensity * max(n . h, 0) ** SHININESS * diffuse * shadow
+ *   h     = normalize(l + v),  l = unit direction to the light,  v = (0, 0, 1)
+ *
+ * added to the lit photo in the light's colour (not the photo's) before the
+ * roll-off, kept off open sky, and for the fill with the key's Shine and no
+ * shadow. Why each part, and why 48: the comment above SHININESS in relight.py.
+ */
+export const SHININESS = 48.0;
 /** cv2.remap interpolates on a 1/32-pixel grid (INTER_BITS = 5). */
 export const REMAP_SUBPIXEL = 32;
 
@@ -53,6 +66,13 @@ export function softTerminator(cos: number): number {
   const k = TERMINATOR_SOFTNESS;
   const eased = Math.max(cos + k, 0.0) ** 2 / (4.0 * k);
   return cos >= k ? cos : eased;
+}
+
+/** _gloss: max(n . h, 0) ** SHININESS, for the unit normal n and the unit direction (lx, ly, lz) to the light, with the viewer straight ahead. */
+export function gloss(nx: number, ny: number, nz: number, lx: number, ly: number, lz: number): number {
+  const hz = lz + 1.0;
+  const length = Math.max(Math.hypot(lx, ly, hz), 1e-6);
+  return Math.max((nx * lx + ny * ly + nz * hz) / length, 0.0) ** SHININESS;
 }
 
 /** The size shadows() works at: longest side capped at max_side. */
@@ -409,6 +429,8 @@ export function relightPixels(scene: SceneArrays, light: Light, castShadows = tr
  * Without one, not a line of the arithmetic below is different from before.
  * The same for open sky (scene.sky): where there is some, the result is moved
  * towards the photo by that share after the roll-off, as apply_shading() does.
+ * And for Shine (light.shine, see SHININESS): at 0, or left out, none of its
+ * lines run.
  */
 export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLayer | null, fill: FillLight | null = null): Uint8ClampedArray<ArrayBuffer> {
   const { width: w, height: h, relief, rgba, depth, normals } = scene;
@@ -422,6 +444,8 @@ export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLaye
   const fillReference = Math.hypot(fx - 0.5, fy - (0.5 * h) / w, fz - relief / 2);
   const out = new Uint8ClampedArray(w * h * 4);
   const knee = HIGHLIGHT_KNEE;
+  // Shared by the two lights, like the ambient. Not above 0 (left out, or from something that knows nothing of it): none.
+  const shine = light.shine > 0 ? light.shine : 0;
 
   for (let j = 0; j < h; j++) {
     for (let i = 0; i < w; i++) {
@@ -439,6 +463,10 @@ export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLaye
 
       // fill_map(): intensity * diffuse(), with no shadow and no ambient.
       let fillShading = 0;
+      // shine_map(), for each light: Shine * intensity * gloss * diffuse, the key's with its shadow (direct has it already).
+      let keyShine = 0;
+      let fillShine = 0;
+      if (shine > 0) keyShine = light.intensity * shine * gloss(normals[p * 3], normals[p * 3 + 1], normals[p * 3 + 2], tx / safe, ty / safe, tz / safe) * direct;
       if (fill) {
         const ux = fx - (i + 0.5) / w;
         const uy = fy - (j + 0.5) / w;
@@ -447,7 +475,13 @@ export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLaye
         const fillCos = (normals[p * 3] * ux + normals[p * 3 + 1] * uy + normals[p * 3 + 2] * uz) / fillSafe;
         const fillFalloff = Math.min((fillReference / fillSafe) ** 2, MAX_FALLOFF);
         fillShading = fill.intensity * (Math.min(softTerminator(fillCos), 1.0) * fillFalloff);
+        if (shine > 0) {
+          const fillGloss = gloss(normals[p * 3], normals[p * 3 + 1], normals[p * 3 + 2], ux / fillSafe, uy / fillSafe, uz / fillSafe);
+          fillShine = fill.intensity * shine * fillGloss * (Math.min(softTerminator(fillCos), 1.0) * fillFalloff);
+        }
       }
+      // None of the shine on open sky, right up to its edge: taken out twice as fast as the sky's brightness is given back, as apply_shading() does.
+      const shineKept = shine > 0 && sky && sky[p] > 0 ? 1.0 - Math.min(2.0 * sky[p], 1.0) : 1.0;
 
       // apply_shading(): multiply in linear light, roll highlights off above the knee.
       const alpha = rgba[p * 4 + 3] / 255;
@@ -456,6 +490,12 @@ export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLaye
         const srgb = (rgba[p * 4 + c] / 255) * alpha + (1 - alpha);
         let lit = srgbToLinear(srgb) * shading * light.color[c];
         if (fill) lit = lit + srgbToLinear(srgb) * fillShading * fill.color[c];
+        // Shine is light the surface reflects: in each light's colour, and not multiplied by the photo.
+        if (shine > 0) {
+          let glossy = keyShine * light.color[c];
+          if (fill) glossy = glossy + fillShine * fill.color[c];
+          lit = lit + glossy * shineKept;
+        }
         if (lit > knee) lit = knee + (1 - knee) * (1 - Math.exp(-(lit - knee) / (1 - knee)));
         // Open sky keeps the photo's own brightness: all of it where it is wholly sky.
         if (sky && sky[p] > 0) lit = lit * (1 - sky[p]) + srgbToLinear(srgb) * sky[p];

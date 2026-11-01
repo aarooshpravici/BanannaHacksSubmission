@@ -43,7 +43,7 @@ export const dome = (size: number, radius = 0.25) =>
 export const block = (size: number, from = 0.375, to = 0.625, top = 0.8) =>
   scene(size, size, (x, y) => ({ near: x >= from && x < to && y >= from && y < to ? top : 0, normal: FACING }));
 
-export const light = (overrides: Partial<Light> = {}): Light => ({ x: 0.5, y: 0.5, height: 0.25, intensity: 1, ambient: 0, color: [1, 1, 1], ...overrides });
+export const light = (overrides: Partial<Light> = {}): Light => ({ x: 0.5, y: 0.5, height: 0.25, intensity: 1, ambient: 0, color: [1, 1, 1], shine: 0, ...overrides });
 
 export const fill = (overrides: Partial<FillLight> = {}): FillLight => ({ x: 0.8, y: 0.5, height: 0.25, intensity: 0.6, color: [1, 1, 1], ...overrides });
 
