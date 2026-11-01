@@ -204,7 +204,22 @@ MOCK_MODE=1 .venv/bin/python -m pytest -q --models   # also the tests that load 
 
 cd ../frontend
 npm run lint && npm run build && npx tsc --noEmit
+npm test                                             # unit tests and the agreement test, a few seconds
 ```
+
+`npm test` runs `frontend/tests/` with Node's own test runner (no packages): known answers for the shading maths, the browser's depth-to-normals step and the draft checks, and an agreement test that holds `lib/relightMath.ts` to pictures rendered by `relight.py`, within 2 levels of 255. The pictures are in `frontend/tests/fixtures/relight/`. After a change to the maths that is meant, make them again and commit them with it:
+
+```bash
+cd backend && MOCK_MODE=1 .venv/bin/python -m scripts.relight_fixtures
+```
+
+A smoke test drives the whole page in headless Chrome: each sample, an upload, Left, Right, Reset light, the fill light, the logo and the Drafts tab. It fails on a red bar, a console error, or a shader that draws more than 3 levels away from `lib/relightMath.ts`. Give it the address of a running build, and a folder if you want the samples' pictures kept for a before and after:
+
+```bash
+node tools/smoke.mjs http://localhost:3199/BanannaHacksSubmission /tmp/relight-before
+```
+
+With no backend the upload is analysed in the browser, which downloads the depth model (19 MB) on a first run, so it needs the internet. Its header says how to build the static demo in a copy, so a dev server in `frontend/` is left alone. It takes about ten seconds.
 
 The tests never call a paid service. `backend/scripts/live_checks.py` does (one image call), so run it only on purpose.
 
