@@ -348,10 +348,12 @@ export type DepthChoice = "auto" | "check" | DepthDevice;
 /**
  * Why the processor is running the model although the graphics chip could have:
  *   "known"  the chip is on the Worker's list of chips known to get the model wrong; it was not tried
+ *   "browser" the browser is Safari's engine (WebKit: Safari, and every browser on an iPhone or iPad), where a tab that
+ *            has run the model on the graphics chip crashes when the page is reloaded or left; it was not tried
  *   "check"  the chip ran the model and got the test picture wrong (lib/depthCheck.ts)
  *   "error"  the chip threw, setting the model up or running it, or did not answer
  */
-export type DepthFallback = "known" | "check" | "error";
+export type DepthFallback = "known" | "browser" | "check" | "error";
 
 /** The photo at the scene's size, as RGBA bytes. */
 export interface DepthRequest {

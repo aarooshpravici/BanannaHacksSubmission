@@ -90,6 +90,7 @@ export function depthDeviceText(device: DepthDevice): string {
   const choice = depthChoice();
   if (device === "webgpu") return choice === "webgpu" ? "graphics chip (WebGPU, not checked: ?depth=webgpu)" : "graphics chip (WebGPU)";
   if (gpuProblem === "known") return "processor (this graphics chip is known to get the depth model wrong)";
+  if (gpuProblem === "browser") return "processor (the graphics chip is not used for depth in this browser)";
   if (gpuProblem === "check") return "processor (the graphics chip failed a check)";
   if (gpuProblem === "error") return "processor (the graphics chip failed)";
   return choice === "wasm" ? "processor (WebAssembly, asked for with ?depth=wasm)" : "processor (WebAssembly)";
@@ -261,7 +262,7 @@ export async function localScene(image: string, onProgress: (progress: LocalProg
   } catch (error) {
     // The graphics chip was found out during this photo and took the Worker down with it: once more, on the processor, in a new Worker.
     // Not for a chip on the list of known bad ones: it was never started, so whatever failed was something else.
-    if (problemBefore !== null || gpuProblem === null || gpuProblem === "known" || (error instanceof DOMException && error.name === "AbortError")) throw error;
+    if (problemBefore !== null || gpuProblem === null || gpuProblem === "known" || gpuProblem === "browser" || (error instanceof DOMException && error.name === "AbortError")) throw error;
     reply = await run({ type: "estimate", width, height, pixels: ctx.getImageData(0, 0, width, height).data }, onProgress);
   }
   // Through a canvas, which keeps colours multiplied by alpha: the depth map's grey is 0 in the open sky, and its alpha is

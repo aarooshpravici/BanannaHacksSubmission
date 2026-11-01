@@ -74,12 +74,30 @@ const CHECK_TIMEOUT_MS = 20000;
 const knownBad = (info) => /qualcomm/i.test(info.vendor ?? "") && /Windows/i.test(navigator.userAgent);
 
 /**
+ * Safari's engine, WebKit: Safari on a Mac, and every browser on an iPhone or an iPad, which Apple makes use it.
+ * There, once the model has run on the graphics chip, reloading or leaving the page crashes the tab, every time
+ * (seen in Playwright's WebKit, Nov 2026; never on the processor route, and not with a bare WebGPU Worker, so it is
+ * how the model's runtime uses WebGPU together with WebKit tearing the Worker down). The processor costs about a
+ * second a photo there. An iPad can say "Macintosh": Chrome, Edge and Opera on a Mac name themselves, Safari does not.
+ */
+const isWebKit = () => {
+  const agent = navigator.userAgent;
+  return /iPhone|iPad|iPod/.test(agent) || (/AppleWebKit/.test(agent) && !/(Chrome|Chromium|Edg|OPR)\//.test(agent));
+};
+
+/**
  * The routes this device can take, best first. The graphics chip only when it does 16-bit maths, which the model file needs.
  * @param {import("./sceneGeometry").DepthChoice} choice
  * @returns {Promise<Route[]>}
  */
 async function routes(choice) {
   if (choice === "wasm" || gpuProblem) return ["wasm"];
+  // Before the graphics chip is even asked for: in WebKit merely using it for the model is what later crashes the tab.
+  if (choice === "auto" && isWebKit()) {
+    gpuProblem = "browser";
+    console.warn("Relight: this browser is Safari's engine, where using the graphics chip for the depth model can crash the tab when the page is reloaded. The processor is used instead. Add ?depth=check or ?depth=webgpu to the address to use the graphics chip anyway.");
+    return ["wasm"];
+  }
   try {
     const adapter = await /** @type {any} */ (navigator).gpu?.requestAdapter();
     if (adapter?.info) chip = `${adapter.info.vendor || "unknown"} ${adapter.info.architecture || ""}`.trim();
