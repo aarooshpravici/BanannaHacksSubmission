@@ -239,12 +239,15 @@ interface OwnPhoto {
 /**
  * The light a fresh scene (and Reset) starts with. The API's own default
  * (x 0.20, y 0.20, height 0.25) lights a photo so evenly that testers read it
- * as "nothing happened". This one sits low and to the left of the subject with
- * little ambient light, so one side is clearly lit and the other falls into
- * shadow, on a face and on an object alike; it is still inside the photo, so
- * the handle is in plain sight.
+ * as "nothing happened". This one sits low and to the left of the subject, so
+ * one side is clearly lit and the other falls into shadow, on a face and on an
+ * object alike; it is still inside the photo, so the handle is in plain sight.
+ * Intensity 1.4 and Ambient 0.20, not the 1.8 and 0.06 it first had:
+ * testers found that too harsh (a tester scored the Portrait 2.5 to 3.5 at the
+ * start and about 4.5 with the dark side lifted), and with these the dark side
+ * keeps its detail while the light still clearly comes from the left.
  */
-const START: LightBase = { x: 0.12, y: 0.35, height: 0.12, intensity: 1.8, ambient: 0.06 };
+const START: LightBase = { x: 0.12, y: 0.35, height: 0.12, intensity: 1.4, ambient: 0.2 };
 
 /** Sweep: how long the light takes to travel once around the subject. Long enough to read, short enough for a demo clip. */
 const SWEEP_MS = 6000;
