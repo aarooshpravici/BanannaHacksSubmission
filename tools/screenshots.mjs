@@ -257,8 +257,15 @@ const IN_PAGE = `
   const byText = (selector, text) => [...document.querySelectorAll(selector)].find((e) => e.textContent.trim() === text);
   const rectOf = (e) => { if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; };
   const photoBox = () => document.querySelector('img[alt="Original photo"]')?.parentElement ?? null;
-  const sliderOf = (label) => [...document.querySelectorAll("label")].find((e) => e.querySelector("span span")?.textContent.trim() === label)?.querySelector('input[type="range"]') ?? null;
-  const lightHandle = () => document.querySelector('button[aria-label^="Light position"]');
+  // A slider or switch is found by its <label for>: the words beside it, which name it (Slider and Toggle in frontend/components/ui.tsx).
+  // controlOf gives the <input type="range"> or the switch itself, controlRow the block that holds it with its name, value and the lines under it.
+  const controlOf = (label) => { const l = [...document.querySelectorAll("label[for]")].find((e) => e.textContent.trim() === label); return l ? document.getElementById(l.htmlFor) : null; };
+  const controlRow = (label) => controlOf(label)?.parentElement ?? null;
+  const sliderOf = (label) => { const e = controlOf(label); return e?.matches('input[type="range"]') ? e : null; };
+  /** What a slider shows as its value, beside its name: the button that turns into a box to type in. */
+  const sliderShown = (label) => controlRow(label)?.querySelector('[aria-label^=' + JSON.stringify(label + ": ") + ']')?.textContent.trim() ?? null;
+  // The key light's handle is "Light position", or "Key light position" while the fill light is on.
+  const lightHandle = () => document.querySelector('button[aria-label^="Light position"], button[aria-label^="Key light position"]');
   const statusPill = () => document.querySelector("header div[title]");
   const ACCENT = "rgb(251, 209, 61)"; // --color-accent in globals.css, as getComputedStyle reports it
   const shadingNote = () => [...document.querySelectorAll('p[role="status"]')].map((e) => e.textContent.trim()).find((x) => x.startsWith("Shading on this device") || x.startsWith("This device's processor")) ?? null;
@@ -551,8 +558,7 @@ class Page {
       const readout = [...document.querySelectorAll("div.font-mono")].find((e) => /^x\\s/.test(e.textContent.trim()));
       if (!readout) return null;
       const m = readout.textContent.match(/x\\s*(-?[\\d.]+)\\s*y\\s*(-?[\\d.]+)/);
-      const shown = (label) => sliderOf(label)?.closest("label").querySelector("span span + span")?.textContent.trim() ?? null;
-      return { x: Number(m[1]), y: Number(m[2]), height: shown("Height"), intensity: shown("Intensity"), ambient: shown("Ambient"), colour: shown("Colour"),
+      return { x: Number(m[1]), y: Number(m[2]), height: sliderShown("Height"), intensity: sliderShown("Intensity"), ambient: sliderShown("Ambient"), colour: sliderShown("Colour"),
         shadows: document.querySelector('button[role="switch"][aria-label="Cast shadows"]')?.getAttribute("aria-checked") === "true",
         detailedNormals: document.querySelector('button[role="switch"][aria-label="Detailed normals"]')?.getAttribute("aria-checked") === "true" };
     })()`);
@@ -990,15 +996,15 @@ async function restOnSun(t) {
 /** The Height control as the page lays it out: the words at the two ends of its track, the helper line, and which of them can be seen. */
 const heightControl = (t) =>
   t.page.js(`(() => {
-    const label = sliderOf("Height").closest("label");
-    const [name, value] = [...label.querySelectorAll("span span")].slice(0, 2).map((e) => e.textContent.trim());
-    const rows = [...label.children].filter((e) => e.tagName === "SPAN").slice(1);
+    const row = controlRow("Height");
+    const name = row.querySelector("label[for]").textContent.trim(); const value = sliderShown("Height");
+    const rows = [...row.children].filter((e) => e.tagName === "SPAN").slice(1);
     const ends = rows.find((e) => e.children.length === 2); const hint = rows.find((e) => e.children.length === 0);
-    return { name, value, tooltip: label.title, endLabels: ends ? [...ends.children].map((e) => e.textContent.trim()) : null, endLabelsShown: !!ends && ends.offsetParent !== null, helperLine: hint?.textContent.trim() ?? null, helperLineShown: !!hint && hint.offsetParent !== null };
+    return { name, value, tooltip: row.title, endLabels: ends ? [...ends.children].map((e) => e.textContent.trim()) : null, endLabelsShown: !!ends && ends.offsetParent !== null, helperLine: hint?.textContent.trim() ?? null, helperLineShown: !!hint && hint.offsetParent !== null };
   })()`);
 
 /** A close-up of the Height control: its name and value, the track, and whatever is under the track. */
-const heightClip = (t, scale = 3) => t.page.clipOf(`sliderOf("Height").closest("label")`, "the Height control", { pad: 14, scale });
+const heightClip = (t, scale = 3) => t.page.clipOf(`controlRow("Height")`, "the Height control", { pad: 14, scale });
 
 // ----- iPhone photos (HEIC). -----
 
@@ -1157,7 +1163,7 @@ function presetRow(t) {
 
 /** The Detailed normals switch as the page has it: on or off, clickable or not, and the hint beside it (a tooltip on a short window). */
 function detailSwitch(t) {
-  return t.page.js(`(() => { const s = document.querySelector('button[role="switch"][aria-label="Detailed normals"]'); return { on: s.getAttribute("aria-checked") === "true", disabled: s.disabled, hint: s.closest("label").title }; })()`);
+  return t.page.js(`(() => { const s = document.querySelector('button[role="switch"][aria-label="Detailed normals"]'); return { on: s.getAttribute("aria-checked") === "true", disabled: s.disabled, hint: controlRow("Detailed normals").title }; })()`);
 }
 
 /** A magnified picture of the right end of the top bar, where the backend status pill is. */
@@ -3153,7 +3159,7 @@ const SHOTS = [
       await openGeometry(t);
       t.note.detailedNormals = await detailSwitch(t);
       if (t.note.detailedNormals.on || !t.note.detailedNormals.disabled) throw new Error(`Expected the switch off and disabled: ${JSON.stringify(t.note.detailedNormals)}`);
-      await t.snap({ sidebar: "bottom", ...(await t.page.clipOf(`document.querySelector('button[role="switch"][aria-label="Detailed normals"]').closest("label")`, "the Detailed normals switch", { pad: 14, scale: 3, block: "end" })) });
+      await t.snap({ sidebar: "bottom", ...(await t.page.clipOf(`controlRow("Detailed normals")`, "the Detailed normals switch", { pad: 14, scale: 3, block: "end" })) });
     },
   },
   {
