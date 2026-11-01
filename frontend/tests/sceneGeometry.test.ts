@@ -2,8 +2,11 @@
 // when there is no backend (the stretch to 0..1, the blur, the normals).
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, test } from "node:test";
-import { RELIEF, buildGeometry, gaussianBlur, nearness, openSky } from "../lib/sceneGeometry";
+import { DEPTH_SHIFT, RELIEF, buildGeometry, depthShift, gaussianBlur, nearness, openSky, scaleDepth } from "../lib/sceneGeometry";
+import { readPng } from "./png";
 
 const close = (actual: number, expected: number, within: number, what: string) => assert.ok(Math.abs(actual - expected) <= within, `${what}: ${actual}, expected ${expected} (within ${within})`);
 
@@ -35,6 +38,16 @@ describe("nearness", () => {
 
   test("a flat picture gives all zeros, as on the backend", () => {
     assert.deepEqual([...nearness(new Float32Array(16).fill(7))], new Array(16).fill(0));
+  });
+
+  test("the shift: DEPTH_SHIFT, and more when the stretched range starts well above raw 0", () => {
+    // Raw 0..99: the 1st percentile is 0.99, so the range starts 0.99 / 97.02 of itself above 0.
+    close(scaleDepth(Float32Array.from({ length: 100 }, (_, i) => i)).shift, DEPTH_SHIFT + 0.99 / 97.02, 1e-9, "a deep scene");
+    // A page: everything between raw 2.9 and 4.4, so it starts about twice its own range above 0, and is shaded flatter.
+    close(depthShift(2.9, 4.4), DEPTH_SHIFT + 2.9 / 1.5, 1e-12, "a page");
+    // Raw just below 0 (where the resize rings round open sky) counts as 0, and a flat map has the least shift.
+    assert.equal(depthShift(-0.1, 2), DEPTH_SHIFT);
+    assert.equal(scaleDepth(new Float32Array(16).fill(7)).shift, DEPTH_SHIFT);
   });
 });
 
@@ -123,6 +136,85 @@ describe("buildGeometry", () => {
     const { normals } = buildGeometry(new Float32Array(SIZE * SIZE).fill(0.4), SIZE, SIZE);
     for (let p = 0; p < SIZE * SIZE; p++) assert.deepEqual([normals[p * 4], normals[p * 4 + 1], normals[p * 4 + 2], normals[p * 4 + 3]], [128, 128, 255, 255]);
   });
+});
+
+describe("buildGeometry through a camera (with a shift)", () => {
+  const [W, H] = [64, 48];
+  /** The focal length in image widths, for a 70 degree view across the longer side (FIELD_OF_VIEW). */
+  const k = (0.5 * Math.max(W, H)) / W / Math.tan((35 * Math.PI) / 180);
+
+  test("a wall square to the camera faces the viewer everywhere, whatever the shift", () => {
+    for (const shift of [0.5, 3]) {
+      const { normals } = buildGeometry(new Float32Array(W * H).fill(0.4), W, H, null, shift);
+      for (let p = 0; p < W * H; p++) assert.deepEqual([normals[p * 4], normals[p * 4 + 1], normals[p * 4 + 2]], [128, 128, 255]);
+    }
+  });
+
+  test("a floor going back from the camera has one normal everywhere, the floor's own", () => {
+    // A plane's disparity is a straight line across the picture: here 1 + b v, with v the pixel's height from the
+    // middle over the focal length. Worked out on paper, that plane's normal is (0, -b, 1), made unit length: the
+    // floor faces up and to the viewer, near the bottom of the picture and far up it alike.
+    const b = 0.8;
+    const height = Float32Array.from({ length: W * H }, (_, p) => 1 + (b * ((Math.floor(p / W) + 0.5) / W - (0.5 * H) / W)) / k - DEPTH_SHIFT);
+    const { normals } = buildGeometry(height, W, H, null, DEPTH_SHIFT);
+    const expected = [0, -b / Math.hypot(b, 1), 1 / Math.hypot(b, 1)];
+    for (const [i, j] of [
+      [32, 24],
+      [2, 2],
+      [61, 3],
+      [5, 45],
+      [60, 46],
+    ])
+      decode(normals, j * W + i).forEach((v, c) => close(v, expected[c], 0.01, `pixel ${i}, ${j}, axis ${"xyz"[c]}`));
+  });
+
+  test("the edge of a block still faces the viewer (the depth-step rule, on these slopes)", () => {
+    const height = Float32Array.from({ length: W * W }, (_, p) => {
+      const [i, j] = [p % W, Math.floor(p / W)];
+      return i >= 24 && i < 40 && j >= 24 && j < 40 ? 0.8 : 0;
+    });
+    const { normals } = buildGeometry(height, W, W, null, DEPTH_SHIFT);
+    for (const i of [22, 23, 24, 25, 38, 39, 40, 41]) {
+      const [x, y, z] = decode(normals, 32 * W + i);
+      assert.ok(z > 0.97 && Math.abs(x) < 0.25 && Math.abs(y) < 0.05, `pixel ${i} on row 32: normal ${[x, y, z].map((v) => v.toFixed(2))}`);
+    }
+  });
+
+  test("a bump tilts more than the height field's slope says, and less with a larger shift (a page)", () => {
+    const bump = (x: number, y: number) => 0.5 * Math.exp(-((x - 0.5) ** 2 + (y - 0.5) ** 2) / (2 * 0.15 * 0.15));
+    const height = Float32Array.from({ length: W * W }, (_, p) => bump(((p % W) + 0.5) / W, (Math.floor(p / W) + 0.5) / W));
+    const tilt = (shift: number | null) => -decode(buildGeometry(height, W, W, null, shift).normals, 32 * W + 16)[0];
+    assert.ok(tilt(DEPTH_SHIFT) > 1.5 * tilt(null), `${tilt(DEPTH_SHIFT)} against ${tilt(null)}`);
+    assert.ok(tilt(3) < tilt(DEPTH_SHIFT) / 2, `${tilt(3)} against ${tilt(DEPTH_SHIFT)}`);
+  });
+});
+
+describe("buildGeometry agrees with relight.build_geometry", () => {
+  // Pictures the Python made from the same depth maps: backend/scripts/relight_fixtures.py (its docstring says how).
+  const FIXTURES = join(import.meta.dirname, "fixtures", "relight");
+  const { scenes } = JSON.parse(readFileSync(join(FIXTURES, "cases.json"), "utf8")) as { scenes: { name: string; width: number; height: number; shift: number }[] };
+
+  /** The largest difference over the channels given, in levels of 255. */
+  const worst = (ours: Uint8ClampedArray, theirs: Uint8ClampedArray, channels: number[]) => {
+    let most = 0;
+    for (let p = 0; p < ours.length; p += 4) for (const c of channels) most = Math.max(most, Math.abs(ours[p + c] - theirs[p + c]));
+    return most;
+  };
+
+  for (const scene of scenes) {
+    test(`${scene.name} (${scene.width} x ${scene.height}), shift ${scene.shift}`, () => {
+      const read = (file: string) => readPng(join(FIXTURES, scene.name, file)).data;
+      const depth = read("depth.png");
+      const size = scene.width * scene.height;
+      const height = Float32Array.from({ length: size }, (_, p) => depth[p * 4] / 255);
+      const sky = Uint8Array.from({ length: size }, (_, p) => (depth[p * 4 + 3] === 0 ? 1 : 0));
+      const camera = buildGeometry(height, scene.width, scene.height, sky, scene.shift);
+      const slope = buildGeometry(height, scene.width, scene.height, sky);
+      assert.ok(worst(camera.normals, read("derived-normals-camera.png"), [0, 1, 2]) <= 1, "normals through a camera");
+      assert.ok(worst(slope.normals, read("derived-normals-slope.png"), [0, 1, 2]) <= 1, "normals from the height field's slope");
+      assert.ok(worst(camera.depth, read("derived-depth.png"), [0, 3]) <= 1, "depth map and its alpha");
+    });
+  }
 });
 
 describe("open sky", () => {

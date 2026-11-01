@@ -101,8 +101,31 @@ def open_sky(raw: np.ndarray) -> np.ndarray:
     return cv2.morphologyEx((raw <= SKY_THRESHOLD * top).astype(np.uint8), cv2.MORPH_OPEN, square).astype(bool)
 
 
-def estimate_depth(img: Image.Image) -> tuple[np.ndarray, np.ndarray]:
-    """Per-pixel nearness in [0, 1] (1 = closest to the camera), image-sized, and where there is open sky (open_sky)."""
+# How far the farthest part of a photo is from being infinitely far, as a share
+# of the photo's whole depth range: build_geometry's `shift`, for depth-derived
+# normals. The depth model's raw output works like disparity (1 / distance):
+# open sky is exactly 0, at infinity. A photo whose stretched 0..1 range starts
+# at a raw value well above 0 (a page, a clock face, a wall seen close up) has
+# little real depth, and its own share is added to this, so it is shaded
+# flatter. Raw values near 0 are not taken at their word, which would make the
+# background of a portrait hundreds of times farther away than the face: this
+# is the floor. Smaller tilts the far parts of a scene (a floor, a table, a
+# backdrop) more; larger brings every surface nearer to the old, flatter look.
+# Chosen by comparing with the Marigold normals on 11 photos (the four samples
+# and seven more from scikit-image).
+DEPTH_SHIFT = 0.5
+
+
+def depth_shift(lo: float, hi: float) -> float:
+    """build_geometry's `shift` for a raw depth map stretched from lo (0) to hi (1): DEPTH_SHIFT and the photo's own offset from 0."""
+    if not hi - lo >= 1e-6:
+        return DEPTH_SHIFT
+    return DEPTH_SHIFT + max(float(lo), 0.0) / float(hi - lo)
+
+
+def estimate_depth(img: Image.Image) -> tuple[np.ndarray, np.ndarray, float]:
+    """Per-pixel nearness in [0, 1] (1 = closest to the camera), image-sized; where there is open sky (open_sky); and
+    the photo's depth_shift, for build_geometry."""
     processor, model = _depth_model()
     inputs = processor(images=to_rgb(img), return_tensors="pt")
     with _lock, torch.no_grad():
@@ -111,9 +134,10 @@ def estimate_depth(img: Image.Image) -> tuple[np.ndarray, np.ndarray]:
     sky = open_sky(raw)
     # Percentiles, not min/max, so one stray pixel cannot squash the range.
     lo, hi = np.percentile(raw, [1, 99])
+    shift = depth_shift(lo, hi)
     if hi - lo < 1e-6:
-        return np.zeros_like(raw, dtype=np.float32), sky
-    return np.clip((raw - lo) / (hi - lo), 0.0, 1.0).astype(np.float32), sky
+        return np.zeros_like(raw, dtype=np.float32), sky, shift
+    return np.clip((raw - lo) / (hi - lo), 0.0, 1.0).astype(np.float32), sky, shift
 
 
 def estimate_height(img: Image.Image) -> np.ndarray:
@@ -185,12 +209,27 @@ DEPTH_STEP_SLOPE = (1.5, 4.0)
 # otherwise be left as a thinner rim.
 DEPTH_STEP_GROW = 3.0
 DEPTH_STEP_FEATHER = 2.0
+# DEPTH_STEP_GROW for normals seen through the camera (build_geometry with a
+# shift). Their slopes are steeper than the height field's, so more of a jump's
+# gentle shoulders pass DEPTH_STEP_SLOPE, and at 3 a faint rim came back round
+# the Portrait's hair. 5 brought the rim down to what it was with the height
+# field's slopes, on 10 of 11 test photos.
+DEPTH_STEP_GROW_CAMERA = 5.0
+
+# The camera the depth-derived normals are seen through (build_geometry with a
+# shift): its angle of view across the photo's longer side, in degrees. A phone's
+# main camera is about 65 to 75. Wider tilts a surface near the photo's edge
+# more; narrower brings the normals nearer to the old ones.
+FIELD_OF_VIEW = 70.0
+# The least a depth-derived normal faces the viewer (its z), so that a surface
+# the camera barely sees, edge on, still faces it a little.
+MIN_FACING = 0.05
 
 
-def _depth_steps(dz_dx: np.ndarray, dz_dy: np.ndarray, w: int) -> np.ndarray:
+def _depth_steps(dz_dx: np.ndarray, dz_dy: np.ndarray, w: int, grow: float = DEPTH_STEP_GROW) -> np.ndarray:
     """Where the height field jumps from one object to what is behind it: 0 = a surface, 1 = a jump."""
     steep = _smoothstep(*DEPTH_STEP_SLOPE, np.hypot(dz_dx, dz_dy)).astype(np.float32)
-    grow = max(1, int(DEPTH_STEP_GROW * w / 512 + 0.5))
+    grow = max(1, int(grow * w / 512 + 0.5))
     steep = cv2.dilate(steep, np.ones((2 * grow + 1, 2 * grow + 1), np.uint8))
     return cv2.GaussianBlur(steep, (0, 0), DEPTH_STEP_FEATHER * w / 512)
 
@@ -221,16 +260,24 @@ def build_geometry(
     relief: float = 0.3,
     smooth: float = 1.5,
     sky: np.ndarray | None = None,
+    shift: float | None = None,
 ) -> Geometry:
     """Turn a nearness map into a height field with normals.
 
     relief is how deep the scene is treated as being, relative to image width:
-    larger makes cast shadows longer and, for depth-derived normals, surfaces
-    tilt more.
+    larger makes cast shadows longer and, for normals derived without a shift,
+    surfaces tilt more.
     normals, if given (from estimate_normals), are used as they are; otherwise
-    normals are derived from the slope of the height field, which is fast but
-    flat-looking because the depth map has little fine detail. Where the height
-    jumps from one object to the next they face the viewer (see DEPTH_STEP_SLOPE).
+    they are derived from the depth, which is fast but smoother than the
+    normals model's because the depth map has little fine detail. Where the
+    height jumps from one object to the next they face the viewer (see
+    DEPTH_STEP_SLOPE).
+    shift (from estimate_depth) says how to derive them: as the surface the
+    depth stands for, seen through a camera (_camera_normals), which is what a
+    photo is. Without it they are the slope of the height field, as if seen from
+    infinitely far away: a face or a receding table then looks flatter than it
+    is, because the face is a small part of the scene's depth and perspective
+    is ignored. Tests and drawn height fields use that; a photo has a shift.
     smooth is a blur (pixels at 512 width) that removes depth-map noise, which
     would otherwise show up as speckled shading.
     sky, if given (from estimate_depth), is where there is open sky.
@@ -251,7 +298,9 @@ def build_geometry(
         # within one level.
         height = np.where(sky & (fade > 0), np.float32(0.0), height).astype(np.float32)
     z = height * relief
-    if normals is None:
+    if normals is None and shift is not None:
+        normals = _camera_normals(height, shift)
+    elif normals is None:
         # Slopes with x and y in image widths: a step of one pixel is 1/W.
         dz_dy, dz_dx = np.gradient(z, 1.0 / w)
         surface = 1.0 - _depth_steps(dz_dx, dz_dy, w)
@@ -260,6 +309,36 @@ def build_geometry(
     elif normals.shape[:2] != (h, w):
         raise ValueError(f"normals {normals.shape[:2]} do not match height {(h, w)}")
     return Geometry(z=z.astype(np.float32), normals=normals.astype(np.float32), relief=relief, sky=fade)
+
+
+def _camera_normals(nearness: np.ndarray, shift: float) -> np.ndarray:
+    """Normals of the surface a (blurred) nearness map stands for, seen through a pinhole camera (FIELD_OF_VIEW).
+
+    The nearness plus shift is taken for disparity, so the distance is
+    1 / (nearness + shift). Each pixel is a point that far away along its ray
+    through the camera, and the normal is that of the surface through those
+    points. Worked out on paper, with x and y in image widths, k the focal length
+    in image widths and a the slope of ln(nearness + shift):
+        normal ~ (-k a_x, -k a_y, 1 - k (a_x u + a_y v))
+    where (u, v) is the pixel's direction from the middle of the photo, over the
+    focal length. Compared with the slope of the height field it tilts a face
+    or a table more (a face is a small part of a scene's whole depth, but its
+    depth relative to its distance is what shapes it) and a page less (its
+    shift is large). Where the depth jumps from one object to the next the
+    normal faces the viewer, as with the height field (_depth_steps, judged on
+    these slopes).
+    """
+    h, w = nearness.shape
+    k = 0.5 * max(h, w) / w / np.tan(np.radians(FIELD_OF_VIEW) / 2)
+    a_y, a_x = np.gradient(np.log(nearness + np.float32(shift)), 1.0 / w)
+    g_x, g_y = k * a_x, k * a_y
+    surface = 1.0 - _depth_steps(g_x, g_y, w, DEPTH_STEP_GROW_CAMERA)
+    g_x, g_y = g_x * surface, g_y * surface
+    u = ((np.arange(w, dtype=np.float32) + 0.5) / w - 0.5)[None, :] / k
+    v = ((np.arange(h, dtype=np.float32) + 0.5) / w - 0.5 * h / w)[:, None] / k
+    facing = np.maximum(1.0 - (g_x * u + g_y * v), MIN_FACING)
+    normals = np.dstack([-g_x, -g_y, facing])
+    return normals / np.linalg.norm(normals, axis=2, keepdims=True)
 
 
 def depth_image(geom: Geometry) -> Image.Image:

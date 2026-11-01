@@ -68,7 +68,7 @@ def bake(name: str, source: Path) -> int:
     img.load()
     img = resize_max_side(to_rgb(ImageOps.exif_transpose(img)), MAX_SIDE)
 
-    height, sky = R.estimate_depth(img)
+    height, sky, _ = R.estimate_depth(img)
     normals = R.estimate_normals(img)
     geom = R.build_geometry(height, normals=normals, sky=sky)
     # The two encodings below are routers/relight.py scene()'s.

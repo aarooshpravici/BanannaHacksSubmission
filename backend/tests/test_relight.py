@@ -440,10 +440,20 @@ def test_a_scene_without_sky_renders_exactly_as_before(cast_shadows):
 def test_the_depth_model_finds_open_sky_and_not_a_backdrop_wall():
     from skimage import data
 
-    _, sky = R.estimate_depth(Image.fromarray(data.astronaut()))
+    _, sky, _ = R.estimate_depth(Image.fromarray(data.astronaut()))
     assert sky.mean() < 0.01 and not sky[30, 480], "the Portrait's backdrop is a wall, not sky"
-    _, sky = R.estimate_depth(Image.fromarray(data.rocket()))
+    _, sky, _ = R.estimate_depth(Image.fromarray(data.rocket()))
     assert sky.mean() > 0.5 and sky[30, 320], "the rocket stands against open sky"
+
+
+@pytest.mark.models
+def test_the_depth_model_gives_a_page_a_large_shift_and_a_portrait_the_least():
+    from skimage import data
+
+    # Measured: 0.505 for the Portrait (raw 0.04 to 8.0), 1.99 for the page (raw 2.9 to 4.4).
+    assert R.estimate_depth(Image.fromarray(data.astronaut()))[2] < 0.55
+    page = Image.fromarray(data.page()).convert("RGB")
+    assert R.estimate_depth(page)[2] > 1.5, "a page has little real depth, and is shaded flatter"
 
 
 @pytest.mark.models
@@ -659,3 +669,55 @@ def test_the_fill_lights_highlight_goes_with_its_intensity_and_has_no_shadow():
     key = R.Light(1.2, 0.5, height=0.3, intensity=0.0, ambient=0.0, shine=1.0)
     with_fill = np.asarray(R.relight(black, mirrored, key, fill=from_the_left)).astype(int)
     assert with_fill[64, 80, 0] > 60
+
+
+# Depth-derived normals seen through a camera (build_geometry with a shift, _camera_normals).
+
+
+def test_depth_shift_is_the_least_shift_and_the_photos_own_offset_from_zero():
+    assert R.depth_shift(0.0, 8.0) == R.DEPTH_SHIFT
+    assert R.depth_shift(-0.1, 2.0) == R.DEPTH_SHIFT, "raw just below 0, where the resize rings round open sky, counts as 0"
+    assert abs(R.depth_shift(2.9, 4.4) - (R.DEPTH_SHIFT + 2.9 / 1.5)) < 1e-9, "a page starts twice its own range above 0"
+    assert R.depth_shift(3.0, 3.0) == R.DEPTH_SHIFT, "a flat map"
+
+
+def test_through_a_camera_a_wall_square_to_it_faces_the_viewer():
+    for shift in (0.5, 3.0):
+        g = R.build_geometry(np.full((48, 64), 0.4, np.float32), shift=shift)
+        assert np.abs(g.normals - np.array([0, 0, 1], np.float32)).max() < 1e-6
+
+
+def test_through_a_camera_a_floor_has_one_normal_everywhere():
+    # A plane's disparity is a straight line across the picture: 1 + b v, v the pixel's height from the middle over the
+    # focal length (k image widths). Worked out on paper, its normal is (0, -b, 1) made unit length, everywhere.
+    h, w, b = 48, 64, 0.8
+    k = 0.5 * max(h, w) / w / np.tan(np.radians(R.FIELD_OF_VIEW) / 2)
+    v = ((np.arange(h, dtype=np.float32) + 0.5) / w - 0.5 * h / w) / k
+    nearness = np.repeat((1 + b * v - R.DEPTH_SHIFT)[:, None], w, 1).astype(np.float32)
+    g = R.build_geometry(nearness, shift=R.DEPTH_SHIFT)
+    expected = np.array([0, -b, 1], np.float32) / np.hypot(b, 1)
+    assert np.abs(g.normals - expected).max() < 0.01
+
+
+def test_through_a_camera_a_bump_tilts_more_than_its_slope_and_a_page_less():
+    yy, xx = (np.mgrid[0:N, 0:N] + 0.5) / N
+    bump = (0.5 * np.exp(-((xx - 0.5) ** 2 + (yy - 0.5) ** 2) / (2 * 0.15**2))).astype(np.float32)
+    tilt = {shift: -R.build_geometry(bump, shift=shift).normals[N // 2, N // 4, 0] for shift in (None, R.DEPTH_SHIFT, 3.0)}
+    assert tilt[R.DEPTH_SHIFT] > 1.5 * tilt[None] > 0, tilt
+    assert tilt[3.0] < tilt[R.DEPTH_SHIFT] / 2, tilt
+
+
+def test_through_a_camera_the_edge_of_a_block_faces_the_viewer():
+    g = R.build_geometry(_block(), relief=0.3, shift=R.DEPTH_SHIFT)
+    edge = g.normals[N // 2, [52, 53, 54, 55, 72, 73, 74, 75]]
+    assert (edge[:, 2] > 0.97).all(), edge
+
+
+def test_a_shift_changes_the_normals_only():
+    nearness, sky = _block_against_sky()
+    plain = R.build_geometry(nearness, sky=sky)
+    camera = R.build_geometry(nearness, sky=sky, shift=R.DEPTH_SHIFT)
+    assert np.array_equal(plain.z, camera.z) and np.array_equal(plain.sky, camera.sky)
+    assert not np.array_equal(plain.normals, camera.normals)
+    detailed = np.dstack([np.zeros_like(nearness), np.zeros_like(nearness), np.ones_like(nearness)])
+    assert np.array_equal(R.build_geometry(nearness, normals=detailed, shift=R.DEPTH_SHIFT).normals, detailed), "detailed normals are used as they are"

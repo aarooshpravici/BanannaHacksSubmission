@@ -306,6 +306,7 @@
       "width": 128,
       "height": 128,
       "relief": 0.3,
+      "shift": 0.5,
       "cases": [
         "start",
         "start-no-shadows",
@@ -329,6 +330,7 @@
       "width": 320,
       "height": 320,
       "relief": 0.3,
+      "shift": 0.5,
       "cases": [
         "start",
         "default-and-fill",
@@ -342,6 +344,7 @@
       "width": 128,
       "height": 85,
       "relief": 0.3,
+      "shift": 0.6,
       "cases": [
         "start",
         "start-no-shadows",
@@ -365,6 +368,7 @@
       "width": 320,
       "height": 213,
       "relief": 0.3,
+      "shift": 0.6,
       "cases": [
         "start",
         "default-and-fill",
@@ -378,6 +382,7 @@
       "width": 128,
       "height": 85,
       "relief": 0.3,
+      "shift": 1.0,
       "cases": [
         "start",
         "start-no-shadows",
@@ -401,6 +406,7 @@
       "width": 320,
       "height": 213,
       "relief": 0.3,
+      "shift": 1.0,
       "cases": [
         "start",
         "default-and-fill",
@@ -414,6 +420,7 @@
       "width": 128,
       "height": 85,
       "relief": 0.3,
+      "shift": 2.8,
       "cases": [
         "start",
         "start-no-shadows",
@@ -437,6 +444,7 @@
       "width": 320,
       "height": 214,
       "relief": 0.3,
+      "shift": 2.8,
       "cases": [
         "start",
         "default-and-fill",

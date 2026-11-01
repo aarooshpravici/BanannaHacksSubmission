@@ -1,8 +1,8 @@
 // A depth model's raw output -> the depth and normal maps the shader lights.
 //
 // A port of backend/app/ideas/relight.py: estimate_depth() after the model has
-// run (resize, normalise, open sky) and build_geometry() with normals=None
-// (blur, relief, normals from the slope, the sky in the depth map's alpha). If the Python changes, change this too. OpenCV and
+// run (resize, normalise, open sky, the shift) and build_geometry() with normals=None
+// (blur, relief, normals seen through a camera, the sky in the depth map's alpha). If the Python changes, change this too. OpenCV and
 // NumPy do the work there; each function here says which call it stands in for,
 // because the details (kernel width, edge handling) are what make the maps match.
 //
@@ -25,6 +25,17 @@ const DEPTH_STEP_SLOPE_HIGH = 4;
 /** DEPTH_STEP_GROW and DEPTH_STEP_FEATHER: how far the flattening reaches to either side of a jump, and how softly it fades out, in pixels at 512 width. */
 const DEPTH_STEP_GROW = 3;
 const DEPTH_STEP_FEATHER = 2;
+/** DEPTH_STEP_GROW_CAMERA in the Python: DEPTH_STEP_GROW for normals seen through the camera, whose steeper slopes take more of a jump's shoulders past the threshold. */
+const DEPTH_STEP_GROW_CAMERA = 5;
+/**
+ * DEPTH_SHIFT in the Python: how far the farthest part of a photo is from being infinitely far, as a share of its
+ * whole depth range, at the least. The reasons are written there.
+ */
+export const DEPTH_SHIFT = 0.5;
+/** FIELD_OF_VIEW in the Python: the angle of view of the camera the normals are seen through, across the longer side, in degrees. */
+const FIELD_OF_VIEW = 70;
+/** MIN_FACING in the Python: the least a depth-derived normal faces the viewer, so a surface seen edge on still faces it a little. */
+const MIN_FACING = 0.05;
 /** The share of pixels ignored at each end when the depth is stretched to 0..1, so one stray pixel cannot squash the range. */
 const PERCENTILE_LOW = 0.01;
 const PERCENTILE_HIGH = 0.99;
@@ -96,20 +107,31 @@ function percentile(sorted: Float32Array, q: number): number {
   return sorted[below] + (sorted[above] - sorted[below]) * (at - below);
 }
 
+/** depth_shift(): buildGeometry's `shift` for a raw depth map stretched from lo (to 0) to hi (to 1). */
+export function depthShift(lo: number, hi: number): number {
+  if (!(hi - lo >= FLAT_RANGE)) return DEPTH_SHIFT;
+  return DEPTH_SHIFT + Math.max(lo, 0) / (hi - lo);
+}
+
 /**
  * The model's depth, already at the scene's size -> nearness in 0..1 (1 =
- * closest). Depth Anything gives larger values for closer surfaces, which is
+ * closest), and the photo's shift for buildGeometry (estimate_depth in the
+ * Python). Depth Anything gives larger values for closer surfaces, which is
  * already "toward the viewer": nothing is flipped.
  */
-export function nearness(raw: Float32Array): Float32Array {
+export function scaleDepth(raw: Float32Array): { nearness: Float32Array; shift: number } {
   const sorted = raw.slice().sort();
   const lo = percentile(sorted, PERCENTILE_LOW);
   const hi = percentile(sorted, PERCENTILE_HIGH);
   const out = new Float32Array(raw.length);
-  if (!(hi - lo >= FLAT_RANGE)) return out;
+  const shift = depthShift(lo, hi);
+  if (!(hi - lo >= FLAT_RANGE)) return { nearness: out, shift };
   for (let i = 0; i < raw.length; i++) out[i] = Math.min(1, Math.max(0, (raw[i] - lo) / (hi - lo)));
-  return out;
+  return { nearness: out, shift };
 }
+
+/** scaleDepth without the shift. */
+export const nearness = (raw: Float32Array): Float32Array => scaleDepth(raw).nearness;
 
 /** open_sky(): where the model's raw depth, at the scene's size, says open sky. 1 = sky, 0 = not. */
 export function openSky(raw: Float32Array, width: number, rows: number): Uint8Array {
@@ -181,41 +203,56 @@ export interface GeometryMaps {
 
 /** cv2.dilate(src, np.ones((2 * reach + 1, 2 * reach + 1))): each pixel becomes the largest value within `reach` pixels of it, sideways and up and down. Past the picture's edge there is nothing to count. */
 function dilate(src: Float32Array, width: number, height: number, reach: number): Float32Array {
-  const across = new Float32Array(width * height);
-  for (let j = 0; j < height; j++) {
-    const row = j * width;
-    for (let i = 0; i < width; i++) {
+  // The largest of 2 * reach + 1 values in a row, in a fixed number of steps whatever the reach (van Herk and
+  // Gil-Werman): cut the line into blocks that long, keep the largest so far going forwards and going backwards in each
+  // block, and every window is the larger of one backward and one forward value. The same answer as looking at every
+  // value in the window, at a fraction of the work once the reach is several pixels (it grows with the photo's size).
+  const size = 2 * reach + 1;
+  const longest = Math.max(width, height) + 2 * reach;
+  const ahead = new Float32Array(longest);
+  const behind = new Float32Array(longest);
+  const runningMax = (line: Float32Array, out: Float32Array, at: number, step: number, count: number) => {
+    for (let start = 0; start < line.length; start += size) {
+      const end = Math.min(line.length, start + size);
       let most = -Infinity;
-      for (let k = Math.max(0, i - reach), end = Math.min(width - 1, i + reach); k <= end; k++) if (src[row + k] > most) most = src[row + k];
-      across[row + i] = most;
+      for (let k = start; k < end; k++) ahead[k] = most = line[k] > most ? line[k] : most;
+      most = -Infinity;
+      for (let k = end - 1; k >= start; k--) behind[k] = most = line[k] > most ? line[k] : most;
     }
+    for (let i = 0; i < count; i++) out[at + i * step] = Math.max(behind[i], ahead[i + size - 1]);
+  };
+  // Past the picture's edge there is nothing to count: the lines are padded with -Infinity.
+  const across = new Float32Array(width * height);
+  const row = new Float32Array(width + 2 * reach).fill(-Infinity);
+  for (let j = 0; j < height; j++) {
+    row.set(src.subarray(j * width, (j + 1) * width), reach);
+    runningMax(row, across, j * width, 1, width);
   }
   const out = new Float32Array(width * height);
-  for (let j = 0; j < height; j++) {
-    const first = Math.max(0, j - reach);
-    const last = Math.min(height - 1, j + reach);
-    for (let i = 0; i < width; i++) {
-      let most = -Infinity;
-      for (let k = first; k <= last; k++) if (across[k * width + i] > most) most = across[k * width + i];
-      out[j * width + i] = most;
-    }
+  const column = new Float32Array(height + 2 * reach).fill(-Infinity);
+  for (let i = 0; i < width; i++) {
+    for (let j = 0; j < height; j++) column[reach + j] = across[j * width + i];
+    runningMax(column, out, i, width, height);
   }
   return out;
 }
 
 /**
  * build_geometry(height) with no detailed normals: blur the nearness map, and
- * take the normals from the slope of the height field it stands for. Fast, but
- * the depth map has little fine detail, so the normals are smooth: a face
- * shades flatter than with the backend's detailed normals model. Where the
- * height jumps from one object to the next, the normal faces the viewer
- * (_depth_steps in the Python). `sky` (from openSky) is where there is open
- * sky: the depth map's alpha says how much each pixel is sky (_sky_fade in the
- * Python: a blur of the mask, a half at its edge, held to a half at most
- * outside it), and in the sky itself the height is 0. A speck too small to
- * survive the blur changes nothing.
+ * derive the normals from it. With a `shift` (from scaleDepth, more than 0)
+ * they are those of the surface the depth stands for, seen through a camera
+ * (_camera_normals in the Python, where the formula is worked out); without
+ * one, the slope of the height field, as if seen from infinitely far away,
+ * which shades a face and a receding table flatter. Fast either way, but the
+ * depth map has little fine detail, so the normals are smoother than the
+ * backend's detailed normals model's. Where the height jumps from one object
+ * to the next, the normal faces the viewer (_depth_steps in the Python). `sky`
+ * (from openSky) is where there is open sky: the depth map's alpha says how
+ * much each pixel is sky (_sky_fade in the Python: a blur of the mask, a half
+ * at its edge, held to a half at most outside it), and in the sky itself the
+ * height is 0. A speck too small to survive the blur changes nothing.
  */
-export function buildGeometry(height: Float32Array, width: number, rows: number, sky: Uint8Array | null = null): GeometryMaps {
+export function buildGeometry(height: Float32Array, width: number, rows: number, sky: Uint8Array | null = null, shift: number | null = null): GeometryMaps {
   const blurred = gaussianBlur(height, width, rows, (SMOOTH * width) / 512);
   let alpha: Uint8Array | null = null;
   if (sky && sky.some((v) => v === 1)) {
@@ -235,7 +272,16 @@ export function buildGeometry(height: Float32Array, width: number, rows: number,
   }
   const depth = new Uint8ClampedArray(width * rows * 4);
   const normals = new Uint8ClampedArray(width * rows * 4);
-  const z = (i: number, j: number) => blurred[j * width + i] * RELIEF;
+  // Through a camera: the slope of ln(nearness + shift), times the focal length in image widths (k). Otherwise the height field's.
+  const camera = shift !== null;
+  const k = (0.5 * Math.max(width, rows)) / width / Math.tan((FIELD_OF_VIEW * Math.PI) / 360);
+  let field = blurred;
+  if (camera) {
+    field = new Float32Array(blurred.length);
+    for (let i = 0; i < blurred.length; i++) field[i] = Math.log(blurred[i] + shift);
+  }
+  const scale = camera ? k : RELIEF;
+  const z = (i: number, j: number) => field[j * width + i] * scale;
   // np.gradient: the step is one pixel, 1 / width of an image width; one-sided at the edges.
   const slope = (ahead: number, behind: number, steps: number) => ((ahead - behind) / steps) * width;
   const slopeX = new Float32Array(width * rows);
@@ -257,14 +303,19 @@ export function buildGeometry(height: Float32Array, width: number, rows: number,
     }
   }
   // _depth_steps: 0 = a surface, 1 = a jump from one object to what is behind it.
-  const grown = dilate(steep, width, rows, Math.max(1, Math.floor((DEPTH_STEP_GROW * width) / 512 + 0.5)));
+  const grow = camera ? DEPTH_STEP_GROW_CAMERA : DEPTH_STEP_GROW;
+  const grown = dilate(steep, width, rows, Math.max(1, Math.floor((grow * width) / 512 + 0.5)));
   const steps = gaussianBlur(grown, width, rows, (DEPTH_STEP_FEATHER * width) / 512);
   for (let j = 0; j < rows; j++) {
+    // The pixel's direction from the middle of the photo, over the focal length (u, v in _camera_normals).
+    const v = ((j + 0.5) / width - (0.5 * rows) / width) / k;
     for (let i = 0; i < width; i++) {
       const surface = 1 - steps[j * width + i];
       const dzdx = slopeX[j * width + i] * surface;
       const dzdy = slopeY[j * width + i] * surface;
-      const length = Math.hypot(dzdx, dzdy, 1);
+      const u = ((i + 0.5) / width - 0.5) / k;
+      const facing = camera ? Math.max(1 - (dzdx * u + dzdy * v), MIN_FACING) : 1;
+      const length = Math.hypot(dzdx, dzdy, facing);
       const p = (j * width + i) * 4;
       const grey = Math.floor(blurred[j * width + i] * 255 + 0.5);
       depth[p] = grey;
@@ -273,7 +324,7 @@ export function buildGeometry(height: Float32Array, width: number, rows: number,
       depth[p + 3] = alpha ? alpha[j * width + i] : 255;
       normals[p] = Math.floor(((-dzdx / length) * 0.5 + 0.5) * 255 + 0.5);
       normals[p + 1] = Math.floor(((-dzdy / length) * 0.5 + 0.5) * 255 + 0.5);
-      normals[p + 2] = Math.floor(((1 / length) * 0.5 + 0.5) * 255 + 0.5);
+      normals[p + 2] = Math.floor(((facing / length) * 0.5 + 0.5) * 255 + 0.5);
       normals[p + 3] = 255;
     }
   }

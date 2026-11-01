@@ -40,11 +40,12 @@ def _gray(a: np.ndarray) -> Image.Image:
 
 def sheet(name: str, img: Image.Image) -> None:
     t0 = time.perf_counter()
-    height = R.estimate_height(img)
+    height, _, shift = R.estimate_depth(img)
     t1 = time.perf_counter()
     marigold = R.estimate_normals(img)
     t2 = time.perf_counter()
-    plain, detailed = R.build_geometry(height), R.build_geometry(height, normals=marigold)
+    # As POST /relight/scene with Detailed normals off and on (the sky is left out, as it always was here).
+    plain, detailed = R.build_geometry(height, shift=shift), R.build_geometry(height, normals=marigold)
     t3 = time.perf_counter()
     rows = [
         [

@@ -60,9 +60,9 @@ def _fill(body: FillLightIn | None) -> R.Light | None:
 @router.post("/scene")
 def scene(body: RelightSceneIn) -> RelightScene:
     img = resize_max_side(to_rgb(decode_image(body.image)), MAX_SIDE)
-    height, sky = R.estimate_depth(img)
+    height, sky, shift = R.estimate_depth(img)
     normals = R.estimate_normals(img) if body.detail else None
-    geom = R.build_geometry(height, normals=normals, sky=sky)
+    geom = R.build_geometry(height, normals=normals, sky=sky, shift=shift)
     scene_id = uuid.uuid4().hex[:12]
     with _scenes_lock:
         _scenes[scene_id] = _Scene(img, geom)

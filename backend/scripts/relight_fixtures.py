@@ -8,6 +8,9 @@ Output: frontend/tests/fixtures/relight/
   <scene>/depth.png      grey, with an alpha channel where the sample has open sky
   <scene>/normals.png
   <scene>/<case>.png     what relight.relight() makes of them
+  <scene>/derived-*.png  what relight.build_geometry() works out from depth.png when there are no detailed normals:
+                         derived-depth.png (the depth map it hands on), derived-normals-camera.png (with the
+                         scene's "shift", as for a photo) and derived-normals-slope.png (without one)
 
 frontend/tests/agreement.test.ts renders the same scenes under the same lights
 with lib/relightMath.ts and fails if any channel of any pixel is more than 2
@@ -17,7 +20,12 @@ match, run this script, check `cd frontend && npm test` passes, and commit the
 new fixtures with the change. If the test fails without the fixtures having
 been remade, the two versions have drifted apart.
 
-The samples are made smaller so the fixtures stay small (about 2 MB in all):
+frontend/tests/sceneGeometry.test.ts does the same for lib/sceneGeometry.ts:
+its buildGeometry() must give the derived-*.png pictures to within 1 level.
+Its input is depth.png read as nearness (grey / 255), with open sky where the
+alpha is 0, and the shift written for the scene in cases.json.
+
+The samples are made smaller so the fixtures stay small (about 3.5 MB in all):
   "<sample>"        128 pixels wide, with the real photo, under all fourteen lights.
                     At this size the shadow map is the picture's own size.
   "<sample>-large"  320 pixels wide, under four lights, with a smooth colour
@@ -82,6 +90,9 @@ CASES = {
     "grazing-shine": (dict(x=1.05, y=0.5, height=HEIGHT_MIN, intensity=2.0, ambient=0.06, color=WHITE, shine=0.6), True, dict(x=-0.2, y=0.6, height=0.5, intensity=2.0, color=WARM)),
 }
 LARGE_CASES = ("start", "default-and-fill", "grazing-right", "left-shine-fill")
+# The shift each scene's derived normals are worked out with (build_geometry's shift). Real photos give DEPTH_SHIFT and
+# a little more, a page or a close wall up to about 3; these cover that range.
+SHIFTS = {"portrait": R.DEPTH_SHIFT, "coffee": 0.6, "cat": 1.0, "rocket": 2.8}
 
 
 def _light(spec: dict | None) -> R.Light | None:
@@ -149,12 +160,22 @@ def main() -> None:
                 depth_png = Image.merge("LA", (depth_png, Image.fromarray(alpha_u8)))
             total += _png(depth_png, folder / "depth.png")
             total += _png(Image.fromarray(normals_u8), folder / "normals.png")
+            # The browser's own geometry, from the depth map alone (lib/sceneGeometry.ts).
+            nearness = depth_u8.astype(np.float32) / np.float32(255.0)
+            sky = None if alpha_u8 is None else alpha_u8 == 0
+            shift = SHIFTS[name]
+            camera = R.build_geometry(nearness, sky=sky, shift=shift)
+            slope = R.build_geometry(nearness, sky=sky)
+            total += _png(R.depth_image(camera), folder / "derived-depth.png")
+            for label, geom_derived in (("camera", camera), ("slope", slope)):
+                encoded = ((geom_derived.normals * 0.5 + 0.5) * 255.0 + 0.5).astype(np.uint8)
+                total += _png(Image.fromarray(encoded), folder / f"derived-normals-{label}.png")
             geom = _geometry(depth_u8, normals_u8, relief, alpha_u8)
             for case in cases:
                 key, cast, fill = CASES[case]
                 out = R.relight(photo, geom, _light(key), cast_shadows=cast, fill=_light(fill))
                 total += _png(out, folder / f"{case}.png")
-            scenes.append({"name": scene, "sample": name, "width": photo.width, "height": photo.height, "relief": relief, "cases": list(cases)})
+            scenes.append({"name": scene, "sample": name, "width": photo.width, "height": photo.height, "relief": relief, "shift": shift, "cases": list(cases)})
             print(f"{scene}: {photo.width} x {photo.height}, {len(cases)} lights")
     cases_json = {name: {"light": key, "shadows": cast, "fill": fill} for name, (key, cast, fill) in CASES.items()}
     (OUT / "cases.json").write_text(json.dumps({"cases": cases_json, "scenes": scenes}, indent=2) + "\n")
