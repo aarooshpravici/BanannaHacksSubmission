@@ -25,7 +25,7 @@ Short on time? Read [TEST_FIRST.md](TEST_FIRST.md): one page saying what to test
 | Your share of the full plan ([TEST_PLAN.md](TEST_PLAN.md)) | 1.5 to 3 hours |
 | The whole plan alone | 5 to 6 hours |
 
-The plan has **227 test cases** in 18 groups. Some need a key, a touch screen or a second browser, and some can only be done if your device happens to take a rare path; skip those you cannot do and mark them NOT RUN.
+The plan has **240 test cases** in 19 groups. Some need a key, a touch screen or a second browser, and some can only be done if your device happens to take a rare path; skip those you cannot do and mark them NOT RUN.
 
 If setup fails, that is a result too. Report it (see [Reporting](#reporting-what-you-found)) and switch to "Plan B" in [SETUP.md](SETUP.md#plan-b-no-backend-mock-mode).
 

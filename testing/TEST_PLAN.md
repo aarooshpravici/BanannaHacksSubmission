@@ -2810,3 +2810,141 @@ FAIL: **Enhance** failing in step 2 with the backend running; a second card for 
 Known (K87): Enhance on a draft always starts from detailed normals, also when the draft was saved with **Detailed normals** off, so the enhanced half can show a little more surface detail than the live preview. A sample and a photo analysed in the browser do the same (K54). The independent check ran what these steps do, by program, with a backend on mock providers; nobody has run them with the real models (K93).
 
 `Result: PASS / FAIL / NOT RUN` Note:
+
+## N. The polish branch (Nov 1)
+
+New on Nov 1, on the branch `polish`. It is **not** on `main` and **not** on the hosted demo, which still show the version of the hackathon. The owner asked for a night of work on the app's biggest weak spots. Five things change what you see.
+
+- **A gentler start.** A new photo starts at Intensity 1.40 and Ambient 0.20 (it was 1.80 and 0.06). The dark side keeps its detail.
+- **Open sky is left as photographed.** Where the depth model sees open sky, no shadow falls on it and the lighting does not darken it.
+- **Shine.** A new slider beside **Ambient**: a glossy highlight from each light. It starts at 0.00, where every picture is exactly what it was.
+- **Safari works out your own photo on the processor.** In Safari (and in every browser on an iPhone or iPad) the depth model no longer runs on the graphics chip: in a program's test, that crashed the tab when the page was reloaded.
+- **The sun stays out of the button rows.** It can no longer be dragged onto **Export PNG**, **Hold to see original** or **New photo**: it stops at the top and bottom edge of the photo. On a phone it no longer shows the "Scroll to…" hint.
+
+And one that is an **experiment**, for the owner to judge by eye: a photo of your own that the browser analysed (Plan B, Plan C, **Analyse in this browser**, or **Detailed normals** off) gets its surface directions worked out a new way (N-11).
+
+**What you need.** Get the branch first: in the folder of the code, `git fetch`, then `git switch polish`, then `git log -1 --format=%h` for the version. Run `npm ci` in the `frontend` folder and restart both programs. Nothing new to install. To go back: `git switch main`. Plan B and Plan C ([SETUP.md](SETUP.md#plan-b-no-backend-mock-mode)) work for every case; N-02 to N-04 also work in the normal app.
+
+**What has been checked.** By programs only: the unit tests (88 in the frontend, 115 in the backend), the smoke test in Chrome on one Mac, and Playwright runs in Chromium, Firefox and WebKit (the engine of Safari) on the same Mac, including an iPhone 14 and a Pixel 7 as the browser imitates them. **No person has run any case in this group, and no real Safari, iPhone or Android phone has been used.**
+
+### N-01 The starting light
+
+1. Click the **Portrait** sample. 2. Click **Right**, then **Reset light**.
+
+**Expected:** steps 1 and 2: Intensity **1.40**, Ambient **0.20**, Shine **0.00**, Height 0.12, x 0.12, y 0.35. The left of the face is lit and the right falls into shadow, but the shadow side is not black: the suit's folds and the hair show in it.
+
+FAIL: other numbers; the shadow side nearly black (that was the old start); Shine above 0 after **Reset light**.
+
+`Result: PASS / FAIL / NOT RUN` Note (your score for the picture out of 5, if you like):
+
+### N-02 Shine
+
+1. Click the **Portrait** sample. Click the "?" beside **Shine** and read it. Close it. 2. Drag **Shine** to about 1.00. 3. Drag the sun slowly across the black helmet at the bottom right, then across the face. 4. Click **Coffee cup**, drag Shine up and move the sun over the cup. 5. Drag Shine back to 0.00.
+
+**Expected:** step 1: on a computer, **Shine** sits on the same row as **Ambient**, to its right. On a phone it has its own row. Step 3: a small bright spot appears on the helmet and moves with the sun; the face gets a soft sheen on its lit side, not a white patch. Step 4: the glaze of the cup gets a highlight that follows the sun. Step 5: the picture is exactly as it was before step 2.
+
+FAIL: no highlight at all at 1.00; a highlight that stays put when the sun moves; a highlight inside a cast shadow; the picture different at 0.00 from before; white blocks or stripes.
+
+Known: a metal lattice close to the light turns silver at high Shine (K97).
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### N-03 Shine with the fill light, presets, Reset and drafts
+
+1. Click the **Portrait** sample. Set Shine to 0.80. Switch **Fill light** on. 2. Click **Left**, then **Top**. 3. Click **Reset light**. 4. Choose a photo of your own, set Shine to 0.50, click the logo, then **DRAFTS** and its card.
+
+**Expected:** step 1: the helmet gets a second, fainter highlight from the fill's sun (F), in the fill's colour. Step 2: Shine stays at 0.80 after each preset. Step 3: Shine is back to 0.00 and the fill is off. Step 4: the draft opens with Shine at 0.50.
+
+FAIL: Shine changing with a preset; **Reset light** leaving Shine up; a draft opening with Shine at 0.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### N-04 Open sky
+
+1. Click the **Rocket** sample. Click **Left**, then **Right**, and drag the sun slowly round the rocket. 2. In Plan B or Plan C, choose a photo of your own with plenty of open sky: a building, a street, a person outdoors. Drag the sun round it.
+
+**Expected:** the sky keeps the brightness and colour it has in the photo at every sun position: no dark column or band beside the rocket, a tower, a roof or a person, and no line where sky meets them. Everything that is not sky is lit as before.
+
+FAIL: a shadow on the sky; the sky darker on the side away from the sun; a hard line between the sky and a building.
+
+Not yet seen by anyone: what counts as sky is where the depth model says "as far as it can see". If something that is not sky is left unlit, or a patch of sky still gets a shadow, send a screenshot.
+
+`Result: PASS / FAIL / NOT RUN` Photo and note:
+
+### N-05 Safari: your own photo, and reloading
+
+Only in Safari on a Mac, or any browser on an iPhone or iPad. Plan B or Plan C.
+
+1. Choose `testing/photos/02-object-coffee.jpg` and wait until it is lit. Open GEOMETRY and read the small line that starts "depth:". 2. Reload the page. Choose the same photo again. 3. Do step 2 twice more. Then go to another site and press Back.
+
+**Expected:** step 1: "depth: this browser, processor (the graphics chip is not used for depth in this browser)". The photo takes a few seconds longer than in Chrome. Steps 2 and 3: every reload works and every photo is lit.
+
+FAIL: "This webpage was reloaded because a problem occurred", or a blank or grey page, at any point (this is the crash the change is for); any other depth line.
+
+Known: slower than on the graphics chip, a few seconds for a phone photo (K98).
+
+`Result: PASS / FAIL / NOT RUN` Device, Safari version, and note:
+
+### N-06 Safari with the graphics chip anyway (optional)
+
+Only if N-05 passed. Same browser. Add `?depth=webgpu` to the address (for example `http://localhost:3000/?depth=webgpu`) and do N-05 again.
+
+**Expected:** the depth line reads "…graphics chip (WebGPU)". This is the old way. It may crash on a reload, which is why it is no longer the default. We want to know whether it does on a real Safari.
+
+`Result: CRASHED / DID NOT CRASH / NOT RUN` Device, Safari version, and note:
+
+### N-07 The sun and the buttons on a phone
+
+On a phone, through the computer's address (W-16 step 8), or Plan C.
+
+1. Click the **Portrait** sample. 2. Drag the sun down past the bottom of the photo, as far as your finger goes, and let go. 3. Tap **Export PNG**. 4. Drag the sun up past the top of the photo, toward **New photo**, and let go. 5. Tap the sun once and wait three seconds.
+
+**Expected:** step 2: the sun stops with its middle on the bottom edge of the photo; it does not cover **Export PNG** or **Hold to see original**. Step 3: the picture is saved. Step 4: it stops at the top edge, clear of **New photo**. Step 5: no hint appears under the sun.
+
+FAIL: the sun on top of a button; a tap on **Export PNG** that moves the sun; a hint "Scroll to bring the light nearer…" under the sun.
+
+Known: the sun can no longer be put above or below the photo, only beside it (K96).
+
+`Result: PASS / FAIL / NOT RUN` Phone, browser and note:
+
+### N-08 The sun and the buttons on a computer
+
+1. Click the **Portrait** sample. 2. Drag the sun straight onto **Export PNG** and let go. 3. Click **Export PNG**. 4. Drag the sun onto **New photo** and let go. 5. Put the mouse on the sun and keep it still for a second.
+
+**Expected:** step 2: the sun stops on the bottom edge of the photo, above the button. Step 3: the picture is saved. Step 4: the sun stops on the top edge, to the right of the photo if you went that far, and **New photo** is clear. Step 5: the hint "Scroll to bring the light nearer or push it back" appears, as before.
+
+FAIL: the sun covering either button; a click on a button that grabs the sun.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### N-09 Sweep and the wheel, unchanged
+
+The code behind the sun and **Sweep** moved to new files. Nothing should look different.
+
+1. Click the **Portrait** sample. Click **Sweep** and watch it to the end. 2. Put the mouse on the sun and scroll up three notches, then down three. 3. On a phone: spread and pinch two fingers on the photo.
+
+**Expected:** step 1: the sun goes once round the photo along its edges at a steady speed and comes back to exactly where it started. Step 2: Height rises, then comes back; the page itself does not scroll. Step 3: Height follows the fingers.
+
+FAIL: anything different from the hosted demo.
+
+`Result: PASS / FAIL / NOT RUN` Note:
+
+### N-10 The new normals: faces and objects (judgement)
+
+This is the experiment. Plan B or Plan C on `polish`, and the **hosted demo** for comparison: the demo still has the old way, so the same photo on both shows the difference.
+
+1. Choose a photo of a face of your own (not a sample: the samples are not affected). Click **Left**, then **Right**. 2. Open the same photo on the hosted demo and do the same. 3. Do 1 and 2 with a photo of a thing on a table, and with `testing/photos/03-animal-cat.jpg`.
+
+**Expected, if the experiment works:** on `polish` the face looks rounder under a side light: the cheek away from the light turns away, the nose and brow stand out. A table or floor top is lit as a surface that lies back, not one that faces you.
+
+**What to look for that is worse:** a flat, evenly lit band along the edge of an object (the cat's cheek under **Right** shows one, K99); a flat wall photographed at an angle (bricks) lit unevenly or in the wrong direction.
+
+`Result: BETTER / SAME / WORSE / NOT RUN` on faces: ___ on objects: ___ Photos and note:
+
+### N-11 The new normals: a wall, a room and an outdoor scene (judgement)
+
+As N-10, with: a brick or tiled wall photographed at an angle; a room with a floor and a wall; an outdoor scene with buildings.
+
+**Expected:** a flat surface is lit evenly across, as one surface, and gets brighter or darker as a whole when the sun moves to the side it faces.
+
+`Result: BETTER / SAME / WORSE / NOT RUN` Photos and note:

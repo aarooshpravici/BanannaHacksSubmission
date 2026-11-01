@@ -1,5 +1,31 @@
 # Test this first
 
+## Nov 1: the `polish` branch
+
+For version `a71a2bf` or later, on the branch `polish`. **This is not on the hosted demo or on `main`**, which still show the app as it was at the hackathon. Group N in [TEST_PLAN.md](TEST_PLAN.md#n-the-polish-branch-nov-1) has the details; this section says what to do first.
+
+**Get the branch** (in the folder of the code; on Windows `cd $HOME\BanannaHacksSubmission` first):
+
+```bash
+git fetch
+git switch polish
+git log -1 --format=%h
+```
+
+Then `npm ci` in the `frontend` folder, and restart both programs. Nothing new to install. Put the version in every report. `git switch main` takes you back.
+
+**Nobody has tried any of this by hand.** Everything below was run only by programs, on one Mac. In order:
+
+1. **Safari, iPhone or iPad owners: N-05 first (five minutes).** In a program's test, Safari's engine crashed the tab when the page was reloaded after working out a photo. The branch avoids that by using the processor. We need a real Safari to say whether it holds. Plan B or Plan C.
+2. **Phone owners: N-07 (two minutes).** The sun could cover **Export PNG** on a phone. It should now stop at the photo's edge.
+3. **Everyone: N-10 (ten minutes, judgement).** A photo of a face of your own on the branch (Plan B or Plan C) against the same photo on the hosted demo, under **Left** and **Right**. The branch works out the surface a new way. Better, same or worse? The owner decides from your answers whether it stays.
+4. **Everyone: N-02 and N-01 (five minutes).** The new **Shine** slider, and the gentler starting light. Does the highlight look like gloss? Is the start better?
+5. Then N-04 (open sky), N-08, N-09, N-03, N-11 and N-06, in that order.
+
+Known and meant: K96 to K99 in [PENDING.md](PENDING.md). The kit's screenshots were taken before the branch: they show Intensity 1.80 and Ambient 0.06 and no Shine slider, and that is not a FAIL.
+
+## Before Nov 1
+
 Sunday Oct 11, the fill light, drafts and the logo, for version `ae26824` or later.
 
 The full plan in [TEST_PLAN.md](TEST_PLAN.md) has 227 cases. You do not need to do them all. This page says what helps most right now, in order. The developer rewrites this page after every update, so check its date before you start.
