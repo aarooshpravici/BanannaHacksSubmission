@@ -78,6 +78,11 @@ If a device cannot run the shader, the page falls back by itself: first to the s
 
 Without the two pretrained models there is nothing to shade; without our code there is nothing to drag. Dragging the light never calls a model.
 
+## Who made it
+
+- **Aaroosh Kurchania** ([@aarooshpravici](https://github.com/aarooshpravici)): code and testing.
+- **[@shanefukumoto](https://github.com/shanefukumoto)** and **[@duckunicorn](https://github.com/duckunicorn)**: testing on Windows (Intel, NVIDIA and Snapdragon laptops) and Android, through the test kit in `testing/` and GitHub issues.
+
 ## Honest limits
 
 - A flat subject (a sheet of paper, a poster, a screen) shades with bands and blotches: with nothing to go on, the depth model invents a gentle bulge, and the app lights it as if it were real.
