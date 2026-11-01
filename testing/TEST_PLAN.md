@@ -2825,7 +2825,7 @@ And one that is an **experiment**, for the owner to judge by eye: a photo of you
 
 **What you need.** Get the branch first: in the folder of the code, `git fetch`, then `git switch polish`, then `git log -1 --format=%h` for the version. Run `npm ci` in the `frontend` folder and restart both programs. Nothing new to install. To go back: `git switch main`. Plan B and Plan C ([SETUP.md](SETUP.md#plan-b-no-backend-mock-mode)) work for every case; N-02 to N-04 also work in the normal app.
 
-**What has been checked.** By programs only: the unit tests (88 in the frontend, 115 in the backend), the smoke test in Chrome on one Mac, and Playwright runs in Chromium, Firefox and WebKit (the engine of Safari) on the same Mac, including an iPhone 14 and a Pixel 7 as the browser imitates them. **No person has run any case in this group, and no real Safari, iPhone or Android phone has been used.**
+**What has been checked.** By programs only: the unit tests (88 in the frontend; 111 in the backend, with 4 more that need the downloaded models skipped), the smoke test in Chrome on one Mac, and Playwright runs in Chromium, Firefox and WebKit (the engine of Safari) on the same Mac, including an iPhone 14 and a Pixel 7 as the browser imitates them. **No person has run any case in this group, and no real Safari, iPhone or Android phone has been used.**
 
 ### N-01 The starting light
 
