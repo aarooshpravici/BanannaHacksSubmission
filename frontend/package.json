@@ -7,7 +7,8 @@
     "build": "next build",
     "build:demo": "NEXT_PUBLIC_DEMO=1 next build && node -e \"const fs = require('fs'), media = 'out/_next/static/media'; fs.writeFileSync('out/.nojekyll', ''); for (const f of fs.existsSync(media) ? fs.readdirSync(media) : []) if (/^ort-wasm.*\\.wasm$/.test(f)) fs.rmSync(media + '/' + f);\"",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import ./tests/hooks.mjs --test tests/"
   },
   "dependencies": {
     "@huggingface/transformers": "4.3.1",

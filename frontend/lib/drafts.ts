@@ -91,11 +91,12 @@ const DRAFT_ID_PREFIX = "draft:";
 export const isDraftScene = (scene: RelightScene) => scene.scene_id.startsWith(DRAFT_ID_PREFIX);
 
 // --- what is read back is checked ---------------------------------------------------
+// (Exported for frontend/tests/drafts.test.ts: Node has no IndexedDB, but these need none.)
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
 /** A record's fill light, or null if it has none or it is not whole. A draft is never skipped for its fill: it opens with the fill off. */
-function asFill(value: unknown): DraftFill | null {
+export function asFill(value: unknown): DraftFill | null {
   const f = value as Partial<DraftFill> | null | undefined;
   if (!f || typeof f !== "object" || typeof f.on !== "boolean") return null;
   if (!finite(f.x) || !finite(f.y) || !finite(f.height) || !finite(f.intensity) || !finite(f.warmth)) return null;
@@ -103,7 +104,7 @@ function asFill(value: unknown): DraftFill | null {
 }
 
 /** A record from the list -> a Draft, or null if it is not one (damaged, or written by something else). Such a record is skipped. */
-function asDraft(value: unknown): Draft | null {
+export function asDraft(value: unknown): Draft | null {
   const d = value as Partial<Draft> | null;
   if (!d || typeof d !== "object" || typeof d.id !== "string" || typeof d.name !== "string" || !finite(d.createdAt) || !finite(d.updatedAt)) return null;
   const light = d.light as Partial<Draft["light"]> | null | undefined;
@@ -128,7 +129,7 @@ function asDraft(value: unknown): Draft | null {
   };
 }
 
-function asScene(value: unknown): RelightScene | null {
+export function asScene(value: unknown): RelightScene | null {
   const s = value as Partial<RelightScene> | null;
   if (!s || typeof s !== "object" || typeof s.scene_id !== "string" || !finite(s.width) || !finite(s.height) || s.width < 1 || s.height < 1 || !finite(s.relief)) return null;
   if (typeof s.image !== "string" || typeof s.depth !== "string" || typeof s.normals !== "string" || !s.image || !s.depth || !s.normals) return null;
