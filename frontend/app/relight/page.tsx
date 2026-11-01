@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "react";
+import { type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "react";
 import { BeforeAfter } from "@/components/BeforeAfter";
 import { ErrorBanner } from "@/components/ErrorBanner";
 import { CollapsiblePanel } from "@/components/CollapsiblePanel";
@@ -8,70 +8,29 @@ import { Help } from "@/components/Help";
 import { FitBox, PageIntro, Panel, Stage, Workspace } from "@/components/Panel";
 import { BusyLabel, BusyOverlay } from "@/components/Spinner";
 import { UploadDropzone } from "@/components/UploadDropzone";
-import { AlertIcon, DownloadIcon, EyeIcon, OrbitIcon, SparklesIcon, SunIcon, UploadIcon } from "@/components/icons";
+import { AlertIcon, DownloadIcon, EyeIcon, OrbitIcon, SparklesIcon, UploadIcon } from "@/components/icons";
 import { RelightCanvas, type ShadingPath } from "@/components/relight/RelightCanvas";
+import { AMBIENT_HELP, AMBIENT_HINT, BOTH_LIGHTS, COLOUR_HELP, FILL_HELP, HEIGHT_ENDS, HEIGHT_HELP, HEIGHT_HINT, INTENSITY_HELP, SHADOWS_HELP, SHADOWS_HELP_WITH_FILL, SHINE_HELP, SHINE_HINT } from "@/components/relight/lightHelp";
+import { HANDLE_MARGIN_PX, HANDLE_MARGIN_Y_PX, LightSun, type Which, handleMarginX } from "@/components/relight/LightSun";
 import { ShadingNote } from "@/components/relight/ShadingNote";
 import { type StartTab, StartTabs } from "@/components/relight/StartTabs";
+import { type WithBackendScene, useServerPreview } from "@/components/relight/useServerPreview";
 import { Button, Segmented, Slider, Switch, Toggle } from "@/components/ui";
-import { ApiError, errorMessage, isAbort, relightAdoptScene, relightEnhance, relightRender, relightScene } from "@/lib/api";
+import { ApiError, errorMessage, isAbort, relightAdoptScene, relightEnhance, relightScene } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { API_URL, DEMO, MOCK } from "@/lib/config";
 import { type Draft, draftName, fingerprint, isDraftScene, readDraftScene, saveDraft, smallPicture, useDrafts } from "@/lib/drafts";
 import { HOME_EVENT } from "@/lib/home";
+import { COOL, HEIGHT_MAX, HEIGHT_MIN, WARM, clamp, cssColor, round, warmthToColor } from "@/lib/lightValues";
 import { type LoadedImage, downloadBase64AsPng, downloadCanvas, sniffMime, toDataUrl } from "@/lib/image";
 import { type DepthDevice, type LocalProgress, depthDeviceText, isLocalScene, localScene, progressText } from "@/lib/localScene";
 import { SAMPLES, type SamplePhoto, isSampleScene, loadSampleScene, sampleThumbUrl } from "@/lib/samples";
+import { SWEEP_MS, SWEEP_STEPS, sweepLoop, sweepProgress } from "@/lib/sweep";
 import type { FillLight, Light, RelightRender, RelightScene } from "@/lib/types";
 import { useJob } from "@/lib/useJob";
 
 /** How far outside the photo the light may be dragged, in image widths/heights. */
 const OUTSIDE = 0.5;
-/** How close the middle of the sun may come to the stage's left and right edges, in pixels: close enough to reach past a photo that fills the stage, far enough that most of the sun stays in view. Also read by .light-handle in globals.css. */
-const HANDLE_MARGIN_PX = 18;
-/**
- * On a touch screen, how far the middle of the sun keeps from the left and right
- * sides of the screen, in pixels. A phone's browser takes a finger that goes down
- * at the very side of the screen as its Back or Forward swipe, and a page cannot
- * switch that off. With the stage 17 px from the side, a sun parked at the stage's
- * edge sat inside that strip: a tester who reached for it on an iPhone left the page.
- */
-const TOUCH_EDGE_CLEAR_PX = 48;
-/**
- * How close the middle of the sun may come to the stage's top and bottom, in
- * pixels: the whole strip above and below the photo that holds the stage's
- * buttons ([--stage-inset-y:4rem] on the stage). A sun parked in a strip lay
- * over Export PNG or New photo, and a press on the button picked up the sun:
- * on a phone, where the stage is only as tall as the photo and the buttons
- * fill most of the strip, that was the only place below the photo it could go.
- * Also read by .light-handle in globals.css.
- */
-const HANDLE_MARGIN_Y_PX = 64;
-/** Height: how far in front of the subject the light floats, in image widths. The slider's two ends. */
-const HEIGHT_MIN = 0.03;
-const HEIGHT_MAX = 2;
-/**
- * The sun shows its height, so that the light's distance can be read off the
- * photo with no words: a light near the surface is a small disc with a tight
- * glow and its shadow right under it; pulled toward the viewer it grows, its
- * glow spreads and its shadow falls away below it. Each number is the value at
- * the lowest and at the highest Height; between them it follows the share of
- * the way up in equal ratios (heightShare), because 0.03 to 0.06 changes the
- * picture as much as 1 to 2 does.
- *
- * The disc is 40 px at the Height a new photo starts with (0.12, a third of
- * the way up): 0.64 and 1.72 of that are far enough apart to tell at a glance,
- * while the small one is still easy to see and the large one hides little of
- * the photo. The button itself never goes under 40 px, so it stays easy to grab.
- */
-const HANDLE_PX = 40;
-const SUN_SCALE = [0.64, 1.72];
-/** How far the glow reaches past the disc, and how soft its edge is, in pixels. 24 and 12 at the starting Height, as before the sun showed its height. */
-const SUN_GLOW_REACH_PX = [8, 56];
-const SUN_GLOW_BLUR_PX = [4, 28];
-/** The shadow under the disc: how far below it falls, how soft it is, and how dark. About 3 px, 11 px and 0.7 at the starting Height, much as before. */
-const SUN_SHADOW_DROP_PX = [0, 30];
-const SUN_SHADOW_BLUR_PX = [4, 24];
-const SUN_SHADOW_ALPHA = [0.8, 0.6];
 
 /**
  * Scrolling over the sun: how much one pixel of scroll changes the Height, as
@@ -81,12 +40,6 @@ const SUN_SHADOW_ALPHA = [0.8, 0.6];
  * needs a tiring number of turns.
  */
 const WHEEL_HEIGHT_PER_PX = 0.0022;
-/** The most one scroll event may count for, in pixels: a wheel that speeds up when spun must not jump the light from one end to the other. */
-const WHEEL_MAX_STEP_PX = 150;
-/** A browser that counts in lines, not pixels (Firefox with a mouse): what one line is worth, so that a notch of three lines matches a notch elsewhere. */
-const WHEEL_LINE_PX = 33;
-/** A trackpad pinch arrives as a scroll with Ctrl held and much smaller numbers: this many times more is made of each. */
-const WHEEL_PINCH_GAIN = 8;
 /** The + and - keys: each press changes the Height by this ratio, like half a wheel notch. */
 const KEY_HEIGHT_RATIO = 1.12;
 /** Two fingers on a touch screen: spreading them to twice as far apart multiplies the Height by 2 to this power. 2.5 reaches either end from the start in one comfortable pinch. */
@@ -95,113 +48,6 @@ const PINCH_POWER = 2.5;
 const PINCH_MIN_SPREAD_PX = 24;
 /** A second finger landing within this many milliseconds of the first means a pinch was meant from the start: the light goes back to where it was before the first finger moved it. */
 const PINCH_GRACE_MS = 350;
-/** Shown under the sun while the mouse rests on it. */
-const SUN_HINT = "Scroll to bring the light nearer or push it back";
-const HEIGHT_HINT = "Scroll or pinch on the sun to change it. Low grazes the surface and stretches the shadows.";
-const HEIGHT_ENDS: [string, string] = ["close to the surface", "close to you"];
-/** Under every slider's "?": its number can be typed as well as dragged. */
-const TYPE_IT = <span className="block text-zinc-500">Click the number on the right to type an exact value.</span>;
-/** Height spelt out, behind the "?" beside its name: beside the stage a laptop window has no room for HEIGHT_HINT, and a tester who lit an outdoor photo of his own from low down found the result odd and nothing to say why. It opens by itself the first time the Height is changed by hand (heightUsed). */
-const HEIGHT_HELP = (
-  <>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Height</strong> is how far the light floats in front of the photo.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Low</strong>: the light skims across the surface. One side goes bright, shadows stretch, and every bump in the estimated shape shows. On a photo of your own, outdoors above all, that can look odd.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">High</strong>: the light faces the photo. The whole frame is lit evenly, shadows are short, and near and far things differ less.
-    </span>
-    <span className="block text-zinc-500">Scrolling or pinching on the sun changes it too. Click the number on the right to type an exact value.</span>
-  </>
-);
-/** The other settings of the LIGHT panel, behind their own "?". What each says follows the shading itself: brightness = Ambient + Intensity x the light that reaches a surface. */
-const INTENSITY_HELP = (
-  <>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Intensity</strong> is how strong the light is.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Higher</strong>: the lit side gets brighter and stands out more against the dark side.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">At 0</strong> the light is off, and only the Ambient light is left.
-    </span>
-    {TYPE_IT}
-  </>
-);
-const AMBIENT_HELP = (
-  <>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Ambient</strong> is even light that reaches everything, shadows included, like daylight filling a room.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Low</strong>: the side away from the light stays dark. Dramatic, but detail is lost there.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Higher</strong>: the shadows lift and the picture softens towards the original photo. For a gentle look on a face, try 0.3 to 0.6 with a lower Intensity.
-    </span>
-    {TYPE_IT}
-  </>
-);
-/** Shine, behind its "?". It is a Blinn-Phong highlight (relight.py's shine_map): bright where a surface faces halfway between the light and the camera. */
-const SHINE_HELP = (
-  <>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Shine</strong> is a glossy highlight, where a surface faces halfway between the light and you. It moves with the light, and takes the light&apos;s colour.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Higher</strong>: the highlight gets brighter. Turn it up for skin, metal and glass: a helmet, a glazed cup, an eye.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">At 0</strong> nothing shines and every surface is matte, as the page starts.
-    </span>
-    {TYPE_IT}
-  </>
-);
-/** Ambient's line under its slider, and Shine's: where the two share a row beside the stage, Ambient's has the row's width and Shine's is the tooltip. */
-const AMBIENT_HINT = "Light that reaches everything, shadows included.";
-const SHINE_HINT = "A glossy highlight where a surface faces between the light and you.";
-const COLOUR_HELP = (
-  <>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Colour</strong> is the colour of the light.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Left</strong> is cool and bluish, like shade or a screen. <strong className="font-semibold text-zinc-100">The middle</strong> is plain white. <strong className="font-semibold text-zinc-100">Right</strong> is warm and orange, like a lamp or a low sun.
-    </span>
-    <span className="block text-zinc-500">Click the words on the right to type a number: -100 is the coolest, 0 is neutral, 100 the warmest.</span>
-  </>
-);
-const SHADOWS_HELP = (
-  <>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">On</strong>: things block the light and throw shadows on whatever is behind them, as a nose does on a cheek.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Off</strong>: every surface is still brighter or darker by the way it faces, but nothing throws a shadow.
-    </span>
-    <span className="block">Open sky gets no shadow, and keeps the brightness it has in the photo.</span>
-  </>
-);
-/** Added to SHADOWS_HELP while the fill light is on: the one switch is for the picture, and the picture's shadows are the key's. */
-const SHADOWS_HELP_WITH_FILL = <span className="block">Only the key light throws shadows. The fill light never does.</span>;
-/** The fill light, behind the "?" beside its switch. */
-const FILL_HELP = (
-  <>
-    <span className="block">
-      A <strong className="font-semibold text-zinc-100">fill light</strong> is a second, weaker light, usually on the side opposite the main one, which is called the key. It lifts the shadows the key leaves.
-    </span>
-    <span className="block">
-      <strong className="font-semibold text-zinc-100">Ambient</strong> lifts everything evenly, which flattens the picture. A fill has a direction, so shapes keep their roundness.
-    </span>
-    <span className="block">It casts no shadows of its own.</span>
-    <span className="block text-zinc-500">Each light has its own sun on the photo, marked K and F. Key and Fill, on the left, choose which one Height, Intensity and Colour change.</span>
-  </>
-);
-/** Beside Ambient and Cast shadows while the fill light is on: the two settings that Key and Fill do not switch between. */
-const BOTH_LIGHTS = "both lights";
 /**
  * The space between the LIGHT panel's rows where the sidebar is beside the stage. The Key | Fill row is one row more than the sidebar was fitted to.
  * The demo has the height for it (its ENHANCE panel is shorter), so it keeps the spacing it had. With a backend the rows sit closer in a window under 874px
@@ -211,13 +57,7 @@ const BOTH_LIGHTS = "both lights";
  */
 const LIGHT_ROW_GAPS = DEMO ? "lg:short:gap-2" : "lg:short:gap-1.5 lg:[@media(min-height:771px)_and_(max-height:873px)]:gap-2";
 
-const WARM: [number, number, number] = [1.0, 0.86, 0.68];
-const COOL: [number, number, number] = [0.7, 0.86, 1.0];
-
 type LightBase = Omit<Light, "color">;
-
-/** The page's two lights: the key, which is the light it always had, and the fill. */
-type Which = "key" | "fill";
 
 /**
  * The fill light as the page holds it, from the first time it is switched on:
@@ -277,22 +117,9 @@ interface OwnPhoto {
  */
 const START: LightBase = { x: 0.12, y: 0.35, height: 0.12, intensity: 1.4, ambient: 0.2, shine: 0 };
 
-/** Sweep: how long the light takes to travel once around the subject. Long enough to read, short enough for a demo clip. */
-const SWEEP_MS = 6000;
-/** Sweep: the orbit's centre and radius, in photo widths/heights. 0.5 around the middle runs the light along the photo's edges, where side lighting is strongest. */
-const SWEEP_CENTRE = { x: 0.5, y: 0.5 };
-const SWEEP_RADIUS = 0.5;
-/** Sweep: the share of the loop spent gliding from the user's light onto the orbit, and again back to it, so nothing jumps. */
-const SWEEP_BLEND = 0.15;
-/** Sweep: the share of the time spent speeding up at the start, and again slowing down at the end. Between the two the sun keeps one steady speed. */
-const SWEEP_RAMP = 0.08;
-/** Sweep: how many pieces the loop is measured in, so that the sun can be moved along it by distance. */
-const SWEEP_STEPS = 360;
-
 /** Enhance and server renders, for a built-in sample with no backend to send it to. */
 const ENHANCE_OFFLINE = `Enhance needs the backend, which cannot be reached at ${API_URL}. The live preview and Export PNG still work without it.`;
 const ENHANCE_HINT = "A photoreal pass over this lighting. Takes a few seconds.";
-const SERVER_RENDER_OFFLINE = `Cannot reach the backend at ${API_URL}. Is it running?`;
 /**
  * Where a photo's scene comes from: the Relight server (depth and detailed
  * normals), or the depth model run in this browser (lib/localScene.ts).
@@ -343,241 +170,6 @@ const PRESETS: { label: string; light: Partial<LightBase>; warmth?: number }[] =
   { label: "Top", light: { x: 0.5, y: -0.15, height: 0.35, intensity: 1.3 } },
   { label: "Low and warm", light: { x: 0.0, y: 0.9, height: 0.12, intensity: 1.6, ambient: 0.2 }, warmth: 1 },
 ];
-
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
-/** How close the middle of the sun may come to the stage's left and right edges: HANDLE_MARGIN_PX, or more on a touch screen where the stage reaches the side of the screen (TOUCH_EDGE_CLEAR_PX). */
-function handleMarginX(bounds: DOMRect | undefined) {
-  if (!bounds || !window.matchMedia("(pointer: coarse)").matches) return HANDLE_MARGIN_PX;
-  const gap = Math.min(bounds.left, document.documentElement.clientWidth - bounds.right);
-  return Math.max(HANDLE_MARGIN_PX, TOUCH_EDGE_CLEAR_PX - gap);
-}
-const round = (v: number, digits = 3) => Number(v.toFixed(digits));
-const smoothstep = (t: number) => t * t * (3 - 2 * t);
-/** Height: 0 at the slider's low end, 1 at its high end, in equal ratios between. */
-const heightShare = (height: number) => clamp(Math.log(height / HEIGHT_MIN) / Math.log(HEIGHT_MAX / HEIGHT_MIN), 0, 1);
-const between = ([low, high]: number[], t: number) => low + (high - low) * t;
-
-/** Sweep: the light a share `s` (0 to 1) of the way round its loop from `from`: out onto the orbit, once round, and back. */
-function sweepPoint(from: { x: number; y: number }, s: number) {
-  const angle = Math.atan2(from.y - SWEEP_CENTRE.y, from.x - SWEEP_CENTRE.x) + s * 2 * Math.PI;
-  // 0 at both ends (the user's own position), 1 while on the orbit.
-  const onOrbit = smoothstep(clamp(Math.min(s, 1 - s) / SWEEP_BLEND, 0, 1));
-  return {
-    x: from.x + (SWEEP_CENTRE.x + SWEEP_RADIUS * Math.cos(angle) - from.x) * onOrbit,
-    y: from.y + (SWEEP_CENTRE.y + SWEEP_RADIUS * Math.sin(angle) - from.y) * onOrbit,
-  };
-}
-
-/**
- * Sweep: the loop as points, with the distance travelled to each as it is seen
- * on screen (`aspect` is the photo's width over its height). Turning the angle
- * evenly made the glide on and off the orbit almost twice as fast as the orbit
- * itself, which a tester saw as a sweep that slows down in the middle.
- */
-function sweepLoop(from: { x: number; y: number }, aspect: number) {
-  const points = Array.from({ length: SWEEP_STEPS + 1 }, (_, i) => sweepPoint(from, i / SWEEP_STEPS));
-  const travelled = [0];
-  for (let i = 1; i < points.length; i++) {
-    travelled.push(travelled[i - 1] + Math.hypot((points[i].x - points[i - 1].x) * aspect, points[i].y - points[i - 1].y));
-  }
-  return { points, travelled };
-}
-
-/** Sweep: the share of the distance covered after a share `t` of the time. One steady speed, with a short ramp up and down so the sun neither jumps off nor stops dead. */
-function sweepProgress(t: number) {
-  const cruise = 1 / (1 - SWEEP_RAMP);
-  if (t < SWEEP_RAMP) return (cruise * t * t) / (2 * SWEEP_RAMP);
-  if (t > 1 - SWEEP_RAMP) return 1 - (cruise * (1 - t) * (1 - t)) / (2 * SWEEP_RAMP);
-  return cruise * (t - SWEEP_RAMP / 2);
-}
-
-/** Runs a backend call that needs a scene id, first obtaining one if the scene is a built-in sample. */
-type WithBackendScene = <T>(scene: RelightScene, offlineMessage: string, call: (sceneId: string) => Promise<T>) => Promise<T>;
-
-/** -1 = cool, 0 = white, 1 = warm -> the light's colour multiplier. */
-function warmthToColor(warmth: number): [number, number, number] {
-  const target = warmth >= 0 ? WARM : COOL;
-  const t = Math.abs(warmth);
-  return [round(1 + (target[0] - 1) * t), round(1 + (target[1] - 1) * t), round(1 + (target[2] - 1) * t)];
-}
-
-const cssColor = (c: [number, number, number]) => `rgb(${c.map((v) => Math.round(clamp(v, 0, 1) * 255)).join(" ")})`;
-
-/**
- * Fallback for browsers that cannot shade, or shade too slowly: ask the server
- * to render each light position (debounced), instead of shading in the browser.
- * `onFail` is called each time a render fails.
- */
-function useServerPreview(enabled: boolean, scene: RelightScene | null, light: Light, shadows: boolean, fill: FillLight | null, withBackendScene: WithBackendScene, onFail: () => void) {
-  const [state, setState] = useState<{ sceneId: string | null; image: string | null; error: string | null }>({ sceneId: null, image: null, error: null });
-  // Bumped by retry(). While renders fail the light is locked, so moving it cannot be what asks again.
-  const [attempt, setAttempt] = useState(0);
-  const retry = useCallback(() => setAttempt((n) => n + 1), []);
-  useEffect(() => {
-    if (!enabled || !scene) return;
-    const controller = new AbortController();
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      try {
-        // With the fill off the request is, to the letter, what it was before there was one.
-        const render = await withBackendScene(scene, SERVER_RENDER_OFFLINE, (scene_id) => relightRender({ scene_id, light, shadows, fill: fill ?? undefined }, controller.signal));
-        if (!cancelled) setState({ sceneId: scene.scene_id, image: render.image, error: null });
-      } catch (error) {
-        if (cancelled || isAbort(error)) return;
-        setState((s) => ({ ...s, error: errorMessage(error) }));
-        onFail();
-      }
-    }, 150);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [enabled, scene, light, shadows, fill, withBackendScene, onFail, attempt]);
-  // The last render outlives a change of photo: never show or export it over another scene.
-  const image = enabled && scene && state.sceneId === scene.scene_id ? state.image : null;
-  return { image, error: enabled ? state.error : null, retry };
-}
-
-/** One light's sun on the photo: the key's, and beside it the fill's while the fill light is on. */
-function LightSun({
-  which,
-  light,
-  letter,
-  onTop,
-  dragging,
-  name,
-  photoRatio,
-  marginX,
-  onScroll,
-  onKeyDown,
-}: {
-  /** The light it stands for. The stage reads this off the sun that was pressed. */
-  which: Which;
-  /** Where that light is, how high, how strong and what colour. */
-  light: FillLight;
-  /** A small letter on the disc, K or F, while there are two suns to tell apart. Null while the key's is the only one, which then looks exactly as it did before there was a fill light. */
-  letter: string | null;
-  /** Drawn above the other sun: the light the LIGHT panel is on, so it is the one a press reaches where the two overlap. */
-  onTop: boolean;
-  dragging: boolean;
-  /** For a screen reader, ahead of the numbers. */
-  name: string;
-  /** The photo's width over its height. */
-  photoRatio: number;
-  /** How close the drawn sun may come to the stage's sides (handleMarginX). */
-  marginX: number;
-  /** The wheel was turned over this sun, by this many pixels of scroll. */
-  onScroll: (step: number) => void;
-  onKeyDown: (event: ReactKeyboardEvent<HTMLButtonElement>) => void;
-}) {
-  // The sun, once it is on the page: scrolling over it needs a listener of its own (below).
-  const [handle, setHandle] = useState<HTMLButtonElement | null>(null);
-  const scrolled = useEffectEvent(onScroll);
-
-  /**
-   * Scrolling while the pointer is over the sun moves the light toward the
-   * viewer or away. Only over the sun: anywhere else the wheel scrolls the page
-   * as it always did. Scrolling up (or spreading two fingers on a trackpad)
-   * brings the light nearer and the sun grows, the way the same gesture zooms
-   * in on a map. A Sweep in progress carries on at the new Height.
-   * Listened for directly: React's own wheel listener may not stop the page from scrolling.
-   */
-  useEffect(() => {
-    if (!handle) return;
-    const onWheel = (event: WheelEvent) => {
-      // Over the sun the wheel is the light's, at the ends of the range too: the page must not start to scroll when the light stops.
-      event.preventDefault();
-      const unit = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? 1 : WHEEL_LINE_PX;
-      const step = clamp(event.deltaY * unit * (event.ctrlKey ? WHEEL_PINCH_GAIN : 1), -WHEEL_MAX_STEP_PX, WHEEL_MAX_STEP_PX);
-      if (step !== 0) scrolled(step);
-    };
-    handle.addEventListener("wheel", onWheel, { passive: false });
-    return () => handle.removeEventListener("wheel", onWheel);
-  }, [handle]);
-
-  // How the sun is drawn at this Height (see SUN_SCALE).
-  const lift = heightShare(light.height);
-  const sunPx = HANDLE_PX * between(SUN_SCALE, lift);
-  const glowReachPx = between(SUN_GLOW_REACH_PX, lift);
-  // The shadow stays under the disc until the light is well off the surface, then falls away quickly.
-  const sunShadow = `0 ${between(SUN_SHADOW_DROP_PX, lift * lift).toFixed(1)}px ${between(SUN_SHADOW_BLUR_PX, lift).toFixed(1)}px rgb(0 0 0 / ${between(SUN_SHADOW_ALPHA, lift).toFixed(2)})`;
-  // The fill's sun is a ring in the fill's colour with the photo showing through it, where the key's is a full disc: the two are told apart before either letter is read.
-  const hollow = which === "fill";
-  return (
-    <button
-      ref={setHandle}
-      type="button"
-      aria-label={`${name}, x ${light.x.toFixed(2)}, y ${light.y.toFixed(2)}, height ${light.height.toFixed(2)}. Use the arrow keys to move, and plus or minus to bring the light nearer or push it back.`}
-      data-light={which}
-      data-height={light.height.toFixed(2)}
-      onKeyDown={onKeyDown}
-      className={cn(
-        `light-handle group absolute ${onTop ? "z-10" : "z-9"} -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/80`,
-        dragging ? "cursor-grabbing" : "cursor-grab",
-      )}
-      style={
-        {
-          // As large as the disc, and never smaller than the 40 px that is easy to grab.
-          width: Math.max(HANDLE_PX, sunPx),
-          height: Math.max(HANDLE_PX, sunPx),
-          "--light-x": light.x,
-          "--light-y": light.y,
-          "--photo-ratio": photoRatio,
-          "--handle-margin": `${HANDLE_MARGIN_PX}px`,
-          "--handle-margin-x": `${marginX}px`,
-          "--handle-margin-y": `${HANDLE_MARGIN_Y_PX}px`,
-        } as CSSProperties
-      }
-    >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          width: sunPx + 2 * glowReachPx,
-          height: sunPx + 2 * glowReachPx,
-          filter: `blur(${between(SUN_GLOW_BLUR_PX, lift).toFixed(1)}px)`,
-          background: `radial-gradient(circle, ${cssColor(light.color)} 0%, transparent 65%)`,
-          opacity: 0.25 + 0.15 * Math.min(light.intensity, 3),
-        }}
-      />
-      <span
-        data-sun
-        className={cn(
-          "pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2",
-          hollow ? "bg-black/25" : "border-white text-black/75",
-          "transition-[scale,width,height,box-shadow] motion-reduce:transition-none",
-          dragging && "scale-110",
-        )}
-        style={
-          hollow
-            ? // A dark hairline on each side of the ring keeps a pale ring in sight on a pale part of the photo.
-              { width: sunPx, height: sunPx, boxShadow: `${sunShadow}, 0 0 0 1px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(0 0 0 / 0.6)`, borderColor: cssColor(light.color) }
-            : { width: sunPx, height: sunPx, boxShadow: sunShadow, background: cssColor(light.color) }
-        }
-      >
-        {/* Marked important: the icon's own default size is set the same way, and which class wins otherwise is down to the stylesheet's order. */}
-        {!hollow && <SunIcon className="h-1/2! w-1/2!" />}
-        {/* On the disc's rim, lower right, whatever its size: 85.4% is the middle plus cos 45 degrees of the radius. */}
-        {letter && (
-          <span data-letter className="absolute left-[85.4%] top-[85.4%] flex h-4 w-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/85 text-[10px] font-bold leading-none text-white ring-1 ring-white/70">
-            {letter}
-          </span>
-        )}
-      </span>
-      {/* Appears when the mouse has rested on the sun for a moment, and never while it is being dragged. Not on a touch screen: there is no wheel to scroll, and a tap would leave it showing. */}
-      {!dragging && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/70 px-2 py-0.5 text-[11px] font-medium text-zinc-200 opacity-0 backdrop-blur transition-opacity delay-0 group-hover:opacity-100 group-hover:delay-500 group-focus-visible:opacity-100 pointer-coarse:hidden"
-        >
-          {SUN_HINT}
-        </span>
-      )}
-    </button>
-  );
-}
 
 export default function RelightPage() {
   const [photo, setPhoto] = useState<LoadedImage | null>(null);
