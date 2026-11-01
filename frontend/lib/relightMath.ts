@@ -178,12 +178,15 @@ export interface ShadowField {
   crest: Float32Array;
   /** cv2.erode(z): the lowest surface within SHADOW_SPREAD pixels. */
   floor: Float32Array;
+  /** Geometry.sky resized the same way (how much each shadow-map pixel is open sky); null when the scene has none. */
+  sky?: Float32Array | null;
 }
 
 /**
  * The height field shadows() marches: z resized to the shadow resolution, with
  * its dilated and eroded copies. `depth` is nearness in 0..1 (the scene's depth
- * PNG / 255), dw x dh pixels.
+ * PNG / 255), dw x dh pixels. `sky` (SceneArrays.sky, the same size) is
+ * shrunk alongside it, for shadowMap to keep shadows off open sky.
  */
 export function shadowHeightField(
   depth: Float32Array,
@@ -192,13 +195,14 @@ export function shadowHeightField(
   sceneWidth: number,
   sceneHeight: number,
   relief: number,
+  sky: Float32Array | null = null,
 ): ShadowField {
   const [width, height] = shadowSize(sceneWidth, sceneHeight);
   const z = resizeArea(depth, dw, dh, width, height);
   for (let i = 0; i < z.length; i++) z[i] *= relief;
   const crest = spread(z, width, height, SHADOW_SPREAD, 1);
   const floor = spread(z, width, height, SHADOW_SPREAD, -1);
-  return { width, height, z, crest, floor };
+  return { width, height, z, crest, floor, sky: sky ? resizeArea(sky, dw, dh, width, height) : null };
 }
 
 /** cv2.GaussianBlur(src, (0, 0), sigma) on a float image: separable, BORDER_REFLECT_101. */
@@ -230,6 +234,7 @@ function gaussianBlur(src: Float32Array, w: number, h: number, sigma: number): F
  */
 export function shadowMap(field: ShadowField, relief: number, lightPos: Vec3): Float32Array {
   const { width: w, height: h, z, crest, floor } = field;
+  const sky = field.sky ?? null;
   const [lx, ly, lz] = lightPos;
   const bias = SHADOW_BIAS * relief;
   // cv2.remap(src, mx, my, INTER_LINEAR, borderMode=BORDER_CONSTANT, borderValue=0)
@@ -274,6 +279,13 @@ export function shadowMap(field: ShadowField, relief: number, lightPos: Vec3): F
         near[p] = Math.max(near[p], occlusion * (1.0 - toMid));
         mid[p] = Math.max(mid[p], occlusion * toMid * (1.0 - toFar));
         far[p] = Math.max(far[p], occlusion * toMid * toFar);
+      }
+      // Open sky receives no shadow, taken out before the blur and twice as fast as its brightness is given back, as in shadows().
+      if (sky) {
+        const keep = Math.fround(1.0 - Math.min(2.0 * sky[p], 1.0));
+        near[p] *= keep;
+        mid[p] *= keep;
+        far[p] *= keep;
       }
     }
   }
@@ -322,6 +334,13 @@ export interface SceneArrays {
   depth: Float32Array;
   /** Unit normals, 3 floats per pixel: x right, y down, z to the viewer. */
   normals: Float32Array;
+  /**
+   * How much each pixel is open sky, 0..1: (255 - the depth PNG's alpha) / 255,
+   * as Geometry.sky in the Python. Null (or left out) when the alpha is 255
+   * everywhere, as in every depth map from before there was sky: then not a
+   * line of the shading below is different from what it was.
+   */
+  sky?: Float32Array | null;
 }
 
 /** Decode the scene's PNGs (as canvas ImageData) into the arrays the math uses. */
@@ -338,8 +357,14 @@ export function sceneArrays(
   const n = width * height;
   const d = new Float32Array(n);
   const nrm = new Float32Array(n * 3);
+  let sky: Float32Array | null = null;
   for (let i = 0; i < n; i++) {
     d[i] = depth.data[i * 4] / 255;
+    const alpha = depth.data[i * 4 + 3];
+    if (alpha !== 255) {
+      sky ??= new Float32Array(n);
+      sky[i] = (255 - alpha) / 255;
+    }
     const x = (normals.data[i * 4] / 255) * 2 - 1;
     const y = (normals.data[i * 4 + 1] / 255) * 2 - 1;
     const z = (normals.data[i * 4 + 2] / 255) * 2 - 1;
@@ -348,7 +373,7 @@ export function sceneArrays(
     nrm[i * 3 + 1] = y / len;
     nrm[i * 3 + 2] = z / len;
   }
-  return { width, height, relief, rgba: image.data, depth: d, normals: nrm };
+  return { width, height, relief, rgba: image.data, depth: d, normals: nrm, sky };
 }
 
 /** A finished shadow map (the output of shadowMap) with its size. */
@@ -367,7 +392,7 @@ export function relightPixels(scene: SceneArrays, light: Light, castShadows = tr
   const { width: w, height: h, relief, depth } = scene;
   let shadow: ShadowLayer | null = null;
   if (castShadows) {
-    const field = shadowHeightField(depth, w, h, w, h, relief);
+    const field = shadowHeightField(depth, w, h, w, h, relief, scene.sky ?? null);
     shadow = { map: shadowMap(field, relief, lightPosition(w, h, relief, light)), width: field.width, height: field.height };
   }
   return shadePixels(scene, light, shadow, fill);
@@ -382,9 +407,12 @@ export function relightPixels(scene: SceneArrays, light: Light, castShadows = tr
  * With a fill light, fill_map() is added the way apply_shading() adds it: the
  * photo times the fill's share, in the fill's colour, before the roll-off.
  * Without one, not a line of the arithmetic below is different from before.
+ * The same for open sky (scene.sky): where there is some, the result is moved
+ * towards the photo by that share after the roll-off, as apply_shading() does.
  */
 export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLayer | null, fill: FillLight | null = null): Uint8ClampedArray<ArrayBuffer> {
   const { width: w, height: h, relief, rgba, depth, normals } = scene;
+  const sky = scene.sky ?? null;
   const [lx, ly, lz] = lightPosition(w, h, relief, light);
 
   // diffuse(): exposure is measured relative to the centre of the scene.
@@ -429,6 +457,8 @@ export function shadePixels(scene: SceneArrays, light: Light, shadow: ShadowLaye
         let lit = srgbToLinear(srgb) * shading * light.color[c];
         if (fill) lit = lit + srgbToLinear(srgb) * fillShading * fill.color[c];
         if (lit > knee) lit = knee + (1 - knee) * (1 - Math.exp(-(lit - knee) / (1 - knee)));
+        // Open sky keeps the photo's own brightness: all of it where it is wholly sky.
+        if (sky && sky[p] > 0) lit = lit * (1 - sky[p]) + srgbToLinear(srgb) * sky[p];
         const v = Math.min(1, Math.max(0, linearToSrgb(lit)));
         out[p * 4 + c] = Math.floor(v * 255 + 0.5);
       }

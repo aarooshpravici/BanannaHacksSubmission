@@ -4,7 +4,7 @@ Every test case has an ID (for example `L-03`), numbered steps, the expected res
 
 ## How to use this plan
 
-- **Standard start.** Unless a case says otherwise: the app runs as in [SETUP.md](SETUP.md), the top-right pill reads **backend: online, mock providers** (on a window narrower than 640 pixels just "online"), the photo file `testing/photos/01-portrait-astronaut.jpg` is loaded through the dashed box, and you have clicked **Reset light** in the LIGHT panel. The light is then at x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, with **Cast shadows** on.
+- **Standard start.** Unless a case says otherwise: the app runs as in [SETUP.md](SETUP.md), the top-right pill reads **backend: online, mock providers** (on a window narrower than 640 pixels just "online"), the photo file `testing/photos/01-portrait-astronaut.jpg` is loaded through the dashed box, and you have clicked **Reset light** in the LIGHT panel. The light is then at x 0.12, y 0.35, Height 0.12, Intensity 1.40, Ambient 0.20, Colour neutral, with **Cast shadows** on.
 - **No backend?** If the pill reads "backend: mock" (Plan B in SETUP) or "backend: offline", click a sample thumbnail wherever a case says to load a test photo: **Portrait** for `01-portrait-astronaut.jpg`, **Coffee cup** for `02-object-coffee.jpg`, **Cat** for `03-animal-cat.jpg`, **Rocket** for `04-dark-rocket.jpg`. They are the same four photos with the same shape data, and they need no backend. A case that needs another photo file can still be run. In Plan B, choose the file: the browser works out its shape (P-10). With the pill "backend: offline", choose the file and click **Analyse in this browser** on the card that appears (R-22). Such a photo shades a little flatter than with the backend, the words on the loading label are different, and **Detailed normals** is off (P-12). Cases about the backend's own loading screen, or about anything else the backend does, cannot be run that way: mark them NOT RUN.
 - **Hosted demo?** If you were given a web address for the static demo (the pill reads "demo: runs in your browser", or just "demo" on a phone), do group H. The demo has the four samples and it takes your own photo too: the browser works out the photo's shape and nothing is uploaded. **H-12 is the case to run first.** Only Enhance is switched off there.
 - **Recording results.** On GitHub, use the "Report a finished test run" link in [README.md](README.md#reporting-what-you-found) and write one line per case. Only if you cannot use GitHub, fill in a copy of [results/TEMPLATE.md](results/TEMPLATE.md). Mark each case **PASS** (matches "Expected"), **FAIL** (does not; open a bug issue) or **NOT RUN**.
@@ -68,7 +68,7 @@ Start each case on the first page with no photo (click **New photo** if a photo 
 
 1. Click the **Portrait** thumbnail under "Or try a sample photo:".
 
-**Expected:** the astronaut photo opens at once, already lit. There is **no** "Estimating depth and surface normals…" wait. The sun sits near the left edge of the photo, about a third of the way down, on the flag. Readout x 0.12, y 0.35; Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral. The left of the face is bright and the right cheek is in shadow. Open GEOMETRY (click its row at the bottom of the sidebar): the size line reads "512 x 512 px, relief 0.3", and under it is the shading line, which starts "shading:" (F-01). This works with or without the backend.
+**Expected:** the astronaut photo opens at once, already lit. There is **no** "Estimating depth and surface normals…" wait. The sun sits near the left edge of the photo, about a third of the way down, on the flag. Readout x 0.12, y 0.35; Height 0.12, Intensity 1.40, Ambient 0.20, Colour neutral. The left of the face is bright and the right cheek is in shadow. Open GEOMETRY (click its row at the bottom of the sidebar): the size line reads "512 x 512 px, relief 0.3", and under it is the shading line, which starts "shading:" (F-01). This works with or without the backend.
 
 ![U-05](screenshots/33-sample-portrait.jpg)
 
@@ -88,7 +88,7 @@ Start each case on the first page with no photo (click **New photo** if a photo 
 
 1. Load the astronaut **file**. Click **Low and warm**. Turn **Cast shadows** off. Type `test` in the ENHANCE text box. Open GEOMETRY and click **Detailed normals** off; wait for loading to finish. 2. Click **New photo** (top right of the stage). 3. Choose `02-object-coffee.jpg`. Open GEOMETRY (it is folded again).
 
-**Expected:** step 2 returns to the first page. After step 3 the coffee photo shows and **every** control is back where a fresh page starts: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral with a white dot, **Cast shadows on** (yellow). The ENHANCE text box is **empty** and shows its grey words "Optional: a mood, such as golden hour". **Detailed normals is on** (yellow) and the Normals picture is the detailed kind. Nothing from the first photo is carried over. (Before the Oct 10 evening update Cast shadows, the text and Detailed normals were kept. If any of them is kept now, that is a FAIL.) Without a backend: use the **Portrait** and **Coffee cup** samples and leave out the Detailed normals part. (The screenshot was taken in a tall 1440 x 1300 window so that the whole sidebar shows.)
+**Expected:** step 2 returns to the first page. After step 3 the coffee photo shows and **every** control is back where a fresh page starts: x 0.12, y 0.35, Height 0.12, Intensity 1.40, Ambient 0.20, Colour neutral with a white dot, **Cast shadows on** (yellow). The ENHANCE text box is **empty** and shows its grey words "Optional: a mood, such as golden hour". **Detailed normals is on** (yellow) and the Normals picture is the detailed kind. Nothing from the first photo is carried over. (Before the Oct 10 evening update Cast shadows, the text and Detailed normals were kept. If any of them is kept now, that is a FAIL.) Without a backend: use the **Portrait** and **Coffee cup** samples and leave out the Detailed normals part. (The screenshot was taken in a tall 1440 x 1300 window so that the whole sidebar shows.)
 
 ![U-07 after the second photo](screenshots/91-new-photo-starts-clean.jpg)
 
@@ -206,7 +206,7 @@ Use whatever of these you have or can make. Skip the rest and say which you skip
 
 1. On the first page click the **Rocket** thumbnail.
 
-**Expected:** the night rocket photo opens at once. Sun near the left edge on the left tower, readout x 0.12, y 0.35. The picture stays dark blue. The left tower is a little brighter and the right of the picture a little darker. There are **no** hard black blocks or stripes on the sky. Open GEOMETRY: the size line reads "640 x 427 px, relief 0.3". Known: a soft, blurred darker column on the sky to the right of each tower can be seen (K13 in [PENDING.md](PENDING.md#already-known-no-need-to-report)). Only a column with a sharp, straight edge is a FAIL.
+**Expected:** the night rocket photo opens at once. Sun near the left edge on the left tower, readout x 0.12, y 0.35. The picture stays dark blue. The left tower is a little brighter and the right of the picture a little darker. There are **no** dark blocks, stripes or columns on the sky: since the Nov 1 update the sky keeps the brightness it has in the photo and gets no shadow. Open GEOMETRY: the size line reads "640 x 427 px, relief 0.3". A darker column on the sky beside a tower, soft or sharp, is a FAIL (it was the known problem K13 before the Nov 1 update).
 
 ![U-20](screenshots/63-sample-rocket.jpg)
 
@@ -643,7 +643,7 @@ On a healthy chip the photo looks the same in all four steps. Only the line and 
 
 1. Standard start.
 
-**Expected:** a round white button with a sun icon and a soft glow, near the left edge of the photo about a third of the way down, on the flag. The white disc is 40 pixels across here; since Oct 11 its size follows **Height** (C-12). Readout "x 0.12", "y 0.35", "colour" with a white dot. Height 0.12, Intensity 1.80, Ambient 0.06. The left of the face is clearly bright and the right cheek is in shadow. Every photo and every sample starts with this light.
+**Expected:** a round white button with a sun icon and a soft glow, near the left edge of the photo about a third of the way down, on the flag. The white disc is 40 pixels across here; since Oct 11 its size follows **Height** (C-12). Readout "x 0.12", "y 0.35", "colour" with a white dot. Height 0.12, Intensity 1.40, Ambient 0.20. The left of the face is clearly bright and the right cheek is in shadow. Every photo and every sample starts with this light.
 
 ![L-01](screenshots/04-scene-default-light.jpg)
 
@@ -897,7 +897,7 @@ These numbers are the same on every window and every photo (C-11). With **Top** 
 
 1. Click **Low and warm**. Turn **Cast shadows** off. Type `test` in the ENHANCE text box. 2. Hold the mouse still over **Reset light** (the last button in the preset row) for two seconds. 3. Click **Reset light**.
 
-**Expected:** step 2: the button has no box until the mouse is on it; then it gets a faint grey background. The hover text reads "Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone." Step 3: x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06, Colour neutral, **Cast shadows on**. This is the same light a photo starts with. The ENHANCE text box still says `test`, the photo stays, and the **Detailed normals** switch is not changed. That is as the hover text says. (The button was named "Reset" before the Oct 10 evening update. The developer could not photograph the hover text; its words were read from the page.)
+**Expected:** step 2: the button has no box until the mouse is on it; then it gets a faint grey background. The hover text reads "Puts the light, its colour and Cast shadows back to how they started. The photo and the Enhance text are left alone." Step 3: x 0.12, y 0.35, Height 0.12, Intensity 1.40, Ambient 0.20, Colour neutral, **Cast shadows on**. This is the same light a photo starts with. The ENHANCE text box still says `test`, the photo stays, and the **Detailed normals** switch is not changed. That is as the hover text says. (The button was named "Reset" before the Oct 10 evening update. The developer could not photograph the hover text; its words were read from the page.)
 
 `Result: PASS / FAIL / NOT RUN` Note:
 
@@ -1026,7 +1026,7 @@ A shadow that falls on something close behind the object (a nose on a cheek) sho
 
 1. Click the **Rocket** sample (or load `04-dark-rocket.jpg`). Click **Left**. 2. Drag the sun slowly up and down the left side, then to the right side. 3. Set **Height** to 0.10. 4. Switch **Cast shadows** off and on.
 
-**Expected:** the sky to the right of the rocket and of each tower gets a little darker, as a soft, blurred column. There are **no** hard-edged black blocks, bands or stripes on the sky, at any sun position. Known: the soft darker columns are still there and can be seen; the one on the right may have a fairly definite top edge. With the switch off they disappear. If you see anything with a hard edge on the sky, that is a FAIL: attach a screenshot showing the x, y and Height.
+**Expected:** the sky stays as it is in the photo at every sun position: no darker column beside the rocket or the towers, no blocks, bands or stripes, and no line where the sky meets a tower. Switching **Cast shadows** off and on changes the towers and the rocket a little, the sky not at all. (Before the Nov 1 update a soft darker column beside each tower was a known problem, K13.) Anything darker on the sky beside a tower, or a visible edge round one, is a FAIL: attach a screenshot showing the x, y and Height.
 
 ![S-07](screenshots/73-sample-rocket-left.jpg)
 
@@ -1547,7 +1547,7 @@ For each: load the file, wait, click the preset named, and compare with the scre
 
 ### T-04 Dark photo
 
-`04-dark-rocket.jpg`, **Left**. **Expected:** the picture stays dark; the left tower and the left side of the rocket are lit a little. On the sky to the right of the rocket and towers there is only faint, soft shading. There are **no** wide, jagged dark blocks on the sky (they were a known problem and should be gone). Known: a soft darker column beside each tower can still be seen. See S-07 and Q-06.
+`04-dark-rocket.jpg`, **Left**. **Expected:** the picture stays dark; the left tower and the left side of the rocket are lit a little. The sky keeps the brightness it has in the photo: no dark blocks and no darker column beside the rocket or the towers. See S-07 and Q-06.
 
 ![T-04](screenshots/36-dark-photo.jpg)
 
@@ -2432,7 +2432,7 @@ The first photo you give the demo downloads a depth model (about 25 MB), so the 
 
 1. Click the **Portrait** thumbnail. 2. Drag the sun. Click **Left**, **Right**, **Top**, **Low and warm**, **Reset light**. 3. Move each of the four sliders. Switch **Cast shadows** off and on. 4. Click **Sweep** and let it finish. 5. Hold **Hold to see original**. 6. Click **Export PNG** and open the file. 7. Click **New photo** (top right of the stage). Do steps 1 and 2 quickly with **Coffee cup**, **Cat** and **Rocket**.
 
-**Expected:** step 1: the astronaut opens at once, already lit, with no "Estimating…" wait: sun on the flag, x 0.12, y 0.35, Height 0.12, Intensity 1.80, Ambient 0.06. The button at the top right of the stage reads **New photo**, with a small upload icon, as in the normal app (before the late night update of Oct 10 it read "Other samples"). Steps 2 to 6: everything behaves exactly as in the normal app. The presets give Left x -0.10, y 0.40; Right x 1.10, y 0.40; Top x 0.50, y -0.15; Low and warm x 0.00, y 0.90, orange. The lighting follows the sun with no delay. **Sweep** reads "Stop sweep" in yellow, takes about 6 seconds and gives the light back. While **Hold to see original** is held, the plain photo and the "Original" tag show and the button is yellow. `relit.png` downloads, is 512 x 512 pixels and matches the screen, without the sun. Step 7: **New photo** returns to the first page; each sample opens at once and starts at x 0.12, y 0.35. There is no red bar at any time, and the pill stays green.
+**Expected:** step 1: the astronaut opens at once, already lit, with no "Estimating…" wait: sun on the flag, x 0.12, y 0.35, Height 0.12, Intensity 1.40, Ambient 0.20. The button at the top right of the stage reads **New photo**, with a small upload icon, as in the normal app (before the late night update of Oct 10 it read "Other samples"). Steps 2 to 6: everything behaves exactly as in the normal app. The presets give Left x -0.10, y 0.40; Right x 1.10, y 0.40; Top x 0.50, y -0.15; Low and warm x 0.00, y 0.90, orange. The lighting follows the sun with no delay. **Sweep** reads "Stop sweep" in yellow, takes about 6 seconds and gives the light back. While **Hold to see original** is held, the plain photo and the "Original" tag show and the button is yellow. `relit.png` downloads, is 512 x 512 pixels and matches the screen, without the sun. Step 7: **New photo** returns to the first page; each sample opens at once and starts at x 0.12, y 0.35. There is no red bar at any time, and the pill stays green.
 
 ![H-03](screenshots/99-demo-sample.jpg)
 

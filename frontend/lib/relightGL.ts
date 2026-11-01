@@ -12,6 +12,9 @@
 //      sampling pass 3 bilinearly, which is the cv2.resize back to full size.
 // A fill light needs no pass of its own: it casts no shadow, so it is one more
 // soft Lambert * falloff in pass 4 (fill_map), added only when it is switched on.
+// Open sky (the depth map's alpha below 255) needs none either: pass 1 keeps
+// shadows off it and pass 4 leaves it as the photo has it. Where the alpha is
+// 255 everywhere, as in every depth map from before, neither branch is taken.
 //
 // Every texture is stored top row first, so texture row j is image row j and
 // v = 0 is the top of the image. Only the final pass, which draws to the
@@ -75,7 +78,7 @@ void main() {
 const SHADOW_FRAGMENT = `#version 300 es
 precision highp float;
 precision highp sampler2D;
-uniform sampler2D u_z;   // shadow resolution, image widths: R = z, G = crest (dilated z), B = floor (eroded z)
+uniform sampler2D u_z;   // shadow resolution, image widths: R = z, G = crest (dilated z), B = floor (eroded z), A = sky
 uniform ivec2 u_size;    // shadow resolution (w, h)
 uniform vec3 u_light;    // light position in image widths
 uniform float u_relief;
@@ -100,7 +103,7 @@ vec2 sampleZ(vec2 p) {
 
 void main() {
   float w = float(u_size.x);
-  vec3 here = texelFetch(u_z, ivec2(gl_FragCoord.xy), 0).rgb;
+  vec4 here = texelFetch(u_z, ivec2(gl_FragCoord.xy), 0);
   // gl_FragCoord is (i + 0.5, j + 0.5): dividing by the width gives positions
   // in image widths for both axes, which keeps the aspect ratio.
   vec3 p = vec3(gl_FragCoord.xy / w, here.r);
@@ -123,6 +126,13 @@ void main() {
     nearLayer = max(nearLayer, occlusion * (1.0 - toMid));
     midLayer = max(midLayer, occlusion * toMid * (1.0 - toFar));
     farLayer = max(farLayer, occlusion * toMid * toFar);
+  }
+  // Open sky receives no shadow, taken out before the blur and twice as fast as its brightness is given back, as in shadows().
+  if (here.a > 0.0) {
+    float keep = 1.0 - min(2.0 * here.a, 1.0);
+    nearLayer *= keep;
+    midLayer *= keep;
+    farLayer *= keep;
   }
   o_color = vec4(nearLayer, midLayer, farLayer, 1.0);
 }`;
@@ -180,7 +190,7 @@ const SHADE_FRAGMENT = `#version 300 es
 precision highp float;
 precision highp sampler2D;
 uniform sampler2D u_image;   // the photo, sRGB
-uniform sampler2D u_depth;   // nearness, white = near
+uniform sampler2D u_depth;   // nearness, white = near; alpha 255 - 255 * open sky
 uniform sampler2D u_normals; // n * 0.5 + 0.5; R = x right, G = y DOWN, B = z to viewer
 uniform sampler2D u_shadow;  // 1 = lit, shadow resolution
 uniform float u_aspect;      // H / W
@@ -250,7 +260,8 @@ void main() {
   vec3 rgb = mix(vec3(1.0), photo.rgb, photo.a); // to_rgb(): transparency flattens onto white
 
   // _pixel_positions(): x in [0, 1], y in [0, H/W], z = depth * relief.
-  vec3 position = vec3(v_uv.x, v_uv.y * u_aspect, texture(u_depth, v_uv).r * u_relief);
+  vec4 depthTexel = texture(u_depth, v_uv);
+  vec3 position = vec3(v_uv.x, v_uv.y * u_aspect, depthTexel.r * u_relief);
   vec3 normal = normalize(texture(u_normals, v_uv).rgb * 2.0 - 1.0);
 
   // diffuse(): Lambert, eased to nothing where the surface turns away, with
@@ -278,6 +289,9 @@ void main() {
   const float knee = ${f(HIGHLIGHT_KNEE)};
   vec3 over = max(lit - knee, 0.0);
   lit = mix(lit, knee + (1.0 - knee) * (1.0 - exp(-over / (1.0 - knee))), greaterThan(lit, vec3(knee)));
+  // Open sky keeps the photo's own brightness: all of it where it is wholly sky.
+  float sky = 1.0 - depthTexel.a;
+  if (sky > 0.0) lit = lit * (1.0 - sky) + srgbToLinear(rgb) * sky;
   o_color = vec4(clamp(linearToSrgb(lit), 0.0, 1.0), 1.0);
 }`;
 
@@ -599,7 +613,10 @@ export class RelightRenderer {
 
     // The height field the shadow pass marches: the depth map, area-averaged
     // down to the shadow resolution on the CPU (cv2.resize INTER_AREA), as
-    // floats, with its dilated and eroded copies in the next two channels.
+    // floats, with its dilated and eroded copies in the next two channels and
+    // the open sky in the fourth. A 2D canvas keeps colours multiplied by alpha:
+    // the backend and lib/sceneGeometry.ts make the grey 0 in the sky and keep
+    // the alpha at 128 or more elsewhere, so it comes back within one level.
     let pixels: Uint8ClampedArray;
     if (data.depth instanceof ImageData) {
       pixels = data.depth.data;
@@ -613,14 +630,22 @@ export class RelightRenderer {
       pixels = ctx.getImageData(0, 0, probe.width, probe.height).data;
     }
     const depth = new Float32Array(data.depth.width * data.depth.height);
-    for (let i = 0; i < depth.length; i++) depth[i] = pixels[i * 4] / 255;
-    const field = shadowHeightField(depth, data.depth.width, data.depth.height, data.width, data.height, data.relief);
+    let sky: Float32Array | null = null;
+    for (let i = 0; i < depth.length; i++) {
+      depth[i] = pixels[i * 4] / 255;
+      if (pixels[i * 4 + 3] !== 255) {
+        sky ??= new Float32Array(depth.length);
+        sky[i] = (255 - pixels[i * 4 + 3]) / 255;
+      }
+    }
+    const field = shadowHeightField(depth, data.depth.width, data.depth.height, data.width, data.height, data.relief, sky);
 
     const packed = new Float32Array(field.width * field.height * 4);
     for (let i = 0; i < field.z.length; i++) {
       packed[i * 4] = field.z[i];
       packed[i * 4 + 1] = field.crest[i];
       packed[i * 4 + 2] = field.floor[i];
+      if (field.sky) packed[i * 4 + 3] = field.sky[i];
     }
     const z = this.texture(gl.NEAREST);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);

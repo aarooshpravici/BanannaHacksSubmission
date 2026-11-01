@@ -5,8 +5,8 @@
         "x": 0.12,
         "y": 0.35,
         "height": 0.12,
-        "intensity": 1.8,
-        "ambient": 0.06,
+        "intensity": 1.4,
+        "ambient": 0.2,
         "color": [
           1.0,
           1.0,
@@ -21,8 +21,8 @@
         "x": 0.12,
         "y": 0.35,
         "height": 0.12,
-        "intensity": 1.8,
-        "ambient": 0.06,
+        "intensity": 1.4,
+        "ambient": 0.2,
         "color": [
           1.0,
           1.0,

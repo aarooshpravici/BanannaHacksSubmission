@@ -61,7 +61,7 @@ def test_unexpected_error_is_a_json_500_the_browser_is_allowed_to_read(monkeypat
     def boom(_):
         raise RuntimeError("model fell over")
 
-    monkeypatch.setattr("app.routers.relight.R.estimate_height", boom)
+    monkeypatch.setattr("app.routers.relight.R.estimate_depth", boom)
     image = encode_image(Image.new("RGB", (8, 8)))
     resp = client.post("/relight/scene", json={"image": image}, headers={"Origin": "http://localhost:3000"})
     assert resp.status_code == 500 and "unexpected error" in resp.json()["detail"]

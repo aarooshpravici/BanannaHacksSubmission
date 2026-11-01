@@ -11,6 +11,11 @@ Conventions (everything is in image space, so there are no axis flips):
   with the nearest surface at z = relief and the farthest at z = 0.
 The depth model (Depth Anything V2) outputs larger values for closer surfaces,
 which already matches "z toward the viewer"; no sign flip is applied.
+
+Open sky is told apart from everything else (open_sky, Geometry.sky): it
+receives no cast shadow and keeps the photo's own brightness. It travels to the
+browser in the depth PNG's alpha channel (depth_image), 255 where there is no
+sky, so a depth map without sky reads exactly as before.
 """
 
 import threading
@@ -58,18 +63,61 @@ def _load_depth_model():
     return processor, model
 
 
-def estimate_height(img: Image.Image) -> np.ndarray:
-    """Per-pixel nearness in [0, 1] (1 = closest to the camera), image-sized."""
+# Open sky. Depth Anything V2's raw output (before it is stretched to 0..1) is
+# exactly 0 where it sees open sky: measured on the Rocket's night sky, on an
+# outdoor daylight sky, and through the gaps of a lattice tower. A backdrop wall
+# a metre or two behind a person reads 0.01 to 0.09 and never 0, which is why
+# distance alone cannot tell the two apart once the depth is stretched, but this
+# can. A raw value at or below this share of the picture's 99th percentile counts
+# as open sky. It also catches, now and then, a dark far corner the model
+# could not place (seen on the coffee photo's table), which is why what is done
+# with sky (see apply_shading) leaves the photo as it is rather than inventing
+# anything.
+SKY_THRESHOLD = 1e-4
+# The model also gives 0 at a few scattered pixels inside things now and then
+# (about ninety specks, none over 16 pixels, on the Portrait's suit and
+# helmet). A patch of "sky" narrower than about twice this, in pixels at 512
+# width, is dropped (a morphological opening). Larger also drops the sky seen
+# through small gaps, such as those in a lattice tower.
+SKY_SPECK = 3.0
+# How softly the sky's edge changes over, in pixels at 512 width: the blur of
+# the sky mask. The model's own outline of a thing against the sky is a few
+# pixels too large, and where it misreads a dark far corner as sky its outline
+# is ragged: with a sharp edge, both showed as a hard-edged shape on the sky. A
+# wide fade hides them. Smaller shows those shapes; larger lets the light on
+# whatever stands against the sky reach further out onto the sky, and gives
+# the edge of that thing back to the photo further in.
+SKY_FEATHER = 6.0
+
+
+def open_sky(raw: np.ndarray) -> np.ndarray:
+    """Where the depth model's raw output says open sky (see SKY_THRESHOLD and SKY_SPECK): True = sky."""
+    top = float(np.percentile(raw, 99))
+    if not top > 0.0:
+        return np.zeros(raw.shape, dtype=bool)
+    reach = max(1, int(SKY_SPECK * raw.shape[1] / 512 + 0.5))
+    square = np.ones((2 * reach + 1, 2 * reach + 1), np.uint8)
+    return cv2.morphologyEx((raw <= SKY_THRESHOLD * top).astype(np.uint8), cv2.MORPH_OPEN, square).astype(bool)
+
+
+def estimate_depth(img: Image.Image) -> tuple[np.ndarray, np.ndarray]:
+    """Per-pixel nearness in [0, 1] (1 = closest to the camera), image-sized, and where there is open sky (open_sky)."""
     processor, model = _depth_model()
     inputs = processor(images=to_rgb(img), return_tensors="pt")
     with _lock, torch.no_grad():
         raw = model(**inputs).predicted_depth[0].numpy()
     raw = cv2.resize(raw, img.size, interpolation=cv2.INTER_CUBIC)
+    sky = open_sky(raw)
     # Percentiles, not min/max, so one stray pixel cannot squash the range.
     lo, hi = np.percentile(raw, [1, 99])
     if hi - lo < 1e-6:
-        return np.zeros_like(raw, dtype=np.float32)
-    return np.clip((raw - lo) / (hi - lo), 0.0, 1.0).astype(np.float32)
+        return np.zeros_like(raw, dtype=np.float32), sky
+    return np.clip((raw - lo) / (hi - lo), 0.0, 1.0).astype(np.float32), sky
+
+
+def estimate_height(img: Image.Image) -> np.ndarray:
+    """Per-pixel nearness in [0, 1] (1 = closest to the camera), image-sized: estimate_depth without the sky."""
+    return estimate_depth(img)[0]
 
 
 def _normals_model():
@@ -108,6 +156,10 @@ class Geometry:
     z: np.ndarray  # (H, W) height toward the viewer, in image widths, 0..relief
     normals: np.ndarray  # (H, W, 3) unit surface normals (x right, y down, z to viewer)
     relief: float
+    # (H, W) how much each pixel is open sky, 0..1, in steps of 1/255 as the
+    # depth PNG's alpha carries it; None where there is none, which shades
+    # exactly as before there was sky.
+    sky: np.ndarray | None = None
 
 
 # Normals taken from the slope of the height field go wrong where one object
@@ -142,8 +194,32 @@ def _depth_steps(dz_dx: np.ndarray, dz_dy: np.ndarray, w: int) -> np.ndarray:
     return cv2.GaussianBlur(steep, (0, 0), DEPTH_STEP_FEATHER * w / 512)
 
 
+def _sky_fade(sky: np.ndarray, w: int) -> np.ndarray | None:
+    """Open sky (True/False) -> how much each pixel is sky, 0..1 in steps of 1/255; None if there is none.
+
+    A blur of the mask (see SKY_FEATHER): a half at the sky's edge, rising to 1
+    inside it and falling to 0 outside. Outside the sky it is held to a half at
+    most, so that something thin against the sky (a pole, a lattice) is never
+    taken for more sky than not; and so that the depth PNG's alpha is at least
+    128 wherever its grey is not 0, which a browser canvas, keeping colours
+    multiplied by alpha, carries through to within one level.
+    """
+    inside = sky.astype(np.float32)
+    blurred = cv2.GaussianBlur(inside, (0, 0), SKY_FEATHER * w / 512)
+    fade = np.where(sky, blurred, np.minimum(blurred, 0.5))
+    alpha = (255.0 - fade * 255.0 + 0.5).astype(np.uint8)
+    if alpha.min() == 255:
+        return None
+    return ((255.0 - alpha.astype(np.float32)) / 255.0).astype(np.float32)
+
+
 def build_geometry(
-    height: np.ndarray, *, normals: np.ndarray | None = None, relief: float = 0.3, smooth: float = 1.5
+    height: np.ndarray,
+    *,
+    normals: np.ndarray | None = None,
+    relief: float = 0.3,
+    smooth: float = 1.5,
+    sky: np.ndarray | None = None,
 ) -> Geometry:
     """Turn a nearness map into a height field with normals.
 
@@ -156,11 +232,23 @@ def build_geometry(
     jumps from one object to the next they face the viewer (see DEPTH_STEP_SLOPE).
     smooth is a blur (pixels at 512 width) that removes depth-map noise, which
     would otherwise show up as speckled shading.
+    sky, if given (from estimate_depth), is where there is open sky.
+    Geometry.sky then says how much each pixel is sky (_sky_fade), and in the
+    sky itself the height is 0, the farthest there is, also where the blur
+    would have spread the edge of something in front of it. A speck of "sky"
+    too small to survive the fade changes nothing. Without sky, the result is
+    as before.
     """
     h, w = height.shape
     sigma = smooth * w / 512
     if sigma > 0:
         height = cv2.GaussianBlur(height, (0, 0), sigma)
+    fade = _sky_fade(sky, w) if sky is not None and sky.any() else None
+    if fade is not None:
+        # Exactly 0 in the sky: a browser canvas keeps colours multiplied by alpha, and 0 is the one grey that survives that
+        # unchanged at every alpha. Outside the sky the alpha is 128 or more (_sky_fade), which a canvas carries through to
+        # within one level.
+        height = np.where(sky & (fade > 0), np.float32(0.0), height).astype(np.float32)
     z = height * relief
     if normals is None:
         # Slopes with x and y in image widths: a step of one pixel is 1/W.
@@ -170,7 +258,36 @@ def build_geometry(
         normals /= np.linalg.norm(normals, axis=2, keepdims=True)
     elif normals.shape[:2] != (h, w):
         raise ValueError(f"normals {normals.shape[:2]} do not match height {(h, w)}")
-    return Geometry(z=z.astype(np.float32), normals=normals.astype(np.float32), relief=relief)
+    return Geometry(z=z.astype(np.float32), normals=normals.astype(np.float32), relief=relief, sky=fade)
+
+
+def depth_image(geom: Geometry) -> Image.Image:
+    """The depth map as POST /relight/scene sends it: grey, white = near; with alpha 255 - 255 * sky when there is sky.
+
+    A scene without sky is a plain grey PNG, byte for byte what it was before
+    there was sky.
+    """
+    grey = Image.fromarray((geom.z / geom.relief * 255.0 + 0.5).astype(np.uint8))
+    if geom.sky is None:
+        return grey
+    alpha = Image.fromarray((255.0 - geom.sky * 255.0 + 0.5).astype(np.uint8))
+    return Image.merge("LA", (grey, alpha))
+
+
+def read_depth_image(img: Image.Image) -> tuple[np.ndarray, np.ndarray | None]:
+    """A depth PNG read back: nearness (grey / 255) and sky ((255 - alpha) / 255, None when alpha is 255 everywhere).
+
+    Read band by band: convert("L") would drop the alpha, and with it the sky.
+    """
+    bands = img.getbands()
+    grey = img.getchannel("L") if "L" in bands else img.convert("RGB").getchannel("R")
+    nearness = np.asarray(grey, dtype=np.float32) / 255.0
+    if "A" not in bands:
+        return nearness, None
+    alpha = np.asarray(img.getchannel("A"), dtype=np.float32)
+    if alpha.min() == 255.0:
+        return nearness, None
+    return nearness, ((255.0 - alpha) / 255.0).astype(np.float32)
 
 
 @dataclass
@@ -281,6 +398,14 @@ def shadows(geom: Geometry, light: Light, *, steps: int = 48, max_side: int = 25
     the line is filed under near, mid or far by its gap to the pixel, and each
     layer is blurred on its own: see the SHADOW_ constants. Done at reduced
     resolution and upsampled, since shadows are low-frequency.
+
+    Open sky (Geometry.sky) receives no shadow: what would fall on it is taken
+    out of the layers before they are blurred, so the blur cannot carry it back
+    onto the thing that threw it either. It is taken out twice as fast as the
+    sky's brightness is given back (apply_shading), so that it is gone wherever
+    the model says sky, right up to the edge (where the sky is a half), while the
+    brightness changes over gently. Sky throws no shadow: its height is 0, the
+    lowest there is, so it never rises above a ray.
     """
     full_h, full_w = geom.z.shape
     scale = min(1.0, max_side / max(full_h, full_w))
@@ -314,6 +439,10 @@ def shadows(geom: Geometry, light: Light, *, steps: int = 48, max_side: int = 25
         near = np.maximum(near, occlusion * (1.0 - to_mid))
         mid = np.maximum(mid, occlusion * to_mid * (1.0 - to_far))
         far = np.maximum(far, occlusion * to_mid * to_far)
+    if geom.sky is not None:
+        # The same shrinking as the height field's, so each shadow-map pixel is sky by the share of it that is.
+        keep = 1.0 - np.minimum(2.0 * cv2.resize(geom.sky, (w, h), interpolation=cv2.INTER_AREA), 1.0)
+        near, mid, far = near * keep, mid * keep, far * keep
 
     lit = np.ones_like(z)
     for layer, sigma in zip((near, mid, far), SHADOW_BLUR_SIGMAS):
@@ -358,6 +487,7 @@ def apply_shading(
     *,
     fill: np.ndarray | None = None,
     fill_color: tuple[float, float, float] = (1.0, 1.0, 1.0),
+    sky: np.ndarray | None = None,
 ) -> Image.Image:
     """Multiply the photo by a shading map, in linear light.
 
@@ -369,6 +499,12 @@ def apply_shading(
     fill, if given (from fill_map), is a second light's share, in its own
     colour: the photo times it is added before the roll-off, so the two lights
     together cannot clip either. Without it, the result is what it always was.
+
+    sky, if given (Geometry.sky), is how much each pixel is open sky. Open sky
+    keeps the photo's own brightness: the lit result is moved towards the photo
+    by that share, after the roll-off, so a pixel that is wholly sky is the
+    photo exactly, bright or not. Neither light, nor the ambient, nor the
+    light's distance darkens or brightens it. Without it, nothing changes.
     """
     rgb = np.asarray(to_rgb(img), dtype=np.float32) / 255.0
     linear = _srgb_to_linear(rgb)
@@ -378,6 +514,9 @@ def apply_shading(
     knee = 0.8
     over = np.maximum(lit - knee, 0.0)
     lit = np.where(lit > knee, knee + (1 - knee) * (1 - np.exp(-over / (1 - knee))), lit)
+    if sky is not None:
+        share = sky[..., None]
+        lit = np.where(share > 0, lit * (1.0 - share) + linear * share, lit)
     out = np.clip(_linear_to_srgb(lit), 0.0, 1.0)
     return Image.fromarray((out * 255.0 + 0.5).astype(np.uint8))
 
@@ -386,8 +525,8 @@ def relight(img: Image.Image, geom: Geometry, light: Light, *, cast_shadows: boo
     """The photo lit by `light` (the main, or key, light) and, if given, by a fill light as well: see fill_map."""
     shading = shading_map(geom, light, cast_shadows=cast_shadows)
     if fill is None:
-        return apply_shading(img, shading, light.color)
-    return apply_shading(img, shading, light.color, fill=fill_map(geom, fill), fill_color=fill.color)
+        return apply_shading(img, shading, light.color, sky=geom.sky)
+    return apply_shading(img, shading, light.color, fill=fill_map(geom, fill), fill_color=fill.color, sky=geom.sky)
 
 
 def normals_preview(geom: Geometry) -> Image.Image:

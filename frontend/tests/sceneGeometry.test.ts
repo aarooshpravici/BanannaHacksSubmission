@@ -3,7 +3,7 @@
 
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { RELIEF, buildGeometry, gaussianBlur, nearness } from "../lib/sceneGeometry";
+import { RELIEF, buildGeometry, gaussianBlur, nearness, openSky } from "../lib/sceneGeometry";
 
 const close = (actual: number, expected: number, within: number, what: string) => assert.ok(Math.abs(actual - expected) <= within, `${what}: ${actual}, expected ${expected} (within ${within})`);
 
@@ -122,5 +122,64 @@ describe("buildGeometry", () => {
   test("a flat floor faces the viewer everywhere", () => {
     const { normals } = buildGeometry(new Float32Array(SIZE * SIZE).fill(0.4), SIZE, SIZE);
     for (let p = 0; p < SIZE * SIZE; p++) assert.deepEqual([normals[p * 4], normals[p * 4 + 1], normals[p * 4 + 2], normals[p * 4 + 3]], [128, 128, 255, 255]);
+  });
+});
+
+describe("open sky", () => {
+  test("raw zeros are open sky; a backdrop wall, however far, is not", () => {
+    // Like the Portrait: a wall reading 0.012 to 0.09 behind someone whose nearest point reads 8.
+    const wall = Float32Array.from({ length: 1000 }, (_, i) => (i < 100 ? 8 : 0.012 + (0.078 * i) / 999));
+    assert.equal(openSky(wall, 1000, 1).reduce((a, b) => a + b, 0), 0);
+    // Like the Rocket: sky (0, and a little below 0 where the resize rings) round a tower reading 2.
+    const rocket = Float32Array.from({ length: 1000 }, (_, i) => (i < 200 ? 2 : i % 7 === 0 ? -0.1 : 0));
+    const sky = openSky(rocket, 1000, 1);
+    assert.equal(sky[0], 0);
+    assert.equal(sky.slice(200).every((v) => v === 1), true);
+    assert.equal(openSky(new Float32Array(100), 10, 10).reduce((a, b) => a + b, 0), 0, "a map with nothing in it is not all sky");
+  });
+
+  test("a few scattered zeros inside something are specks, not sky", () => {
+    // 512 wide, so a speck has to be narrower than about 7 pixels (SKY_SPECK).
+    const raw = new Float32Array(512 * 64).fill(3);
+    for (let j = 20; j < 24; j++) for (let i = 100; i < 104; i++) raw[j * 512 + i] = 0;
+    for (let j = 0; j < 64; j++) for (let i = 300; i < 340; i++) raw[j * 512 + i] = 0;
+    const sky = openSky(raw, 512, 64);
+    assert.equal(sky[22 * 512 + 101], 0, "a 4-pixel speck is dropped");
+    assert.equal(sky[32 * 512 + 320], 1, "a 40-pixel band is kept");
+    assert.equal(sky[0 * 512 + 300], 1, "right up to its edges, and the picture's");
+  });
+
+  /** A 512-wide picture: a block reading 5 in raw depth, against raw 0. */
+  const blockAgainstSky = () => {
+    const raw = new Float32Array(512 * 512);
+    for (let j = 200; j < 300; j++) for (let i = 200; i < 300; i++) raw[j * 512 + i] = 5;
+    return raw;
+  };
+
+  test("the sky goes into the depth map's alpha, softly across its edge, with the grey 0 in the sky and the alpha 128 or more outside it", () => {
+    const raw = blockAgainstSky();
+    const sky = openSky(raw, 512, 512);
+    const { depth } = buildGeometry(nearness(raw), 512, 512, sky);
+    let below = 0;
+    for (let p = 0; p < 512 * 512; p++) {
+      const alpha = depth[p * 4 + 3];
+      if (alpha === 255) continue;
+      below++;
+      // So that a canvas, which keeps colours multiplied by alpha, gives the grey back: exactly in the sky, within one level elsewhere.
+      if (sky[p]) assert.equal(depth[p * 4], 0, "grey 0 in the sky");
+      else assert.ok(alpha >= 128, "never more sky than not outside the sky");
+    }
+    assert.ok(below > 512 * 512 * 0.9);
+    // Across the block's right edge on row 250: what relight.depth_image writes for the same picture (worked out with the Python).
+    const row = (c: number, from: number, to: number) => Array.from({ length: to - from }, (_, k) => depth[(250 * 512 + from + k) * 4 + c]);
+    assert.deepEqual(row(3, 288, 316), [248, 245, 241, 235, 228, 220, 209, 197, 184, 169, 153, 136, 119, 102, 86, 71, 58, 46, 35, 27, 20, 14, 10, 7, 5, 3, 2, 1]);
+    assert.deepEqual(row(0, 292, 306), [255, 255, 255, 255, 253, 244, 216, 161, 0, 0, 0, 0, 0, 0]);
+  });
+
+  test("with no sky, or a mask with no sky in it, the maps are what they were, alpha 255 everywhere", () => {
+    const wall = nearness(Float32Array.from({ length: 64 * 48 }, (_, i) => 1 + Math.sin(i / 50)));
+    const plain = buildGeometry(wall, 64, 48);
+    assert.deepEqual(buildGeometry(wall, 64, 48, new Uint8Array(64 * 48)), plain);
+    for (let p = 3; p < plain.depth.length; p += 4) assert.equal(plain.depth[p], 255);
   });
 });

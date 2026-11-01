@@ -4,7 +4,20 @@
 
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { HIGHLIGHT_KNEE, TERMINATOR_SOFTNESS, gaussianKernel, linearToSrgb, pyRound, relightPixels, softTerminator, srgbToLinear } from "../lib/relightMath";
+import {
+  HIGHLIGHT_KNEE,
+  TERMINATOR_SOFTNESS,
+  gaussianKernel,
+  lightPosition,
+  linearToSrgb,
+  pyRound,
+  relightPixels,
+  sceneArrays,
+  shadowHeightField,
+  shadowMap,
+  softTerminator,
+  srgbToLinear,
+} from "../lib/relightMath";
 import { block, dome, fill, light, mean, plane } from "./scenes";
 
 const SIZE = 64;
@@ -150,6 +163,43 @@ describe("relightPixels", () => {
     const out = relightPixels(flat, light(), false);
     // White lit at exactly 1, past the knee: see below.
     assert.equal(out[(32 * 65 + 32) * 4], 247);
+  });
+});
+
+describe("open sky", () => {
+  /** The low block of the shadow test, its floor all open sky (sky 1: the depth PNG's alpha 0), the block not. */
+  const blockAgainstSky = () => {
+    const shape = block(SIZE, 0.375, 0.625, 0.25);
+    shape.sky = Float32Array.from(shape.depth, (near) => (near === 0 ? 1 : 0));
+    return shape;
+  };
+  const key = light({ x: 0.05, y: 0.5, height: 0.03, intensity: 1.5, ambient: 0.1 });
+
+  test("receives no shadow, and is left exactly as the photo has it, whatever the lights", () => {
+    const shape = blockAgainstSky();
+    const relief = shape.relief;
+    const field = shadowHeightField(shape.depth, SIZE, SIZE, SIZE, SIZE, relief, shape.sky);
+    const shadow = shadowMap(field, relief, lightPosition(SIZE, SIZE, relief, key));
+    // The shadow map is the picture's own size here (64 is under 256).
+    for (let p = 0; p < SIZE * SIZE; p++) if (BEHIND(p % SIZE, Math.floor(p / SIZE))) assert.ok(shadow[p] > 0.999, `no shadow behind the block: ${shadow[p]}`);
+    const without = shadowMap(shadowHeightField(shape.depth, SIZE, SIZE, SIZE, SIZE, relief), relief, lightPosition(SIZE, SIZE, relief, key));
+    assert.ok(without[32 * SIZE + 42] < 0.9, "where the floor is not sky, the block's shadow falls there");
+    for (const [k, f] of [[key, null], [light({ x: 0.5, y: 0.5, height: 2, intensity: 4, ambient: 1 }), fill({ x: 1.2, intensity: 4 })]] as const) {
+      const out = relightPixels(shape, k, true, f);
+      for (let p = 0; p < SIZE * SIZE; p++) if (shape.depth[p] === 0) assert.deepEqual([...out.subarray(p * 4, p * 4 + 4)], [128, 128, 128, 255]);
+    }
+  });
+
+  test("a depth map whose alpha is 255 everywhere, or a sky of 0 everywhere, shades exactly as before there was sky", () => {
+    const shape = block(SIZE, 0.375, 0.625, 0.25);
+    const toImage = (bytes: Uint8ClampedArray) => ({ width: SIZE, height: SIZE, data: bytes }) as unknown as ImageData;
+    const depthBytes = new Uint8ClampedArray(SIZE * SIZE * 4).map((_, k) => (k % 4 === 3 ? 255 : Math.round(shape.depth[k >> 2] * 255)));
+    const normalBytes = new Uint8ClampedArray(SIZE * SIZE * 4).map((_, k) => (k % 4 === 3 ? 255 : k % 4 === 2 ? 255 : 128));
+    assert.equal(sceneArrays(toImage(shape.rgba), toImage(depthBytes), toImage(normalBytes), shape.relief).sky, null);
+    const zero = { ...shape, sky: new Float32Array(SIZE * SIZE) };
+    for (const f of [null, fill({ x: 1.2 })]) {
+      for (const cast of [true, false]) assert.deepEqual(relightPixels(zero, key, cast, f), relightPixels(shape, key, cast, f));
+    }
   });
 });
 

@@ -1,8 +1,8 @@
 // A depth model's raw output -> the depth and normal maps the shader lights.
 //
-// A port of backend/app/ideas/relight.py: estimate_height() after the model has
-// run (resize, normalise) and build_geometry() with normals=None (blur, relief,
-// normals from the slope). If the Python changes, change this too. OpenCV and
+// A port of backend/app/ideas/relight.py: estimate_depth() after the model has
+// run (resize, normalise, open sky) and build_geometry() with normals=None
+// (blur, relief, normals from the slope, the sky in the depth map's alpha). If the Python changes, change this too. OpenCV and
 // NumPy do the work there; each function here says which call it stands in for,
 // because the details (kernel width, edge handling) are what make the maps match.
 //
@@ -30,6 +30,15 @@ const PERCENTILE_LOW = 0.01;
 const PERCENTILE_HIGH = 0.99;
 /** A depth range smaller than this is a flat picture: the map is all zeros, as on the backend. */
 const FLAT_RANGE = 1e-6;
+/**
+ * SKY_THRESHOLD in the Python: a raw value at or below this share of the picture's 99th percentile is open sky. The
+ * model gives exactly 0 for open sky and never 0 for a wall just behind someone; the reasons are written there.
+ */
+export const SKY_THRESHOLD = 1e-4;
+/** SKY_SPECK in the Python: a patch of "sky" narrower than about twice this, in pixels at 512 width, is a speck the model left inside something, and is dropped. */
+const SKY_SPECK = 3;
+/** SKY_FEATHER in the Python: how softly the sky's edge changes over, in pixels at 512 width (the blur of the sky mask). */
+const SKY_FEATHER = 6;
 /** OpenCV's bicubic sharpness (the "a" of the cubic kernel). Not the textbook -0.5: this is what cv2.resize uses. */
 const CUBIC_A = -0.75;
 
@@ -102,6 +111,24 @@ export function nearness(raw: Float32Array): Float32Array {
   return out;
 }
 
+/** open_sky(): where the model's raw depth, at the scene's size, says open sky. 1 = sky, 0 = not. */
+export function openSky(raw: Float32Array, width: number, rows: number): Uint8Array {
+  const sky = new Uint8Array(raw.length);
+  const top = percentile(raw.slice().sort(), PERCENTILE_HIGH);
+  if (!(top > 0)) return sky;
+  const limit = SKY_THRESHOLD * top;
+  const notSky = new Float32Array(raw.length);
+  for (let i = 0; i < raw.length; i++) notSky[i] = raw[i] <= limit ? 0 : 1;
+  // cv2.morphologyEx(MORPH_OPEN) with a square: erode the sky (grow what is not sky), then dilate it back. Past the
+  // picture's edge counts for neither, as OpenCV's default border does.
+  const reach = Math.max(1, Math.floor((SKY_SPECK * width) / 512 + 0.5));
+  const eroded = dilate(notSky, width, rows, reach);
+  for (let i = 0; i < raw.length; i++) eroded[i] = 1 - eroded[i];
+  const opened = dilate(eroded, width, rows, reach);
+  for (let i = 0; i < raw.length; i++) sky[i] = opened[i];
+  return sky;
+}
+
 /** cv2.GaussianBlur(src, (0, 0), sigma) on one float channel: OpenCV's kernel width for floats, edges mirrored without repeating the edge pixel. */
 export function gaussianBlur(src: Float32Array, width: number, height: number, sigma: number): Float32Array {
   if (!(sigma > 0)) return src.slice();
@@ -146,7 +173,7 @@ export function gaussianBlur(src: Float32Array, width: number, height: number, s
 
 /** The two maps as a canvas wants them: RGBA bytes, encoded as POST /relight/scene encodes its PNGs. */
 export interface GeometryMaps {
-  /** Grey, white = near. */
+  /** Grey, white = near. Alpha is 255 - 255 * open sky (relight.depth_image): the grey is 0 in the sky, and the alpha 128 or more outside it. */
   depth: Uint8ClampedArray<ArrayBuffer>;
   /** R = x (right), G = y (down), B = z (to the viewer), each -1..1 stored as 0..255. */
   normals: Uint8ClampedArray<ArrayBuffer>;
@@ -182,10 +209,30 @@ function dilate(src: Float32Array, width: number, height: number, reach: number)
  * the depth map has little fine detail, so the normals are smooth: a face
  * shades flatter than with the backend's detailed normals model. Where the
  * height jumps from one object to the next, the normal faces the viewer
- * (_depth_steps in the Python).
+ * (_depth_steps in the Python). `sky` (from openSky) is where there is open
+ * sky: the depth map's alpha says how much each pixel is sky (_sky_fade in the
+ * Python: a blur of the mask, a half at its edge, held to a half at most
+ * outside it), and in the sky itself the height is 0. A speck too small to
+ * survive the blur changes nothing.
  */
-export function buildGeometry(height: Float32Array, width: number, rows: number): GeometryMaps {
+export function buildGeometry(height: Float32Array, width: number, rows: number, sky: Uint8Array | null = null): GeometryMaps {
   const blurred = gaussianBlur(height, width, rows, (SMOOTH * width) / 512);
+  let alpha: Uint8Array | null = null;
+  if (sky && sky.some((v) => v === 1)) {
+    const inside = Float32Array.from(sky);
+    const spread = gaussianBlur(inside, width, rows, (SKY_FEATHER * width) / 512);
+    alpha = new Uint8Array(sky.length);
+    let any = false;
+    for (let i = 0; i < sky.length; i++) {
+      const fade = sky[i] ? spread[i] : Math.min(spread[i], 0.5);
+      alpha[i] = Math.floor(255 - fade * 255 + 0.5);
+      if (alpha[i] < 255) any = true;
+      // Exactly 0 in the sky: a canvas keeps colours multiplied by alpha, and 0 is the one grey that survives that at every
+      // alpha. Outside it the alpha is 128 or more, which a canvas carries through to within one level.
+      if (sky[i] && alpha[i] < 255) blurred[i] = 0;
+    }
+    if (!any) alpha = null;
+  }
   const depth = new Uint8ClampedArray(width * rows * 4);
   const normals = new Uint8ClampedArray(width * rows * 4);
   const z = (i: number, j: number) => blurred[j * width + i] * RELIEF;
@@ -223,7 +270,7 @@ export function buildGeometry(height: Float32Array, width: number, rows: number)
       depth[p] = grey;
       depth[p + 1] = grey;
       depth[p + 2] = grey;
-      depth[p + 3] = 255;
+      depth[p + 3] = alpha ? alpha[j * width + i] : 255;
       normals[p] = Math.floor(((-dzdx / length) * 0.5 + 0.5) * 255 + 0.5);
       normals[p + 1] = Math.floor(((-dzdy / length) * 0.5 + 0.5) * 255 + 0.5);
       normals[p + 2] = Math.floor(((1 / length) * 0.5 + 0.5) * 255 + 0.5);

@@ -5,7 +5,7 @@ Input:  the four built-in samples in frontend/public/samples/<name>/.
 Output: frontend/tests/fixtures/relight/
   cases.json             the lights, and which scene is rendered under which
   <scene>/photo.png      the inputs, exactly as both sides read them
-  <scene>/depth.png
+  <scene>/depth.png      grey, with an alpha channel where the sample has open sky
   <scene>/normals.png
   <scene>/<case>.png     what relight.relight() makes of them
 
@@ -25,9 +25,9 @@ The samples are made smaller so the fixtures stay small (about 2 MB in all):
                     nothing and still runs every brightness through the
                     colour curves). At this size the shadow map is 256 wide, so
                     the shrinking and stretching of the shadow map are checked.
-Both sides read the inputs from the PNGs written here, depth / 255 and normals
-mapped 0..255 -> -1..1 and made unit length, as the browser reads a scene's PNGs
-(sceneArrays in lib/relightMath.ts). Only local files are read: no model runs.
+Both sides read the inputs from the PNGs written here, depth / 255, open sky
+(255 - alpha) / 255, and normals mapped 0..255 -> -1..1 and made unit length,
+as the browser reads a scene's PNGs (sceneArrays in lib/relightMath.ts). Only local files are read: no model runs.
 """
 
 import json
@@ -49,7 +49,7 @@ SMALL_WIDTH = 128
 LARGE_WIDTH = 320
 
 # The page's own lights, from frontend/app/relight/page.tsx and lib/types.ts.
-START = dict(x=0.12, y=0.35, height=0.12, intensity=1.8, ambient=0.06)
+START = dict(x=0.12, y=0.35, height=0.12, intensity=1.4, ambient=0.2)
 DEFAULT = dict(x=0.2, y=0.2, height=0.25, intensity=1.5, ambient=0.12)
 DEFAULT_FILL = dict(x=0.8, y=0.2, height=0.35, intensity=0.6)
 WARM = [1.0, 0.86, 0.68]
@@ -82,8 +82,9 @@ def _light(spec: dict | None) -> R.Light | None:
     return R.Light(spec["x"], spec["y"], height=spec["height"], intensity=spec["intensity"], ambient=spec.get("ambient", 0.0), color=tuple(spec["color"]))
 
 
-def _inputs(name: str, width: int, ramp: bool) -> tuple[Image.Image, np.ndarray, np.ndarray, float]:
-    """The sample shrunk to `width`, as 8-bit pictures: photo (RGB), depth (grey), normals (RGB); and its relief."""
+def _inputs(name: str, width: int, ramp: bool) -> tuple[Image.Image, np.ndarray, np.ndarray, np.ndarray | None, float]:
+    """The sample shrunk to `width`, as 8-bit pictures: photo (RGB), depth (grey), normals (RGB), the depth's alpha (None
+    when the sample has no open sky); and its relief."""
     folder = SAMPLES / name
     relief = json.loads((folder / "scene.json").read_text())["relief"]
     photo = Image.open(folder / "photo.jpg").convert("RGB")
@@ -95,7 +96,7 @@ def _inputs(name: str, width: int, ramp: bool) -> tuple[Image.Image, np.ndarray,
         photo = Image.fromarray((rgb * 255.0 + 0.5).astype(np.uint8))
     else:
         photo = photo.resize((width, height), Image.BOX)
-    depth = np.asarray(Image.open(folder / "depth.png").convert("L"), dtype=np.float32) / 255.0
+    depth, sky = R.read_depth_image(Image.open(folder / "depth.png"))
     depth = cv2.resize(depth, (width, height), interpolation=cv2.INTER_AREA)
     normals = np.asarray(Image.open(folder / "normals.png").convert("RGB"), dtype=np.float32) / 255.0 * 2.0 - 1.0
     normals = cv2.resize(normals, (width, height), interpolation=cv2.INTER_AREA)
@@ -103,15 +104,20 @@ def _inputs(name: str, width: int, ramp: bool) -> tuple[Image.Image, np.ndarray,
     # The two encodings of routers/relight.py scene(), as in make_samples.py.
     depth_u8 = (np.clip(depth, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
     normals_u8 = ((normals * 0.5 + 0.5) * 255.0 + 0.5).astype(np.uint8)
-    return photo, depth_u8, normals_u8, relief
+    alpha_u8 = None
+    if sky is not None:
+        sky = cv2.resize(sky, (width, height), interpolation=cv2.INTER_AREA)
+        alpha_u8 = (255.0 - np.clip(sky, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8)
+    return photo, depth_u8, normals_u8, alpha_u8, relief
 
 
-def _geometry(depth_u8: np.ndarray, normals_u8: np.ndarray, relief: float) -> R.Geometry:
+def _geometry(depth_u8: np.ndarray, normals_u8: np.ndarray, relief: float, alpha_u8: np.ndarray | None = None) -> R.Geometry:
     """The scene as the browser reads it back from its PNGs (sceneArrays in lib/relightMath.ts)."""
     z = (depth_u8.astype(np.float32) / 255.0) * np.float32(relief)
     n = normals_u8.astype(np.float32) / 255.0 * 2.0 - 1.0
     n /= np.maximum(np.linalg.norm(n, axis=2, keepdims=True), 1e-6)
-    return R.Geometry(z=z.astype(np.float32), normals=n.astype(np.float32), relief=relief)
+    sky = None if alpha_u8 is None or alpha_u8.min() == 255 else ((255.0 - alpha_u8.astype(np.float32)) / 255.0).astype(np.float32)
+    return R.Geometry(z=z.astype(np.float32), normals=n.astype(np.float32), relief=relief, sky=sky)
 
 
 def _png(img: Image.Image, path: Path) -> int:
@@ -126,13 +132,16 @@ def main() -> None:
     total = 0
     for name in NAMES:
         for scene, width, ramp, cases in ((name, SMALL_WIDTH, False, tuple(CASES)), (f"{name}-large", LARGE_WIDTH, True, LARGE_CASES)):
-            photo, depth_u8, normals_u8, relief = _inputs(name, width, ramp)
+            photo, depth_u8, normals_u8, alpha_u8, relief = _inputs(name, width, ramp)
             folder = OUT / scene
             folder.mkdir(parents=True)
             total += _png(photo, folder / "photo.png")
-            total += _png(Image.fromarray(depth_u8), folder / "depth.png")
+            depth_png = Image.fromarray(depth_u8)
+            if alpha_u8 is not None:
+                depth_png = Image.merge("LA", (depth_png, Image.fromarray(alpha_u8)))
+            total += _png(depth_png, folder / "depth.png")
             total += _png(Image.fromarray(normals_u8), folder / "normals.png")
-            geom = _geometry(depth_u8, normals_u8, relief)
+            geom = _geometry(depth_u8, normals_u8, relief, alpha_u8)
             for case in cases:
                 key, cast, fill = CASES[case]
                 out = R.relight(photo, geom, _light(key), cast_shadows=cast, fill=_light(fill))

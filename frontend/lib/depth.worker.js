@@ -7,7 +7,7 @@
 // copies this file as it stands into the build folder.
 
 import { CHECK_MAX_ROUGHNESS, CHECK_MIN_AGREEMENT, CHECK_SIDE, checkPasses, checkPicture, checkScores } from "./depthCheck";
-import { buildGeometry, nearness, resizeCubic } from "./sceneGeometry";
+import { buildGeometry, nearness, openSky, resizeCubic } from "./sceneGeometry";
 
 /** An ONNX build of the backend's model, for transformers.js. Apache-2.0, like the original. */
 const MODEL_ID = "onnx-community/depth-anything-v2-small";
@@ -226,7 +226,9 @@ async function estimateOn(request, route) {
   if (!raw.every(Number.isFinite)) throw new Error("the model's output was not a depth map");
   // The model never gives one single value for a whole picture, even a blank one. On the processor a flat map is kept, as before: there is nothing slower to turn to.
   if (route === "webgpu" && isFlat(raw)) throw new Error("the model's output was flat");
-  return buildGeometry(nearness(resizeCubic(raw, modelWidth, modelHeight, width, height)), width, height);
+  const resized = resizeCubic(raw, modelWidth, modelHeight, width, height);
+  // Open sky is read from the raw depth, before nearness() stretches it and the zeros that mark the sky are lost.
+  return buildGeometry(nearness(resized), width, height, openSky(resized, width, height));
 }
 
 /** @param {import("./sceneGeometry").DepthRequest} request */

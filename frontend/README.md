@@ -70,7 +70,7 @@ In the normal app the backend comes first; if it cannot be reached, the failure 
   both (Cache Storage, under `transformers-cache`), so later photos and later visits download nothing.
   The photo itself is never sent anywhere.
 - **What is different from a backend scene:** the depth map goes through the same steps (`lib/sceneGeometry.ts`
-  is a port of `estimate_height` and `build_geometry` in `backend/app/ideas/relight.py`; if the Python changes,
+  is a port of `estimate_depth` and `build_geometry` in `backend/app/ideas/relight.py`; if the Python changes,
   change it too). The backend's detailed normals come from a second model, Marigold, which is too large for a
   browser, so these scenes take their normals from the slope of the depth map: surfaces shade flatter.
   The page says so in the Geometry panel, and "Detailed normals" is off for them.
@@ -261,7 +261,7 @@ Each is a folder `public/samples/<name>/`:
 | File | What it is |
 | --- | --- |
 | `photo.jpg` | the photo, at most 1024 px on its longer side |
-| `depth.png` | the depth map, grey, white = near |
+| `depth.png` | the depth map, grey, white = near; where there is open sky it has an alpha channel, 0 = sky (see `relight.depth_image`) |
 | `normals.png` | the surface normals, each axis -1..1 stored as 0..255 |
 | `thumb.jpg` | a 320 px wide preview for the sample row |
 | `scene.json` | `{"width", "height", "relief"}` |

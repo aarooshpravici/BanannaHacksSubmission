@@ -154,7 +154,7 @@ const SHADOWS_HELP = (
     <span className="block">
       <strong className="font-semibold text-zinc-100">Off</strong>: every surface is still brighter or darker by the way it faces, but nothing throws a shadow.
     </span>
-    <span className="block">Behind something that stands in front of open sky, a thrown shadow shows as a soft dark band on the sky. Switch this off and the band goes.</span>
+    <span className="block">Open sky gets no shadow, and keeps the brightness it has in the photo.</span>
   </>
 );
 /** Added to SHADOWS_HELP while the fill light is on: the one switch is for the picture, and the picture's shadows are the key's. */

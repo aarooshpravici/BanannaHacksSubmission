@@ -86,10 +86,10 @@ export class CpuScene {
     // shadowHeightField() sizes its map from the scene size it is told, capped at 256: telling it a smaller scene gives the smaller map.
     const shrink = Math.min(1, PREVIEW_SHADOW_SIDE / Math.max(full.width, full.height));
     this.levels = {
-      full: { scene: full, field: shadowHeightField(full.depth, full.width, full.height, full.width, full.height, full.relief), shadow: null },
+      full: { scene: full, field: shadowHeightField(full.depth, full.width, full.height, full.width, full.height, full.relief, full.sky), shadow: null },
       preview: {
         scene: preview,
-        field: shadowHeightField(full.depth, full.width, full.height, full.width * shrink, full.height * shrink, full.relief),
+        field: shadowHeightField(full.depth, full.width, full.height, full.width * shrink, full.height * shrink, full.relief, full.sky),
         shadow: null,
       },
     };

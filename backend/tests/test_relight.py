@@ -343,6 +343,109 @@ def test_enhance_renders_its_input_with_the_shadow_setting_on_screen():
     assert np.array_equal(sent(fill=None), on), "no fill unless the request has one"
 
 
+# --- open sky ----------------------------------------------------------------
+
+
+def _block_against_sky() -> tuple[np.ndarray, np.ndarray]:
+    """_block() as the depth model would report it against open sky: raw 0 all round it. Its nearness, and the sky."""
+    raw = _block() * 5.0
+    return raw / raw.max(), R.open_sky(raw)
+
+
+def _random_photo() -> Image.Image:
+    return Image.fromarray(np.random.default_rng(2).integers(0, 255, (N, N, 3), dtype=np.uint8))
+
+
+def test_open_sky_is_where_the_raw_depth_is_zero_and_a_backdrop_wall_is_not():
+    # Like the Portrait: a wall reading 0.012 to 0.09 behind someone whose nearest point reads 8.
+    wall = np.linspace(0.012, 0.09, N * N, dtype=np.float32).reshape(N, N)
+    wall[40:90, 40:90] = 8.0
+    assert not R.open_sky(wall).any()
+    _, sky = _block_against_sky()
+    assert sky[0, 0] and sky[64, 100] and not sky[64, 64]
+    assert not R.open_sky(np.zeros((N, N), np.float32)).any(), "a map with nothing in it is not all sky"
+
+
+def test_a_few_scattered_zeros_inside_something_are_specks_not_sky():
+    # 512 wide, so a speck has to be narrower than about 7 pixels (SKY_SPECK).
+    raw = np.full((64, 512), 3.0, np.float32)
+    raw[20:24, 100:104] = 0.0
+    raw[:, 300:340] = 0.0
+    sky = R.open_sky(raw)
+    assert not sky[22, 101], "a 4-pixel speck is dropped"
+    assert sky[32, 320] and sky[0, 300] and sky[63, 339], "a 40-pixel band is kept, right up to its edges and the picture's"
+
+
+def test_open_sky_changes_over_softly_at_its_edge_and_has_no_height():
+    # 512 wide, where the blur is SKY_FEATHER pixels: a block against open sky.
+    raw = np.zeros((512, 512), np.float32)
+    raw[200:300, 200:300] = 5.0
+    sky = R.open_sky(raw)
+    g = R.build_geometry(raw / 5.0, relief=0.3, sky=sky)
+    assert g.sky is not None and g.sky[0, 0] == 1.0 and g.sky[250, 250] == 0.0
+    row = g.sky[250, 280:330]
+    assert (np.diff(row) >= 0).all() and abs(row[20] - 0.5) < 0.05 and row[0] == 0.0 and row[-1] == 1.0, f"a half at the edge, 0 well inside the block, 1 well out in the sky: {row}"
+    assert g.sky[~sky].max() <= 0.5, "never more sky than not outside the sky"
+    assert (g.z[sky & (g.sky > 0)] == 0).all(), "sky has no height, also where the blur spread the block's edge"
+    # The depth PNG: grey 0 in the sky, alpha 128 or more outside it, and the sky read back exactly.
+    png = R.depth_image(g)
+    assert png.mode == "LA"
+    grey, alpha = np.asarray(png.getchannel("L")), np.asarray(png.getchannel("A"))
+    assert (grey[sky & (alpha < 255)] == 0).all() and alpha[~sky].min() >= 128
+    nearness_back, sky_back = R.read_depth_image(png)
+    assert np.array_equal(sky_back, g.sky) and np.array_equal(nearness_back, grey / np.float32(255))
+
+
+def test_open_sky_gets_no_shadow_and_is_left_as_the_photo_has_it():
+    nearness, sky = _block_against_sky()
+    g = R.build_geometry(nearness, relief=0.3, smooth=0, sky=sky)
+    plain = R.build_geometry(nearness, relief=0.3, smooth=0)
+    light = R.Light(-0.2, 0.5, height=0.15, intensity=1.4, ambient=0.2)
+    assert R.shadows(plain, light, max_side=N)[64, 85] < 0.8, "without the sky, the block's shadow falls beside it"
+    assert R.shadows(g, light, max_side=N)[64, 85] > 0.99, "on open sky it does not"
+    photo = _random_photo()
+    whole = g.sky == 1.0
+    for key, fill in ((light, None), (R.Light(0.5, 0.5, height=2.0, intensity=4.0, ambient=1.0), R.Light(1.2, 0.5, intensity=4.0))):
+        out = np.asarray(R.relight(photo, g, key, fill=fill))
+        assert np.array_equal(out[whole], np.asarray(photo)[whole]), "where it is wholly sky, the photo exactly"
+    # The block itself, away from its edge with the sky, is shaded as it was, and is if anything less darkened by its
+    # shadow on the sky, which the blur no longer spreads back onto it.
+    flat, flat_before = np.asarray(R.relight(photo, g, light, cast_shadows=False)), np.asarray(R.relight(photo, plain, light, cast_shadows=False))
+    assert np.array_equal(flat[59:69, 59:69], flat_before[59:69, 59:69])
+    lit, before = np.asarray(R.relight(photo, g, light), dtype=int), np.asarray(R.relight(photo, plain, light), dtype=int)
+    assert (lit[59:69, 59:69] >= before[59:69, 59:69]).all()
+
+
+@pytest.mark.parametrize("cast_shadows", [True, False])
+def test_a_scene_without_sky_renders_exactly_as_before(cast_shadows):
+    photo = _random_photo()
+    g = R.build_geometry(_block(), relief=0.3, smooth=0)
+    light = R.Light(-0.2, 0.4, height=0.15, intensity=1.4, ambient=0.2, color=(1.0, 0.86, 0.68))
+    fill = R.Light(1.2, 0.5, height=0.35, intensity=0.6)
+    before = _as_before_the_fill_light(photo, g, light, cast_shadows)
+    assert np.array_equal(np.asarray(R.relight(photo, g, light, cast_shadows=cast_shadows)), before)
+    # No sky in the mask, or a sky of 0 everywhere (a depth PNG whose alpha is 255 everywhere), is the same as none.
+    none = R.build_geometry(_block(), relief=0.3, smooth=0, sky=np.zeros((N, N), bool))
+    assert none.sky is None and np.array_equal(none.z, g.z) and np.array_equal(none.normals, g.normals)
+    zero = R.Geometry(z=g.z, normals=g.normals, relief=g.relief, sky=np.zeros_like(g.z))
+    for f in (None, fill):
+        expected = np.asarray(R.relight(photo, g, light, cast_shadows=cast_shadows, fill=f))
+        assert np.array_equal(np.asarray(R.relight(photo, zero, light, cast_shadows=cast_shadows, fill=f)), expected)
+    # And its depth PNG is the plain grey one it always was.
+    assert R.depth_image(g).mode == "L"
+    assert R.read_depth_image(R.depth_image(g).convert("LA"))[1] is None
+
+
+@pytest.mark.models
+def test_the_depth_model_finds_open_sky_and_not_a_backdrop_wall():
+    from skimage import data
+
+    _, sky = R.estimate_depth(Image.fromarray(data.astronaut()))
+    assert sky.mean() < 0.01 and not sky[30, 480], "the Portrait's backdrop is a wall, not sky"
+    _, sky = R.estimate_depth(Image.fromarray(data.rocket()))
+    assert sky.mean() > 0.5 and sky[30, 320], "the rocket stands against open sky"
+
+
 @pytest.mark.models
 def test_depth_model_puts_the_foreground_in_front():
     from skimage import data

@@ -264,6 +264,8 @@ export async function localScene(image: string, onProgress: (progress: LocalProg
     if (problemBefore !== null || gpuProblem === null || gpuProblem === "known" || (error instanceof DOMException && error.name === "AbortError")) throw error;
     reply = await run({ type: "estimate", width, height, pixels: ctx.getImageData(0, 0, width, height).data }, onProgress);
   }
+  // Through a canvas, which keeps colours multiplied by alpha: the depth map's grey is 0 in the open sky, and its alpha is
+  // 128 or more everywhere else (lib/sceneGeometry.ts), so its grey comes through to within one level.
   const toPng = (data: Uint8ClampedArray<ArrayBuffer>) => {
     const out = makeCanvas(width, height);
     ctx2d(out).putImageData(new ImageData(data, width, height), 0, 0);

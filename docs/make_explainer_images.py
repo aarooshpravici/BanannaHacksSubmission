@@ -25,7 +25,7 @@ STILLS = ROOT / "frontend" / "public" / "how-it-works"
 GIF = ROOT / "docs" / "relight-sweep.gif"
 
 # The light a fresh scene starts with: START in frontend/app/relight/page.tsx.
-START = {"x": 0.12, "y": 0.35, "height": 0.12, "intensity": 1.8, "ambient": 0.06}
+START = {"x": 0.12, "y": 0.35, "height": 0.12, "intensity": 1.4, "ambient": 0.2}
 # The Sweep button's path, copied from the same file (SWEEP_CENTRE, SWEEP_RADIUS, SWEEP_BLEND, SWEEP_MS).
 SWEEP_CENTRE = (0.5, 0.5)
 SWEEP_RADIUS = 0.5
@@ -54,11 +54,11 @@ def load_scene() -> tuple[Image.Image, R.Geometry]:
     """The sample as the browser decodes it (see scene() in app/routers/relight.py for the encodings)."""
     photo = Image.open(SAMPLE / "photo.jpg").convert("RGB")
     relief = 0.3  # scene.json; the same for every sample
-    depth = np.asarray(Image.open(SAMPLE / "depth.png").convert("L"), np.float32) / 255.0
+    depth, sky = R.read_depth_image(Image.open(SAMPLE / "depth.png"))
     normals = np.asarray(Image.open(SAMPLE / "normals.png").convert("RGB"), np.float32) / 255.0 * 2.0 - 1.0
     normals /= np.maximum(np.linalg.norm(normals, axis=2, keepdims=True), 1e-6)
     # Not build_geometry: the depth map was already blurred when the sample was baked.
-    return photo, R.Geometry(z=(depth * relief).astype(np.float32), normals=normals.astype(np.float32), relief=relief)
+    return photo, R.Geometry(z=(depth * relief).astype(np.float32), normals=normals.astype(np.float32), relief=relief, sky=sky)
 
 
 def save_still(img: Image.Image, name: str) -> None:

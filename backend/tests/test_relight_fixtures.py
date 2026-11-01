@@ -30,9 +30,12 @@ def test_fixtures_exist():
 def test_relight_still_makes_the_fixtures(scene):
     folder = OUT / scene["name"]
     photo = Image.open(folder / "photo.png").convert("RGB")
-    depth = np.asarray(Image.open(folder / "depth.png").convert("L"))
+    # Band by band: convert("L") would drop the alpha, which carries the open sky.
+    depth_png = Image.open(folder / "depth.png")
+    depth = np.asarray(depth_png.getchannel("L"))
+    alpha = np.asarray(depth_png.getchannel("A")) if "A" in depth_png.getbands() else None
     normals = np.asarray(Image.open(folder / "normals.png").convert("RGB"))
-    geom = _geometry(depth, normals, scene["relief"])
+    geom = _geometry(depth, normals, scene["relief"], alpha)
     off = {}
     for case in scene["cases"]:
         key, cast, fill = CASES[case]

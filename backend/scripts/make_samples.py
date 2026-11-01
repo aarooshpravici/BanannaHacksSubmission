@@ -4,7 +4,8 @@ Run from backend/:  MOCK_MODE=1 .venv/bin/python -m scripts.make_samples
 Input:  four photos from testing/photos (see SAMPLES).
 Output: frontend/public/samples/<name>/
   photo.jpg    the photo as POST /relight/scene would return it
-  depth.png    grayscale, white = near
+  depth.png    grayscale, white = near; with an alpha channel where there is
+               open sky (0 = sky, 255 = not), as relight.depth_image writes it
   normals.png  RGB, each axis mapped -1..1 -> 0..255
   thumb.jpg    small preview for the sample row on the first page
   scene.json   {"width", "height", "relief"}
@@ -67,11 +68,11 @@ def bake(name: str, source: Path) -> int:
     img.load()
     img = resize_max_side(to_rgb(ImageOps.exif_transpose(img)), MAX_SIDE)
 
-    height = R.estimate_height(img)
+    height, sky = R.estimate_depth(img)
     normals = R.estimate_normals(img)
-    geom = R.build_geometry(height, normals=normals)
-    # The two encodings below are copied from routers/relight.py scene().
-    depth_png = Image.fromarray((geom.z / geom.relief * 255.0 + 0.5).astype(np.uint8))
+    geom = R.build_geometry(height, normals=normals, sky=sky)
+    # The two encodings below are routers/relight.py scene()'s.
+    depth_png = R.depth_image(geom)
     normals_png = Image.fromarray(((geom.normals * 0.5 + 0.5) * 255.0 + 0.5).astype(np.uint8))
 
     thumb = img.resize((THUMB_WIDTH, max(1, round(THUMB_WIDTH * img.height / img.width))), Image.LANCZOS)
